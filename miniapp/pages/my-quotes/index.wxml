@@ -1,0 +1,17 @@
+<view class="container">
+  <scroll-view scroll-x class="tabs">
+    <text wx:for="{{tabs}}" wx:key="key" class="chip {{tab===item.key?'on':''}}"
+      bindtap="switchTab" data-key="{{item.key}}">{{item.label}}</text>
+  </scroll-view>
+  <view class="empty" wx:if="{{!items.length}}">暂无报价记录</view>
+  <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-oid="{{item.orderId}}">
+    <view class="spread">
+      <view class="title">{{item.order.projectName}}</view>
+      <text class="status st-blue">{{item.statusText}}</text>
+    </view>
+    <view class="spread" style="margin-top:12rpx">
+      <text class="muted">承诺 {{item.days}} 天 · {{item.time}}</text>
+      <text class="money">¥{{item.amountY}}</text>
+    </view>
+  </view>
+</view>

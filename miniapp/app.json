@@ -1,0 +1,31 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/login/index",
+    "pages/publish/index",
+    "pages/orders/index",
+    "pages/order-detail/index",
+    "pages/quote-form/index",
+    "pages/my-quotes/index",
+    "pages/chat-list/index",
+    "pages/chat-room/index",
+    "pages/me/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1890FF",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "仿真服务平台",
+    "backgroundColor": "#F5F6F8"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#1890FF",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "首页" },
+      { "pagePath": "pages/chat-list/index", "text": "消息" },
+      { "pagePath": "pages/me/index", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

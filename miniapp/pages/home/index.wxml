@@ -1,0 +1,66 @@
+<view class="container">
+
+  <!-- ========== 客户视图 ========== -->
+  <block wx:if="{{role === 'CUSTOMER'}}">
+    <view class="hero">
+      <view class="hero-title">有仿真需求？</view>
+      <view class="hero-sub">发布需求，让专业工程师来报价</view>
+      <view class="hero-btn" bindtap="goPublish">+ 提报需求</view>
+    </view>
+    <view class="card">
+      <view class="spread">
+        <view class="title">我的订单</view>
+        <text class="muted" bindtap="goOrders">全部 ></text>
+      </view>
+      <view class="stat-row">
+        <view class="stat"><view class="num">{{counts.QUOTING}}</view><view class="muted">待报价</view></view>
+        <view class="stat"><view class="num">{{counts.AWAITING_PAYMENT}}</view><view class="muted">待支付</view></view>
+        <view class="stat"><view class="num">{{counts.IN_PROGRESS}}</view><view class="muted">执行中</view></view>
+        <view class="stat"><view class="num">{{counts.DELIVERED}}</view><view class="muted">待验收</view></view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!recent.length}}">还没有订单，点上方按钮发布第一个需求</view>
+    <view class="card" wx:for="{{recent}}" wx:key="id" bindtap="openMine" data-id="{{item.id}}">
+      <view class="spread">
+        <view class="title">{{item.projectName}}</view>
+        <text class="status {{item.cls}}">{{item.statusText}}</text>
+      </view>
+      <view class="spread" style="margin-top:8rpx">
+        <text class="muted">{{item.time}} · {{item.quoteCount}} 人报价</text>
+        <text class="money">¥{{item.budgetY}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- ========== 工程师视图（抢单大厅） ========== -->
+  <block wx:if="{{role === 'ENGINEER'}}">
+    <view class="spread" style="margin-bottom:16rpx">
+      <view class="title">抢单大厅</view>
+      <text class="muted" bindtap="goMyQuotes">我的报价 ></text>
+    </view>
+    <scroll-view scroll-x class="filter">
+      <text wx:for="{{dicts.directions}}" wx:key="*this" class="chip {{fDirection===item?'on':''}}"
+        bindtap="pickDirection" data-v="{{item}}">{{item}}</text>
+    </scroll-view>
+    <scroll-view scroll-x class="filter">
+      <text wx:for="{{dicts.softwares}}" wx:key="*this" class="chip {{fSoftware===item?'on':''}}"
+        bindtap="pickSoftware" data-v="{{item}}">{{item}}</text>
+    </scroll-view>
+    <view class="empty" wx:if="{{!hall.length}}">暂无可报价的需求，下拉刷新试试</view>
+    <view class="card" wx:for="{{hall}}" wx:key="id" bindtap="openMarket" data-id="{{item.id}}">
+      <view class="spread">
+        <view class="title">{{item.projectName}}</view>
+        <text class="money">¥{{item.budgetY}}</text>
+      </view>
+      <view class="muted" style="margin-top:8rpx">{{item.description}}</view>
+      <view style="margin-top:12rpx">
+        <text class="tag" wx:for="{{item.directionTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+        <text class="tag" wx:for="{{item.softwareTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+      </view>
+      <view class="spread" style="margin-top:8rpx">
+        <text class="muted">工期 {{item.deliveryDays}} 天 · 已 {{item.quoteCount}} 人报价 · {{item.time}}</text>
+        <text class="status st-blue" wx:if="{{item.myQuote}}">已报价</text>
+      </view>
+    </view>
+  </block>
+</view>

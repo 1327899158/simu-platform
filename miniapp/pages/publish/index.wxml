@@ -1,0 +1,76 @@
+<view class="container">
+  <view class="card">
+    <view class="step-title">步骤 1 · 基本信息</view>
+    <view class="label">项目名称</view>
+    <input class="input" placeholder="如：支架静力学分析" value="{{projectName}}"
+      bindinput="input" data-f="projectName" maxlength="60" />
+    <view class="label">项目描述（至少20字）</view>
+    <textarea class="input" style="height:160rpx" placeholder="分析对象、目标、评价指标、交付物要求…"
+      value="{{description}}" bindinput="input" data-f="description" maxlength="5000" />
+    <view class="label">预算（元，可不填）</view>
+    <input class="input" type="digit" placeholder="如 5000" value="{{budgetYuan}}"
+      bindinput="input" data-f="budgetYuan" />
+    <view class="row" style="margin-top:16rpx" bindtap="toggleFlexible">
+      <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" />
+      <text class="muted">预算有弹性，可与工程师协商</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="step-title">步骤 2 · 仿真配置</view>
+    <view class="label">仿真软件（多选）</view>
+    <view style="margin-top:12rpx">
+      <text wx:for="{{dicts.softwares}}" wx:key="*this"
+        class="chip {{softwareTags.indexOf(item)>=0?'on':''}}"
+        bindtap="toggleTag" data-f="softwareTags" data-v="{{item}}">{{item}}</text>
+    </view>
+    <view class="label">仿真方向（多选）</view>
+    <view style="margin-top:12rpx">
+      <text wx:for="{{dicts.directions}}" wx:key="*this"
+        class="chip {{directionTags.indexOf(item)>=0?'on':''}}"
+        bindtap="toggleTag" data-f="directionTags" data-v="{{item}}">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="step-title">步骤 3 · 工期与要求</view>
+    <view style="margin-top:12rpx">
+      <text wx:for="{{dicts.deliveryOptions}}" wx:key="key"
+        class="chip {{deliveryKey===item.key?'on':''}}"
+        bindtap="pickDelivery" data-k="{{item.key}}">{{item.label}}</text>
+    </view>
+    <input wx:if="{{deliveryKey==='custom'}}" class="input" type="number"
+      placeholder="自定义天数（1-90）" value="{{customDays}}" bindinput="input" data-f="customDays" />
+    <view class="label">特殊要求（可选）</view>
+    <textarea class="input" style="height:120rpx" placeholder="保密要求、汇报形式、验收标准…"
+      value="{{specialNote}}" bindinput="input" data-f="specialNote" maxlength="2000" />
+  </view>
+
+  <view class="card">
+    <view class="step-title">步骤 4 · 文件上传</view>
+    <view class="muted">支持模型（.stp/.step/.zip 等）与图片，Demo 单文件 ≤ 25MB</view>
+    <view class="file-row" wx:for="{{files}}" wx:key="fileId">
+      <text class="file-name">{{item.name}}</text>
+      <text class="muted">{{item.sizeText}}</text>
+      <text class="file-del" bindtap="removeFile" data-i="{{index}}">删除</text>
+    </view>
+    <view class="btn-outline" style="margin-top:16rpx" bindtap="chooseFile">
+      {{uploading ? '上传中…' : '+ 选择文件（从聊天记录）'}}
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="step-title">步骤 5 · 确认提交</view>
+    <view class="muted">
+      {{projectName || '未命名项目'}} · {{directionTags.length}}个方向 · {{softwareTags.length}}款软件 ·
+      {{files.length}}个文件{{budgetYuan ? ' · 预算¥' + budgetYuan : ''}}
+    </view>
+    <view class="row" style="margin-top:16rpx" bindtap="toggleAgree">
+      <checkbox checked="{{agreed}}" style="transform:scale(.8)" />
+      <text class="muted">已阅读并同意《平台服务协议》《隐私政策》</text>
+    </view>
+    <view class="btn-primary {{submitting?'disabled':''}}" style="margin-top:24rpx" bindtap="submit">
+      {{submitting ? '提交中…' : '确认发布'}}
+    </view>
+  </view>
+</view>

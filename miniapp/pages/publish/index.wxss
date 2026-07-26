@@ -1,0 +1,3 @@
+.file-row { display: flex; align-items: center; margin-top: 16rpx; }
+.file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 16rpx; }
+.file-del { color: #FF4D4F; margin-left: 16rpx; }

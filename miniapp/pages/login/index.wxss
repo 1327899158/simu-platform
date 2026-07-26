@@ -1,0 +1,10 @@
+.wrap { padding: 120rpx 48rpx; }
+.logo { font-size: 48rpx; font-weight: 700; color: #1890FF; text-align: center; }
+.slogan { text-align: center; color: #999; margin: 16rpx 0 96rpx; }
+.role-btn { border-radius: 16rpx; padding: 40rpx; margin-bottom: 32rpx; color: #fff; }
+.role-btn.dim { opacity: .6; }
+.customer { background: linear-gradient(135deg,#1890FF,#36A3FF); }
+.engineer { background: linear-gradient(135deg,#13C2C2,#36CFC9); }
+.role-name { font-size: 36rpx; font-weight: 600; }
+.role-desc { font-size: 24rpx; opacity: .85; margin-top: 8rpx; }
+.tip { color: #bbb; font-size: 22rpx; text-align: center; margin-top: 64rpx; }

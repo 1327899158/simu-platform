@@ -1,0 +1,13 @@
+{
+  "name": "simu-platform-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "仿真服务平台小程序 · 最小闭环Demo后端（零依赖：Node>=22 内置 http/sqlite/crypto）",
+  "scripts": {
+    "start": "node --experimental-sqlite src/main.js",
+    "e2e": "node --experimental-sqlite test/e2e.mjs"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

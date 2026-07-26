@@ -1,0 +1,13 @@
+{
+  "description": "仿真服务平台小程序（最小闭环Demo）",
+  "projectname": "simu-platform",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "libVersion": "3.4.0",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true
+  }
+}

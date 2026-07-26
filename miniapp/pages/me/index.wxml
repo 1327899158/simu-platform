@@ -1,0 +1,19 @@
+<view class="container">
+  <view class="card row">
+    <view class="avatar">{{roleText[0]}}</view>
+    <view style="margin-left:24rpx">
+      <view class="title">{{user.nickname || '未命名'}}</view>
+      <view class="muted">角色：{{roleText}} <text wx:if="{{user.engineer}}"> · 认证：{{user.engineer.verifyStatus === 'APPROVED' ? '已通过' : '审核中'}}</text></view>
+    </view>
+  </view>
+  <view class="card" wx:if="{{user.engineer}}">
+    <view class="title" style="font-size:28rpx">专业领域</view>
+    <view style="margin-top:16rpx">
+      <text class="tag" wx:for="{{user.engineer.specialties}}" wx:key="*this">{{item}}</text>
+      <text class="tag" wx:for="{{user.engineer.softwares}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+  <view class="card btn-outline" bindtap="switchRole">切换为{{user.role === 'ENGINEER' ? '客户' : '工程师'}}（演示）</view>
+  <view class="card btn-danger-outline" bindtap="logout">退出登录</view>
+  <view class="empty" style="padding-top:24rpx">Demo 版 · Mock 登录/Mock 支付<br/>正式版切换见 docs/upgrade.md</view>
+</view>

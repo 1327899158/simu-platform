@@ -1,0 +1,9 @@
+.desc { margin-top: 16rpx; line-height: 1.6; }
+.file-row { display: flex; align-items: center; margin-top: 16rpx; }
+.file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 12rpx; }
+.dl { color: #1890FF; margin-left: 16rpx; }
+.quote { border-top: 1rpx solid #F0F0F0; padding-top: 20rpx; margin-top: 20rpx; }
+.q-avatar {
+  width: 72rpx; height: 72rpx; border-radius: 50%; background: #13C2C2; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 32rpx;
+}

@@ -1,0 +1,13 @@
+<view class="wrap">
+  <view class="logo">仿真服务平台</view>
+  <view class="slogan">连接仿真需求与专业工程师</view>
+  <view class="role-btn customer {{loading==='customer'?'dim':''}}" bindtap="go" data-role="customer">
+    <view class="role-name">我是客户</view>
+    <view class="role-desc">发布仿真需求，选择工程师</view>
+  </view>
+  <view class="role-btn engineer {{loading==='engineer'?'dim':''}}" bindtap="go" data-role="engineer">
+    <view class="role-name">我是工程师</view>
+    <view class="role-desc">进入抢单大厅，报价接单</view>
+  </view>
+  <view class="tip">演示模式：微信一键登录（Mock），同一设备同角色登录为同一账号</view>
+</view>

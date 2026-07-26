@@ -1,0 +1,14 @@
+<view class="container">
+  <view class="card">
+    <view class="label">报价金额（元）</view>
+    <input class="input" type="digit" placeholder="如 4800" value="{{amountYuan}}" bindinput="input" data-f="amountYuan" />
+    <view class="label">工期承诺（天）</view>
+    <input class="input" type="number" placeholder="如 5" value="{{days}}" bindinput="input" data-f="days" />
+    <view class="label">技术方案简述（客户可见，至少10字）</view>
+    <textarea class="input" style="height:200rpx" placeholder="求解器、网格策略、工况设置、交付物…"
+      value="{{solution}}" bindinput="input" data-f="solution" maxlength="3000" />
+    <view class="btn-primary {{submitting?'disabled':''}}" style="margin-top:32rpx" bindtap="submit">
+      {{submitting?'提交中…':'提交报价'}}</view>
+    <view class="muted" style="margin-top:16rpx">提示：其他工程师看不到你的报价金额与方案；被选中后不可修改。</view>
+  </view>
+</view>

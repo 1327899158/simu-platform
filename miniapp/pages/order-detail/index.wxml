@@ -1,0 +1,97 @@
+<view class="container" wx:if="{{order}}">
+  <view class="card">
+    <view class="spread">
+      <view class="title">{{order.projectName}}</view>
+      <text class="status {{order.cls}}">{{order.statusText}}</text>
+    </view>
+    <view class="muted" style="margin-top:8rpx">{{order.orderNo}} · {{order.time}}</view>
+    <view style="margin-top:16rpx">
+      <text class="tag" wx:for="{{order.directionTags}}" wx:key="*this">{{item}}</text>
+      <text class="tag" wx:for="{{order.softwareTags}}" wx:key="*this">{{item}}</text>
+    </view>
+    <view class="desc">{{order.description}}</view>
+    <view class="muted" wx:if="{{order.specialNote}}">特殊要求:{{order.specialNote}}</view>
+    <view class="spread" style="margin-top:16rpx">
+      <text class="muted">工期 {{order.deliveryDays}} 天{{order.budgetFlexible ? ' · 预算可协商' : ''}}</text>
+      <text class="money">{{order.finalAmountFen ? '成交 ¥' + order.finalY : '预算 ¥' + order.budgetY}}</text>
+    </view>
+  </view>
+
+  <!-- 文件 -->
+  <view class="card" wx:if="{{files.length}}">
+    <view class="title" style="font-size:28rpx">相关文件</view>
+    <view class="file-row" wx:for="{{files}}" wx:key="fileId">
+      <text class="status {{item.kind==='RESULT'?'st-green':'st-blue'}}" style="margin-right:12rpx">{{item.kind==='RESULT'?'成果':'需求'}}</text>
+      <text class="file-name">{{item.name}}</text>
+      <text class="muted">{{item.sizeText}}</text>
+      <text class="dl" bindtap="download" data-id="{{item.fileId}}">下载</text>
+    </view>
+  </view>
+
+  <!-- ===== 客户视角 ===== -->
+  <block wx:if="{{mode==='customer'}}">
+    <view class="card" wx:if="{{order.status==='QUOTING' || order.status==='AWAITING_PAYMENT'}}">
+      <view class="title" style="font-size:28rpx">收到的报价（{{quotes.length}}）</view>
+      <view class="empty" wx:if="{{!quotes.length}}">还没有工程师报价，请耐心等待</view>
+      <view class="quote" wx:for="{{quotes}}" wx:key="id">
+        <view class="spread">
+          <view class="row">
+            <view class="q-avatar">{{item.engineer.nickname[0]}}</view>
+            <view style="margin-left:16rpx">
+              <view>{{item.engineer.nickname}} <text class="muted">已完成 {{item.engineer.completedCount}} 单</text></view>
+              <view class="muted">承诺 {{item.days}} 天</view>
+            </view>
+          </view>
+          <text class="money">¥{{item.amountY}}</text>
+        </view>
+        <view class="muted" style="margin-top:12rpx">{{item.solution}}</view>
+        <view class="btn-primary" style="margin-top:16rpx" wx:if="{{order.status==='QUOTING'}}"
+          bindtap="select" data-id="{{item.id}}" data-nick="{{item.engineer.nickname}}"
+          data-amounty="{{item.amountY}}" data-days="{{item.days}}">选择该工程师</view>
+        <view class="status st-blue" wx:if="{{item.status==='SELECTED'}}" style="margin-top:12rpx">已选中</view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{order.status==='AWAITING_PAYMENT'}}">
+      <view class="spread">
+        <text>应付金额</text><text class="money" style="font-size:40rpx">¥{{order.finalY}}</text>
+      </view>
+      <view class="btn-primary {{paying?'disabled':''}}" style="margin-top:16rpx" bindtap="pay">
+        {{paying?'处理中…':'立即支付（演示通道）'}}</view>
+      <view class="muted" style="margin-top:12rpx">超时未支付将自动释放选标；真实通道将调起微信支付收银台</view>
+    </view>
+
+    <view class="card" wx:if="{{order.status==='DELIVERED'}}">
+      <view class="btn-primary" bindtap="confirmDone">确认验收，完成订单</view>
+      <view class="btn-danger-outline" style="margin-top:16rpx" bindtap="rejectDelivery">驳回本次交付</view>
+    </view>
+
+    <view class="card btn-outline" wx:if="{{order.status==='IN_PROGRESS'||order.status==='DELIVERED'||order.status==='COMPLETED'}}"
+      bindtap="goChat">与工程师沟通</view>
+    <view class="card btn-danger-outline" wx:if="{{order.status==='QUOTING'}}" bindtap="del">删除订单</view>
+  </block>
+
+  <!-- ===== 工程师视角 ===== -->
+  <block wx:if="{{mode==='market'}}">
+    <view class="card" wx:if="{{order.myQuote}}">
+      <view class="spread">
+        <view class="title" style="font-size:28rpx">我的报价</view>
+        <text class="status st-blue">{{order.myQuote.status==='PENDING'?'待客户确认':order.myQuote.status==='SELECTED'?'已选中':order.myQuote.status}}</text>
+      </view>
+      <view class="spread" style="margin-top:12rpx">
+        <text class="muted">承诺 {{order.myQuote.days}} 天</text>
+        <text class="money">¥{{order.myQuote.amountFen/100}}</text>
+      </view>
+    </view>
+    <view class="card btn-primary" wx:if="{{order.status==='QUOTING'}}" bindtap="goQuote">
+      {{order.myQuote?'修改报价':'我要报价'}}</view>
+    <view class="card btn-primary {{delivering?'disabled':''}}"
+      wx:if="{{order.iAmSelected && order.status==='IN_PROGRESS'}}" bindtap="deliver">
+      {{delivering?'上传中…':'上传成果并交付'}}</view>
+    <view class="card btn-outline" wx:if="{{order.iAmSelected && (order.status==='IN_PROGRESS'||order.status==='DELIVERED'||order.status==='COMPLETED')}}"
+      bindtap="goChat">与客户沟通</view>
+    <view class="card" wx:if="{{order.customer}}">
+      <text class="muted">客户：{{order.customer.nickname}}（支付后可见）</text>
+    </view>
+  </block>
+</view>

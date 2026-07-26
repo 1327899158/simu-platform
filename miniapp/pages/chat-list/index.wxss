@@ -1,0 +1,9 @@
+.c-avatar {
+  width: 80rpx; height: 80rpx; border-radius: 50%; background: #1890FF; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 34rpx;
+}
+.badge {
+  display: inline-block; min-width: 32rpx; height: 32rpx; line-height: 32rpx; text-align: center;
+  background: #FF4D4F; color: #fff; border-radius: 16rpx; font-size: 20rpx; padding: 0 8rpx; margin-top: 8rpx;
+}
+.last { margin-top: 12rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

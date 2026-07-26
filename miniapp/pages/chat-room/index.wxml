@@ -1,0 +1,23 @@
+<view class="room">
+  <scroll-view class="list" scroll-y scroll-into-view="{{scrollInto}}" scroll-with-animation>
+    <view wx:for="{{msgs}}" wx:key="id" id="{{item.anchor}}">
+      <view class="sys" wx:if="{{item.sys}}">{{item.content}}</view>
+      <view class="bubble-row {{item.mine?'mine':''}}" wx:else>
+        <view class="bubble {{item.mine?'b-mine':'b-peer'}}">
+          <view wx:if="{{item.type==='TEXT'}}">{{item.content}}</view>
+          <view wx:else class="filemsg" bindtap="openFile" data-fid="{{item.fileId}}" data-type="{{item.type}}">
+            {{item.type==='IMAGE'?'[图片] 点击查看':'[文件] '}}{{item.type==='IMAGE'?'':item.content}}
+          </view>
+          <view class="t">{{item.time}}</view>
+        </view>
+      </view>
+    </view>
+    <view style="height:24rpx"></view>
+  </scroll-view>
+  <view class="inputbar">
+    <view class="plus" bindtap="sendImage">图</view>
+    <input class="ipt" value="{{text}}" bindinput="input" confirm-type="send"
+      bindconfirm="send" placeholder="输入消息…" />
+    <view class="sendbtn {{sending?'dim':''}}" bindtap="send">发送</view>
+  </view>
+</view>

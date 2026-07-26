@@ -1,0 +1,210 @@
+// ============================================================
+// 生产版数据库蓝图（MySQL + Prisma）
+// Demo 后端（server/，SQLite）的表结构与此一一对应；
+// 迁移到 NestJS + Prisma 时以本文件为准：npx prisma migrate dev
+// 设计纪律：金额一律「分」(Int)、枚举英文、软删除、审计时间戳
+// ============================================================
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  CUSTOMER
+  ENGINEER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  DELETED
+}
+
+enum VerifyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  QUOTING
+  AWAITING_PAYMENT
+  IN_PROGRESS
+  DELIVERED
+  COMPLETED
+  CLOSED
+}
+
+enum QuoteStatus {
+  PENDING
+  SELECTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum PayStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum FileKind {
+  MODEL
+  DOC
+  IMAGE
+  RESULT
+}
+
+enum MsgType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+model User {
+  id        String     @id @default(cuid())
+  role      UserRole   @default(CUSTOMER)
+  openid    String?    @unique
+  nickname  String?
+  avatarUrl String?
+  phone     String?    @unique
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
+
+  engineer EngineerProfile?
+  orders   Order[]          @relation("CustomerOrders")
+  quotes   Quote[]
+}
+
+model EngineerProfile {
+  userId       String       @id
+  realName     String?
+  specialties  Json // ["结构分析","流体分析"]
+  softwares    Json // ["ANSYS全系列"]
+  intro        String?      @db.Text
+  verifyStatus VerifyStatus @default(PENDING)
+  user         User         @relation(fields: [userId], references: [id])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNo         String      @unique // SIM202607260001
+  customerId      String
+  projectName     String
+  description     String      @db.Text
+  softwareTags    Json
+  directionTags   Json
+  budgetFen       Int?
+  budgetFlexible  Boolean     @default(true)
+  deliveryDays    Int
+  specialNote     String?     @db.Text
+  status          OrderStatus @default(QUOTING)
+  selectedQuoteId String?     @unique
+  finalAmountFen  Int?
+  selectedAt      DateTime?
+  paidAt          DateTime?
+  deliveredAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  customer User           @relation("CustomerOrders", fields: [customerId], references: [id])
+  quotes   Quote[]
+  files    UploadedFile[]
+
+  @@index([status, createdAt])
+  @@index([customerId, status])
+}
+
+model Quote {
+  id         String      @id @default(cuid())
+  orderId    String
+  engineerId String
+  amountFen  Int
+  days       Int
+  solution   String      @db.Text
+  status     QuoteStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  order    Order @relation(fields: [orderId], references: [id])
+  engineer User  @relation(fields: [engineerId], references: [id])
+
+  @@unique([orderId, engineerId])
+  @@index([engineerId, status])
+}
+
+model UploadedFile {
+  id         String   @id @default(cuid())
+  orderId    String?
+  uploaderId String
+  kind       FileKind
+  name       String
+  cosKey     String   @unique // 生产：COS 对象键；Demo：本地文件名
+  sizeBytes  BigInt
+  mime       String?
+  createdAt  DateTime @default(now())
+
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+}
+
+model Conversation {
+  id         String    @id @default(cuid())
+  orderId    String    @unique
+  customerId String
+  engineerId String
+  lastMsgAt  DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  messages   Message[]
+}
+
+model Message {
+  id        BigInt    @id @default(autoincrement())
+  convId    String
+  senderId  String // SYSTEM 消息为 'SYSTEM'
+  type      MsgType   @default(TEXT)
+  content   String?   @db.Text
+  fileId    String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  conv Conversation @relation(fields: [convId], references: [id])
+
+  @@index([convId, id])
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  orderId       String
+  outTradeNo    String    @unique
+  transactionId String?   @unique
+  amountFen     Int
+  status        PayStatus @default(PENDING)
+  paidAt        DateTime?
+  raw           Json?
+  createdAt     DateTime  @default(now())
+
+  @@index([orderId])
+}
+
+model RefreshToken {
+  token     String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
