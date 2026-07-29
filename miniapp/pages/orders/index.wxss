@@ -1,1 +1,53 @@
-.tabs { white-space: nowrap; margin-bottom: 16rpx; }
+/* ========== 折叠分类筛选 · 霓虹 ========== */
+.filter-trigger {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  margin-bottom: 16rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--c-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+}
+.ft-label {
+  font-size: 24rpx;
+  color: var(--c-text-3);
+  letter-spacing: 1rpx;
+}
+.ft-value {
+  flex: 1;
+  margin-left: 20rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  background: var(--grad-violet-pink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--neon-violet-2);
+}
+.ft-arrow {
+  font-size: 24rpx;
+  color: var(--c-text-3);
+  transition: transform 0.2s ease;
+}
+.ft-arrow.open {
+  transform: rotate(180deg);
+  color: var(--neon-cyan-2);
+}
+.row-hover {
+  opacity: 0.7;
+  border-color: var(--c-border-strong);
+}
+
+.filter-panel {
+  max-height: 0;
+  overflow: hidden;
+  margin-bottom: 0;
+  padding: 0 8rpx;
+  transition: max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease;
+}
+.filter-panel.show {
+  max-height: 480rpx;
+  padding: 16rpx 8rpx 20rpx;
+  margin-bottom: 20rpx;
+}

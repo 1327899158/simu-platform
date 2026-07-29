@@ -1,44 +1,361 @@
-/* 设计规范：科技蓝 #1890FF，16px 基础间距，卡片 8px 圆角（方案 8.1） */
-page { background: #F5F6F8; font-size: 28rpx; color: #333; }
-.container { padding: 24rpx; }
-.card { background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx; }
+/* ================================================================
+   仿真服务平台 · 霓虹渐变未来风 Design Token 体系
+   深紫黑底 + 紫粉/青蓝霓虹渐变 + 玻璃拟态卡片
+   基于 miniprogram UI/UX 设计规范：rpx 优先、Flexbox 为主、
+   系统字体、触屏优先、对比度层级、留白呼吸感
+   ================================================================ */
+
+/* ---------- Design Tokens ---------- */
+page {
+  /* ===== 底色 · 深紫黑空间 ===== */
+  --bg-deep: #08060F;
+  --bg-base: #0E0A1F;
+  --bg-elev: #160F30;
+  --bg-card: rgba(255, 255, 255, 0.045);
+
+  /* ===== 霓虹色系 ===== */
+  --neon-violet: #A855F7;
+  --neon-violet-2: #C084FC;
+  --neon-pink: #EC4899;
+  --neon-pink-2: #F472B6;
+  --neon-cyan: #22D3EE;
+  --neon-cyan-2: #67E8F9;
+  --neon-blue: #3B82F6;
+  --neon-green: #34D399;
+  --neon-amber: #FBBF24;
+  --neon-red: #FB7185;
+
+  /* ===== 霓虹渐变 ===== */
+  --grad-neon: linear-gradient(135deg, #A855F7 0%, #EC4899 50%, #22D3EE 100%);
+  --grad-violet-pink: linear-gradient(135deg, #A855F7, #EC4899);
+  --grad-cyan-blue: linear-gradient(135deg, #22D3EE, #3B82F6);
+  --grad-pink-cyan: linear-gradient(90deg, #EC4899, #22D3EE);
+  --grad-gold: linear-gradient(135deg, #FBBF24, #FB7185);
+
+  /* ===== 文字 ===== */
+  --c-text: #F5F3FF;
+  --c-text-2: rgba(245, 243, 255, 0.72);
+  --c-text-3: rgba(245, 243, 255, 0.5);
+  --c-text-4: rgba(245, 243, 255, 0.32);
+  --c-money: #FBBF24;
+
+  /* ===== 线条 ===== */
+  --c-border: rgba(168, 85, 247, 0.22);
+  --c-border-strong: rgba(34, 211, 238, 0.45);
+  --c-divider: rgba(245, 243, 255, 0.08);
+
+  /* ===== 间距 — 8px 基准 → rpx (×2) ===== */
+  --sp-1: 8rpx;
+  --sp-2: 16rpx;
+  --sp-3: 24rpx;
+  --sp-4: 32rpx;
+  --sp-5: 40rpx;
+  --sp-6: 48rpx;
+  --sp-7: 64rpx;
+
+  /* ===== 圆角 ===== */
+  --r-sm: 8rpx;
+  --r-md: 16rpx;
+  --r-lg: 24rpx;
+  --r-xl: 32rpx;
+  --r-pill: 999rpx;
+
+  /* ===== 阴影 · 霓虹发光 ===== */
+  --shadow-sm: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8rpx 32rpx rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16rpx 48rpx rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 8rpx 40rpx rgba(0, 0, 0, 0.45), inset 0 1rpx 0 rgba(255, 255, 255, 0.06);
+  --glow-cyan: 0 0 20rpx rgba(34, 211, 238, 0.4), 0 0 44rpx rgba(34, 211, 238, 0.16);
+  --glow-violet: 0 0 24rpx rgba(168, 85, 247, 0.45), 0 0 56rpx rgba(168, 85, 247, 0.2);
+  --glow-pink: 0 8rpx 32rpx rgba(236, 72, 153, 0.35);
+  --glow-primary: 0 8rpx 28rpx rgba(168, 85, 247, 0.45), 0 0 48rpx rgba(34, 211, 238, 0.12);
+
+  /* ===== 字体 ===== */
+  --font-family: -apple-system, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* 页面背景：深紫黑底 + 顶部霓虹光晕（固定尺寸，不拉伸无接缝）+ 科技网格 */
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.28), transparent 400rpx),
+    radial-gradient(circle at 88% 4%, rgba(34, 211, 238, 0.22), transparent 360rpx),
+    linear-gradient(rgba(168, 85, 247, 0.05) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.045) 1rpx, transparent 1rpx);
+  background-size:
+    100% 400rpx, 100% 360rpx,
+    52rpx 52rpx, 52rpx 52rpx;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+  background-attachment: scroll;
+  font-size: 28rpx;
+  color: var(--c-text);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 布局 ---------- */
+.container {
+  padding: var(--sp-3);
+  padding-bottom: calc(var(--sp-5) + env(safe-area-inset-bottom));
+}
+
+/* ---------- 卡片 ---------- */
+.card {
+  position: relative;
+  background: var(--bg-elev);
+  border: 1rpx solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform 0.18s ease, border-color 0.2s ease;
+}
+/* 卡片顶部霓虹高光带 */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.6), rgba(168, 85, 247, 0.6), transparent);
+  opacity: 0.7;
+}
+.card:active {
+  transform: scale(0.985);
+  border-color: var(--c-border-strong);
+}
+/* 整框可点反馈（hover-class 用） */
+.card-press {
+  opacity: 0.8;
+  border-color: var(--c-border-strong);
+}
+
+/* ---------- 按钮 · 霓虹 ---------- */
 .btn-primary {
-  background: #1890FF; color: #fff; border-radius: 8rpx;
-  font-size: 30rpx; padding: 18rpx 0; text-align: center;
+  background: var(--grad-violet-pink);
+  color: #fff;
+  border-radius: var(--r-md);
+  font-size: 30rpx;
+  font-weight: 600;
+  padding: 22rpx 0;
+  text-align: center;
+  box-shadow: var(--glow-primary);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
-.btn-primary.disabled { background: #9DC9F7; }
+/* 按钮内扫光 */
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: skewX(-20deg);
+}
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 4rpx 16rpx rgba(168, 85, 247, 0.35);
+}
+.btn-primary.disabled {
+  background: rgba(168, 85, 247, 0.25);
+  box-shadow: none;
+  opacity: 0.55;
+}
+
 .btn-outline {
-  border: 1rpx solid #1890FF; color: #1890FF; background: #fff;
-  border-radius: 8rpx; font-size: 30rpx; padding: 16rpx 0; text-align: center;
+  border: 1rpx solid var(--neon-cyan);
+  color: var(--neon-cyan-2);
+  background: rgba(34, 211, 238, 0.06);
+  border-radius: var(--r-md);
+  font-size: 30rpx;
+  font-weight: 500;
+  padding: 20rpx 0;
+  text-align: center;
+  box-shadow: inset 0 0 24rpx rgba(34, 211, 238, 0.08);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
+.btn-outline:active {
+  transform: scale(0.98);
+  background: rgba(34, 211, 238, 0.14);
+}
+
 .btn-danger-outline {
-  border: 1rpx solid #FF4D4F; color: #FF4D4F; background: #fff;
-  border-radius: 8rpx; font-size: 30rpx; padding: 16rpx 0; text-align: center;
+  border: 1rpx solid var(--neon-red);
+  color: var(--neon-red);
+  background: rgba(251, 113, 133, 0.06);
+  border-radius: var(--r-md);
+  font-size: 30rpx;
+  font-weight: 500;
+  padding: 20rpx 0;
+  text-align: center;
+  transition: transform 0.15s ease, background 0.15s ease;
 }
+.btn-danger-outline:active {
+  transform: scale(0.98);
+  background: rgba(251, 113, 133, 0.14);
+}
+
+/* ---------- 通用工具类 ---------- */
 .row { display: flex; align-items: center; }
 .spread { display: flex; align-items: center; justify-content: space-between; }
-.title { font-size: 32rpx; font-weight: 600; }
-.muted { color: #999; font-size: 24rpx; }
-.money { color: #FF6A00; font-weight: 600; }
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.muted {
+  color: var(--c-text-3);
+  font-size: 24rpx;
+}
+.money {
+  background: var(--grad-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--c-money);
+  font-weight: 700;
+}
+
+/* 渐变文字工具类 */
+.grad-text {
+  background: var(--grad-violet-pink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--neon-violet-2);
+}
+.grad-text-cyan {
+  background: var(--grad-cyan-blue);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--neon-cyan-2);
+}
+
+/* ---------- 标签 Tag ---------- */
 .tag {
-  display: inline-block; background: #EDF5FF; color: #1890FF;
-  border-radius: 6rpx; padding: 4rpx 12rpx; margin: 0 12rpx 12rpx 0; font-size: 22rpx;
+  display: inline-block;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1rpx solid rgba(34, 211, 238, 0.3);
+  color: var(--neon-cyan-2);
+  border-radius: var(--r-sm);
+  padding: 6rpx 16rpx;
+  margin: 0 var(--sp-2) var(--sp-2) 0;
+  font-size: 22rpx;
+  font-weight: 500;
 }
+
+/* ---------- Chip 选择标签 ---------- */
 .chip {
-  display: inline-block; border: 1rpx solid #D9D9D9; color: #555; border-radius: 28rpx;
-  padding: 8rpx 24rpx; margin: 0 16rpx 16rpx 0; font-size: 26rpx; background: #fff;
+  display: inline-block;
+  border: 1rpx solid rgba(168, 85, 247, 0.3);
+  color: var(--c-text-2);
+  border-radius: var(--r-pill);
+  padding: 12rpx 30rpx;
+  margin: 0 var(--sp-2) var(--sp-2) 0;
+  font-size: 26rpx;
+  background: rgba(255, 255, 255, 0.03);
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
-.chip.on { border-color: #1890FF; color: #1890FF; background: #EDF5FF; }
-.status { font-size: 24rpx; padding: 4rpx 14rpx; border-radius: 6rpx; }
-.st-blue { background: #EDF5FF; color: #1890FF; }
-.st-orange { background: #FFF4E6; color: #FA8C16; }
-.st-cyan { background: #E6FFFB; color: #13C2C2; }
-.st-purple { background: #F9F0FF; color: #722ED1; }
-.st-green { background: #F0FFF0; color: #52C41A; }
-.st-gray { background: #F0F0F0; color: #999; }
-.empty { text-align: center; color: #999; padding: 80rpx 0; }
+.chip:active { transform: scale(0.95); }
+.chip.on {
+  border-color: transparent;
+  color: #fff;
+  background: var(--grad-violet-pink);
+  font-weight: 600;
+  box-shadow: var(--glow-violet);
+}
+
+/* ---------- 状态徽章 · 霓虹深色底 ---------- */
+.status {
+  font-size: 22rpx;
+  font-weight: 600;
+  padding: 6rpx 18rpx;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  border: 1rpx solid transparent;
+}
+.st-blue { background: rgba(59, 130, 246, 0.16); color: #60A5FA; border-color: rgba(59, 130, 246, 0.4); }
+.st-orange { background: rgba(251, 191, 36, 0.16); color: var(--neon-amber); border-color: rgba(251, 191, 36, 0.4); }
+.st-cyan { background: rgba(34, 211, 238, 0.16); color: var(--neon-cyan-2); border-color: rgba(34, 211, 238, 0.45); }
+.st-purple { background: rgba(168, 85, 247, 0.18); color: var(--neon-violet-2); border-color: rgba(168, 85, 247, 0.45); }
+.st-green { background: rgba(52, 211, 153, 0.16); color: var(--neon-green); border-color: rgba(52, 211, 153, 0.45); }
+.st-gray { background: rgba(245, 243, 255, 0.08); color: var(--c-text-3); border-color: rgba(245, 243, 255, 0.18); }
+
+/* ---------- 空状态 ---------- */
+.empty {
+  text-align: center;
+  color: var(--c-text-4);
+  padding: 110rpx 0;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+/* ---------- 表单 ---------- */
 .input {
-  background: #F5F6F8; border-radius: 8rpx; padding: 16rpx 20rpx; margin-top: 12rpx;
+  background: rgba(8, 6, 15, 0.6);
+  border-radius: var(--r-md);
+  padding: 20rpx 24rpx;
+  margin-top: 12rpx;
+  font-size: 28rpx;
+  color: var(--c-text);
+  border: 1rpx solid rgba(168, 85, 247, 0.22);
+  transition: border-color 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
 }
-.label { font-size: 26rpx; color: #666; margin-top: 24rpx; }
-.step-title { font-size: 30rpx; font-weight: 600; margin: 8rpx 0 8rpx; color: #1890FF; }
+.input:focus {
+  border-color: var(--neon-cyan);
+  background: rgba(8, 6, 15, 0.85);
+}
+.input::placeholder {
+  color: var(--c-text-4);
+}
+.label {
+  font-size: 26rpx;
+  color: var(--c-text-2);
+  margin-top: var(--sp-3);
+  font-weight: 500;
+  letter-spacing: 1rpx;
+}
+.step-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  margin: 0 0 var(--sp-2);
+  display: flex;
+  align-items: center;
+  background: var(--grad-violet-pink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--neon-violet-2);
+}
+.step-title::before {
+  content: "";
+  display: inline-block;
+  width: 6rpx;
+  height: 32rpx;
+  background: var(--grad-violet-pink);
+  border-radius: var(--r-pill);
+  margin-right: var(--sp-2);
+  box-shadow: var(--glow-violet);
+}
+
+/* ---------- 入场动画 ---------- */
+@keyframes neon-rise {
+  from { opacity: 0; transform: translateY(24rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes neon-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes neon-scan {
+  0% { transform: translateX(-160%); }
+  100% { transform: translateX(260%); }
+}
+.rise {
+  animation: neon-rise 0.4s ease-out both;
+}

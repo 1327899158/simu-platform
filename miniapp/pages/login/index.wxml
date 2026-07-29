@@ -1,13 +1,34 @@
 <view class="wrap">
-  <view class="logo">仿真服务平台</view>
+  <view class="logo-row">
+    <image class="logo-img" src="/images/logo.jpg" mode="aspectFit" />
+    <view class="logo">仿真服务平台</view>
+  </view>
   <view class="slogan">连接仿真需求与专业工程师</view>
-  <view class="role-btn customer {{loading==='customer'?'dim':''}}" bindtap="go" data-role="customer">
-    <view class="role-name">我是客户</view>
-    <view class="role-desc">发布仿真需求，选择工程师</view>
+
+  <!-- 角色选择 -->
+  <view class="role-btn customer {{role==='customer'?'selected':''}}" bindtap="selectRole" data-role="customer">
+    <image class="role-icon" src="/images/customer.png" mode="aspectFit" />
+    <view class="role-info">
+      <view class="role-name">我是客户</view>
+      <view class="role-desc">发布仿真需求，选择工程师</view>
+    </view>
+    <view class="check-mark" wx:if="{{role==='customer'}}">✓</view>
   </view>
-  <view class="role-btn engineer {{loading==='engineer'?'dim':''}}" bindtap="go" data-role="engineer">
-    <view class="role-name">我是工程师</view>
-    <view class="role-desc">进入抢单大厅，报价接单</view>
+
+  <view class="role-btn engineer {{role==='engineer'?'selected':''}}" bindtap="selectRole" data-role="engineer">
+    <image class="role-icon" src="/images/engineer.png" mode="aspectFit" />
+    <view class="role-info">
+      <view class="role-name">我是工程师</view>
+      <view class="role-desc">进入抢单大厅，报价接单</view>
+    </view>
+    <view class="check-mark" wx:if="{{role==='engineer'}}">✓</view>
   </view>
-  <view class="tip">演示模式：微信一键登录（Mock），同一设备同角色登录为同一账号</view>
+
+  <!-- 微信一键登录 -->
+  <view class="btn-wx-login {{(loading||!role)?'disabled':''}}" bindtap="doLogin">
+    <view wx:if="{{loading}}">登录中…</view>
+    <view wx:else>微信一键登录</view>
+  </view>
+
+  <view class="tip">登录即同意《用户服务协议》和《隐私政策》</view>
 </view>

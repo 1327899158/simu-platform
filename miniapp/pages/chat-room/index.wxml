@@ -1,15 +1,27 @@
 <view class="room">
-  <scroll-view class="list" scroll-y scroll-into-view="{{scrollInto}}" scroll-with-animation>
+  <scroll-view class="list" scroll-y scroll-top="{{scrollTop}}">
     <view wx:for="{{msgs}}" wx:key="id" id="{{item.anchor}}">
       <view class="sys" wx:if="{{item.sys}}">{{item.content}}</view>
       <view class="bubble-row {{item.mine?'mine':''}}" wx:else>
-        <view class="bubble {{item.mine?'b-mine':'b-peer'}}">
+        <image wx:if="{{!item.mine && item.senderAvatar}}" src="{{item.senderAvatar}}" class="peer-avatar" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx" />
+        <view wx:if="{{!item.mine && !item.senderAvatar}}" class="peer-avatar-text" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;font-size:{{avatarSize/2}}rpx">对</view>
+        <view class="bubble {{item.mine?'b-mine':'b-peer'}}" style="max-width:{{bubbleMaxWidth}}">
+          <!-- 文字消息 -->
           <view wx:if="{{item.type==='TEXT'}}">{{item.content}}</view>
-          <view wx:else class="filemsg" bindtap="openFile" data-fid="{{item.fileId}}" data-type="{{item.type}}">
-            {{item.type==='IMAGE'?'[图片] 点击查看':'[文件] '}}{{item.type==='IMAGE'?'':item.content}}
+          <!-- 图片消息：直接渲染缩略图，点击全屏预览 -->
+          <view wx:elif="{{item.type==='IMAGE'}}">
+            <image wx:if="{{item.imgUrl}}" class="msg-img" src="{{item.imgUrl}}"
+              mode="widthFix" style="width:{{imageWidth}}rpx" bindtap="previewImg" data-url="{{item.imgUrl}}" />
+            <view wx:else class="filemsg-loading">图片加载中…</view>
+          </view>
+          <!-- 文件消息 -->
+          <view wx:else class="filemsg" bindtap="openFile" data-fid="{{item.fileId}}">
+            📎 {{item.content || '[文件]'}}
           </view>
           <view class="t">{{item.time}}</view>
         </view>
+        <image wx:if="{{item.mine && item.senderAvatar}}" src="{{item.senderAvatar}}" class="my-avatar" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx" />
+        <view wx:if="{{item.mine && !item.senderAvatar}}" class="my-avatar-text" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;font-size:{{avatarSize/2}}rpx">我</view>
       </view>
     </view>
     <view style="height:24rpx"></view>

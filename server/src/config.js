@@ -1,7 +1,10 @@
 'use strict';
 /**
- * 配置加载：读取 server/.env（如存在）与进程环境变量。
- * 所有开关式配置集中在此，Mock → 真实微信只改这里对应的环境变量。
+ * 配置加载：读取环境变量（云托管自动注入 MYSQL_ADDRESS 等）。
+ * 云开发版变化：
+ *   - 移除 JWT / SQLite / 本地文件 / 短信相关配置
+ *   - 新增 CLOUDBASE_ENV_ID / MYSQL_* 系列（云托管自动注入）
+ *   - 微信支付通过云托管「开放接口服务」代签名，不再存储密钥
  */
 const path = require('node:path');
 const fs = require('node:fs');
@@ -20,42 +23,43 @@ function loadDotEnv(file) {
 }
 loadDotEnv(path.join(__dirname, '..', '.env'));
 
-const int = (v, d) => {
-  const n = parseInt(v, 10);
-  return Number.isFinite(n) ? n : d;
-};
+const int = (v, d) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : d; };
+
+// 云托管 MySQL 注入的环境变量名（在容器内自动可用）
+// 本地开发时在 .env 里手动填
+const mysqlAddr = process.env.MYSQL_ADDRESS || '127.0.0.1:3306';
+const [mysqlHost, mysqlPortStr] = mysqlAddr.split(':');
 
 const config = {
   env: process.env.NODE_ENV || 'development',
-  port: int(process.env.PORT, 3000),
-  dbFile: process.env.DB_FILE || path.join(__dirname, '..', 'data', 'simu.db'),
-  uploadDir: process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads'),
+  port: int(process.env.PORT, 80),
 
-  jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me-in-prod',
-  accessTtlSec: int(process.env.ACCESS_TTL_SEC, 2 * 3600),
-  refreshTtlSec: int(process.env.REFRESH_TTL_SEC, 30 * 24 * 3600),
+  // 云开发环境 ID（用于服务端调用云存储/云数据库）
+  cloudbaseEnv: process.env.CLOUDBASE_ENV_ID || process.env.TCB_ENV_ID || '',
 
-  // 微信登录：WX_MOCK=1 时不请求微信服务器，openid = 'mock_' + code
-  wxMock: (process.env.WX_MOCK || '1') === '1',
+  // 微信小程序 AppID（用于校验 X-WX-APPID 头）
   wxAppid: process.env.WX_APPID || '',
-  wxSecret: process.env.WX_SECRET || '',
 
-  // 支付：mock（演示）| wechat（微信支付v3，需商户凭据，见 docs/upgrade.md）
-  payProvider: process.env.PAY_PROVIDER || 'mock',
-  payTimeoutSec: int(process.env.PAY_TIMEOUT_SEC, 30 * 60), // 未支付自动回退
-  payAmountOverrideFen: int(process.env.PAY_AMOUNT_OVERRIDE_FEN, 0) || null, // 演示价开关
+  // 云托管 MySQL（容器内由平台注入，本地开发写 .env）
+  mysql: {
+    host: mysqlHost || '127.0.0.1',
+    port: int(mysqlPortStr, 3306),
+    user: process.env.MYSQL_USERNAME || 'root',
+    password: process.env.MYSQL_PASSWORD || 'dev123456',
+    database: process.env.MYSQL_DATABASE || 'simu',
+  },
 
-  maxUploadBytes: int(process.env.MAX_UPLOAD_MB, 25) * 1024 * 1024,
-  // 内容安全：Mock 词表拦截；接入微信 msgSecCheck 后替换 services/content-check.js
+  // 微信支付（云托管代签名时 notify_url 用内部地址，mchid 仅部分接口需要显式传参）
+  wxpayMchid: process.env.WXPAY_MCHID || '',
+  // 支付回调地址（云托管内部：http://<服务名>.<env>.wxcloudrun/api/pay/notify）
+  wxpayNotifyUrl: process.env.WXPAY_NOTIFY_URL || '',
+  // 演示价开关：设为 1 则实付 0.01 元；生产必须留空
+  payAmountOverrideFen: int(process.env.PAY_AMOUNT_OVERRIDE_FEN, 0) || null,
+  payTimeoutSec: int(process.env.PAY_TIMEOUT_SEC, 30 * 60),
+
+  // 内容安全 Mock 词表
   bannedWords: (process.env.BANNED_WORDS || '违禁词,代刷,加微信私聊')
     .split(',').map((s) => s.trim()).filter(Boolean),
 };
-
-if (config.env === 'production' && config.jwtSecret.includes('dev-secret')) {
-  console.error('[config] 生产环境必须设置 JWT_SECRET'); process.exit(1);
-}
-if (config.env === 'production' && config.payProvider === 'mock') {
-  console.error('[config] 生产环境禁止使用 mock 支付通道'); process.exit(1);
-}
 
 module.exports = { config };

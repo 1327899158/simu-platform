@@ -5,10 +5,7 @@
  */
 const { ensureLogin, getUser } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
-const { BASE_URL } = require('../../utils/config');
 const { fenToYuan, timeShort, STATUS_CLASS } = require('../../utils/format');
-
-const ORIGIN = BASE_URL.replace(/\/api$/, '');
 
 Page({
   data: {
@@ -45,7 +42,16 @@ Page({
     if (this.data.mode === 'customer' && ['QUOTING', 'AWAITING_PAYMENT'].includes(order.status)) {
       const quotes = await request('GET', `/orders/${id}/quotes`);
       this.setData({
-        quotes: quotes.map((x) => ({ ...x, amountY: fenToYuan(x.amountFen) })),
+        quotes: quotes.map((x) => ({
+          ...x,
+          amountY: fenToYuan(x.amountFen),
+          engineer: x.engineer ? {
+            ...x.engineer,
+            avatarUrl: x.engineer.avatarUrl
+              ? (x.engineer.avatarUrl.startsWith('/') ? ORIGIN + x.engineer.avatarUrl : x.engineer.avatarUrl)
+              : '',
+          } : x.engineer,
+        })),
       });
     }
   },
@@ -54,10 +60,11 @@ Page({
   async download(e) {
     const fid = e.currentTarget.dataset.id;
     try {
+      // 云开发版：url 是云存储临时链接（HTTPS，直接下载）
       const info = await request('GET', `/files/${fid}/url`);
       wx.showLoading({ title: '下载中…' });
       wx.downloadFile({
-        url: ORIGIN + info.url,
+        url: info.url,
         success(res) {
           wx.hideLoading();
           if (res.statusCode !== 200) return wx.showToast({ title: '下载失败', icon: 'none' });
@@ -105,27 +112,62 @@ Page({
     if (this.data.paying) return;
     this.setData({ paying: true });
     try {
+      // 云开发版：服务端通过云托管开放接口代签名，返回 wx.requestPayment 五参数
       const p = await request('POST', `/orders/${this.data.id}/pay`);
-      // Mock 收银台：真实通道此处改为 wx.requestPayment(五参数)
-      wx.showModal({
-        title: '模拟收银台（演示）',
-        content: `支付金额：¥${fenToYuan(p.amountFen)}\n单号：${p.outTradeNo}`,
-        confirmText: '确认支付',
-        success: async (r) => {
-          if (r.confirm) {
-            await request('POST', '/payments/mock-notify', { outTradeNo: p.outTradeNo }, { noAuth: true });
-            // 轮询确认落账（与真实支付后的处理一致）
-            for (let i = 0; i < 5; i++) {
+
+      if (p.timeStamp) {
+        // 真实微信支付（云托管代签名返回的五参数）
+        wx.requestPayment({
+          timeStamp: p.timeStamp,
+          nonceStr: p.nonceStr,
+          package: p.package,
+          signType: p.signType || 'RSA',
+          paySign: p.paySign,
+          success: async () => {
+            // 轮询等待回调落账
+            for (let i = 0; i < 8; i++) {
               const st = await request('GET', `/orders/${this.data.id}/payment`, null, { silent: true });
-              if (st.orderStatus === 'IN_PROGRESS') break;
-              await new Promise((rs) => setTimeout(rs, 500));
+              if (st && st.orderStatus === 'IN_PROGRESS') break;
+              await new Promise((rs) => setTimeout(rs, 800));
             }
             wx.showToast({ title: '支付成功', icon: 'success' });
             this.load();
-          }
-          this.setData({ paying: false });
-        },
-      });
+          },
+          fail: (err) => {
+            if (err.errMsg && err.errMsg.includes('cancel')) {
+              wx.showToast({ title: '已取消支付', icon: 'none' });
+            } else {
+              wx.showToast({ title: '支付失败', icon: 'none' });
+            }
+          },
+          complete: () => this.setData({ paying: false }),
+        });
+      } else {
+        // 演示模式（PAY_AMOUNT_OVERRIDE_FEN=1，服务端无法代签名时的回退）
+        wx.showModal({
+          title: '演示支付',
+          content: `支付金额：¥${fenToYuan(p.amountFen || 1)}\n单号：${p.outTradeNo || ''}`,
+          confirmText: '确认支付',
+          success: async (r) => {
+            if (r.confirm) {
+              // 演示：直接调后端落账（仅 development 环境）
+              await request('POST', '/pay/notify', {
+                trade_state: 'SUCCESS',
+                out_trade_no: p.outTradeNo,
+                transaction_id: 'DEMO' + Date.now(),
+              }, { silent: true });
+              for (let i = 0; i < 5; i++) {
+                const st = await request('GET', `/orders/${this.data.id}/payment`, null, { silent: true });
+                if (st && st.orderStatus === 'IN_PROGRESS') break;
+                await new Promise((rs) => setTimeout(rs, 500));
+              }
+              wx.showToast({ title: '支付成功（演示）', icon: 'success' });
+              this.load();
+            }
+            this.setData({ paying: false });
+          },
+        });
+      }
     } catch (e) { this.setData({ paying: false }); }
   },
   confirmDone() {
@@ -154,10 +196,10 @@ Page({
   // ---------- 工程师操作 ----------
   goQuote() {
     const o = this.data.order;
-    wx.navigateTo({
-      url: `/pages/quote-form/index?orderId=${this.data.id}` +
-        (o.myQuote ? `&amountFen=${o.myQuote.amountFen}&days=${o.myQuote.days}&solution=${encodeURIComponent(o.myQuote.solution)}` : ''),
-    });
+    let url = `/pages/quote-form/index?orderId=${this.data.id}&flexible=${o.budgetFlexible ? 1 : 0}`;
+    if (!o.budgetFlexible && o.budgetFen) url += `&fixedFen=${o.budgetFen}`;
+    if (o.myQuote) url += `&amountFen=${o.myQuote.amountFen}&days=${o.myQuote.days}&solution=${encodeURIComponent(o.myQuote.solution)}`;
+    wx.navigateTo({ url });
   },
   async deliver() {
     if (this.data.delivering) return;
@@ -170,7 +212,7 @@ Page({
           const ids = [];
           for (const f of r.tempFiles) {
             const up = await upload(f.path, { kind: 'RESULT', orderId: that.data.id });
-            ids.push(up.fileId);
+            ids.push(up.id || up.fileId);
           }
           await request('POST', `/orders/${that.data.id}/deliver`, { fileIds: ids, note: '成果文件已上传' });
           wx.showToast({ title: '已交付，等待客户验收', icon: 'success' });

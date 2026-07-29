@@ -3,7 +3,8 @@
   <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
     <view class="spread">
       <view class="row">
-        <view class="c-avatar">{{item.peer.nickname[0]}}</view>
+        <image wx:if="{{item.peer.avatarUrl}}" src="{{item.peer.avatarUrl}}" class="c-avatar-img" />
+        <view wx:else class="c-avatar">{{item.peer.nickname[0]}}</view>
         <view style="margin-left:16rpx">
           <view class="title" style="font-size:28rpx">{{item.peer.nickname}}</view>
           <view class="muted">{{item.order.projectName}}</view>
@@ -15,5 +16,8 @@
       </view>
     </view>
     <view class="muted last">{{item.lastText}}</view>
+    <view class="order-link" catchtap="goOrder" data-oid="{{item.orderId}}" data-role="{{role}}">
+      查看订单详情 &gt;
+    </view>
   </view>
 </view>

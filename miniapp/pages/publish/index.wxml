@@ -1,5 +1,41 @@
+<wxs module="u">
+/* WXML 插值不支持调用数组方法（indexOf 会静默失效），选中态判断放在 WXS 里 */
+module.exports = {
+  has: function (arr, v) { return arr && arr.indexOf(v) > -1; }
+};
+</wxs>
 <view class="container">
-  <view class="card">
+
+  <!-- ========== 顶部分步导航 ========== -->
+  <view class="stepper">
+    <view class="step-item" bindtap="toStep" data-s="1">
+      <view class="step-dot {{step>=1?'reached':''}} {{step===1?'cur':''}}">1</view>
+      <view class="step-txt {{step===1?'on':''}}">基本</view>
+    </view>
+    <view class="step-line {{step>1?'on':''}}"></view>
+    <view class="step-item" bindtap="toStep" data-s="2">
+      <view class="step-dot {{step>=2?'reached':''}} {{step===2?'cur':''}}">2</view>
+      <view class="step-txt {{step===2?'on':''}}">配置</view>
+    </view>
+    <view class="step-line {{step>2?'on':''}}"></view>
+    <view class="step-item" bindtap="toStep" data-s="3">
+      <view class="step-dot {{step>=3?'reached':''}} {{step===3?'cur':''}}">3</view>
+      <view class="step-txt {{step===3?'on':''}}">工期</view>
+    </view>
+    <view class="step-line {{step>3?'on':''}}"></view>
+    <view class="step-item" bindtap="toStep" data-s="4">
+      <view class="step-dot {{step>=4?'reached':''}} {{step===4?'cur':''}}">4</view>
+      <view class="step-txt {{step===4?'on':''}}">文件</view>
+    </view>
+    <view class="step-line {{step>4?'on':''}}"></view>
+    <view class="step-item" bindtap="toStep" data-s="5">
+      <view class="step-dot {{step>=5?'reached':''}} {{step===5?'cur':''}}">5</view>
+      <view class="step-txt {{step===5?'on':''}}">确认</view>
+    </view>
+  </view>
+
+  <!-- ========== 步骤 1 · 基本信息 ========== -->
+  <view class="card step-card" wx:if="{{step===1}}">
     <view class="step-title">步骤 1 · 基本信息</view>
     <view class="label">项目名称</view>
     <input class="input" placeholder="如：支架静力学分析" value="{{projectName}}"
@@ -16,23 +52,25 @@
     </view>
   </view>
 
-  <view class="card">
+  <!-- ========== 步骤 2 · 仿真配置 ========== -->
+  <view class="card step-card" wx:if="{{step===2}}">
     <view class="step-title">步骤 2 · 仿真配置</view>
     <view class="label">仿真软件（多选）</view>
     <view style="margin-top:12rpx">
       <text wx:for="{{dicts.softwares}}" wx:key="*this"
-        class="chip {{softwareTags.indexOf(item)>=0?'on':''}}"
+        class="chip {{u.has(softwareTags, item) ? 'on' : ''}}"
         bindtap="toggleTag" data-f="softwareTags" data-v="{{item}}">{{item}}</text>
     </view>
     <view class="label">仿真方向（多选）</view>
     <view style="margin-top:12rpx">
       <text wx:for="{{dicts.directions}}" wx:key="*this"
-        class="chip {{directionTags.indexOf(item)>=0?'on':''}}"
+        class="chip {{u.has(directionTags, item) ? 'on' : ''}}"
         bindtap="toggleTag" data-f="directionTags" data-v="{{item}}">{{item}}</text>
     </view>
   </view>
 
-  <view class="card">
+  <!-- ========== 步骤 3 · 工期与要求 ========== -->
+  <view class="card step-card" wx:if="{{step===3}}">
     <view class="step-title">步骤 3 · 工期与要求</view>
     <view style="margin-top:12rpx">
       <text wx:for="{{dicts.deliveryOptions}}" wx:key="key"
@@ -46,7 +84,8 @@
       value="{{specialNote}}" bindinput="input" data-f="specialNote" maxlength="2000" />
   </view>
 
-  <view class="card">
+  <!-- ========== 步骤 4 · 文件上传 ========== -->
+  <view class="card step-card" wx:if="{{step===4}}">
     <view class="step-title">步骤 4 · 文件上传</view>
     <view class="muted">支持模型（.stp/.step/.zip 等）与图片，Demo 单文件 ≤ 25MB</view>
     <view class="file-row" wx:for="{{files}}" wx:key="fileId">
@@ -59,18 +98,24 @@
     </view>
   </view>
 
-  <view class="card">
+  <!-- ========== 步骤 5 · 确认提交 ========== -->
+  <view class="card step-card" wx:if="{{step===5}}">
     <view class="step-title">步骤 5 · 确认提交</view>
-    <view class="muted">
+    <view class="muted summary">
       {{projectName || '未命名项目'}} · {{directionTags.length}}个方向 · {{softwareTags.length}}款软件 ·
       {{files.length}}个文件{{budgetYuan ? ' · 预算¥' + budgetYuan : ''}}
     </view>
-    <view class="row" style="margin-top:16rpx" bindtap="toggleAgree">
+    <view class="row" style="margin-top:24rpx" bindtap="toggleAgree">
       <checkbox checked="{{agreed}}" style="transform:scale(.8)" />
       <text class="muted">已阅读并同意《平台服务协议》《隐私政策》</text>
     </view>
-    <view class="btn-primary {{submitting?'disabled':''}}" style="margin-top:24rpx" bindtap="submit">
-      {{submitting ? '提交中…' : '确认发布'}}
+  </view>
+
+  <!-- ========== 底部步进导航 ========== -->
+  <view class="dock">
+    <view class="btn-outline dock-btn" wx:if="{{step>1}}" bindtap="prev" hover-class="btn-press">上一步</view>
+    <view class="btn-primary dock-btn {{submitting?'disabled':''}}" bindtap="next" hover-class="btn-press">
+      {{step===5 ? (submitting?'提交中…':'确认发布') : '下一步'}}
     </view>
   </view>
 </view>

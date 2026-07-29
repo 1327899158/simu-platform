@@ -1,0 +1,46 @@
+<view class="container">
+  <view class="section">
+    <view class="section-title">头像</view>
+    <view class="avatar-picker" bindtap="pickAvatar">
+      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="avatar-placeholder">{{user.nickname ? user.nickname[0] : '头'}}</view>
+      <view wx:if="{{uploading}}" class="uploading">上传中…</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">基本信息</view>
+    <view class="form-group">
+      <label>昵称 *</label>
+      <input type="text" value="{{nickname}}" bindinput="inputNickname" placeholder="请输入昵称" />
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{role === 'ENGINEER'}}">
+    <view class="section-title">专业信息</view>
+    <view class="form-group">
+      <label>姓名</label>
+      <input type="text" value="{{realName}}" bindinput="inputRealName" placeholder="请输入真实姓名" />
+    </view>
+    <view class="form-group">
+      <label>个人简介</label>
+      <textarea value="{{intro}}" bindinput="inputIntro" placeholder="请输入个人简介（500字以内）" />
+    </view>
+    <view class="form-group">
+      <label>专业方向</label>
+      <input type="text" value="{{specialtiesStr}}" bindinput="inputSpecialties"
+        placeholder="多个方向用逗号分隔，如：结构分析，热分析" />
+    </view>
+    <view class="form-group">
+      <label>擅长软件</label>
+      <input type="text" value="{{softwaresStr}}" bindinput="inputSoftwares"
+        placeholder="多个软件用逗号分隔，如：ANSYS，COMSOL" />
+    </view>
+  </view>
+
+  <view class="btn-group">
+    <view class="btn btn-primary" bindtap="save" style="{{saving ? 'opacity:.5' : ''}}">
+      {{saving ? '保存中…' : '保存'}}
+    </view>
+  </view>
+</view>

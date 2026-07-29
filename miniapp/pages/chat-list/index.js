@@ -1,15 +1,27 @@
-const { ensureLogin } = require('../../utils/auth');
+const { ensureLogin, getUser } = require('../../utils/auth');
 const { request } = require('../../utils/request');
 const { timeShort } = require('../../utils/format');
+const { BASE_URL } = require('../../utils/config');
+const ORIGIN = BASE_URL.replace(/\/api$/, '');
+
+function resolveUrl(url) {
+  return url && url.startsWith('/') ? ORIGIN + url : (url || '');
+}
+
 Page({
-  data: { items: [] },
-  onShow() { if (ensureLogin()) this.load(); },
+  data: { items: [], role: '' },
+  onShow() {
+    const user = ensureLogin();
+    if (user) { this.setData({ role: user.role }); this.load(); }
+    wx.removeTabBarBadge({ index: 1 });
+  },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
     const data = await request('GET', '/conversations', null, { silent: true }).catch(() => []);
     this.setData({
       items: (data || []).map((c) => ({
         ...c,
+        peer: { ...c.peer, avatarUrl: resolveUrl(c.peer?.avatarUrl) },
         time: timeShort(c.lastMsgAt),
         lastText: c.lastMessage
           ? (c.lastMessage.type === 'TEXT' || c.lastMessage.type === 'SYSTEM'
@@ -19,4 +31,10 @@ Page({
     });
   },
   open(e) { wx.navigateTo({ url: `/pages/chat-room/index?id=${e.currentTarget.dataset.id}` }); },
+  goOrder(e) {
+    e.stopPropagation && e.stopPropagation();
+    const { oid, role } = e.currentTarget.dataset;
+    const mode = role === 'ENGINEER' ? 'market' : 'customer';
+    wx.navigateTo({ url: `/pages/order-detail/index?id=${oid}&mode=${mode}` });
+  },
 });

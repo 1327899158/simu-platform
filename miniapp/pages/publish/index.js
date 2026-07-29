@@ -7,6 +7,7 @@ const DRAFT_KEY = 'publishDraft';
 
 Page({
   data: {
+    step: 1,
     dicts: { softwares: [], directions: [], deliveryOptions: [] },
     // 步骤1
     projectName: '',
@@ -43,6 +44,24 @@ Page({
     });
   },
 
+  toStep(e) { this.setData({ step: Number(e.currentTarget.dataset.s) }); },
+  prev() { if (this.data.step > 1) this.setData({ step: this.data.step - 1 }); },
+  next() {
+    const d = this.data, s = d.step;
+    // 逐步轻量校验，不通过则停在当前步
+    if (s === 1) {
+      if ((d.projectName || '').trim().length < 4) return wx.showToast({ title: '项目名称至少4个字', icon: 'none' });
+      if ((d.description || '').trim().length < 20) return wx.showToast({ title: '项目描述至少20个字', icon: 'none' });
+    } else if (s === 2) {
+      if (!d.softwareTags.length || !d.directionTags.length) return wx.showToast({ title: '请选择仿真软件与方向', icon: 'none' });
+    } else if (s === 3) {
+      const days = this.deliveryDays();
+      if (!days || days < 1 || days > 90) return wx.showToast({ title: '请填写 1-90 天的工期', icon: 'none' });
+    }
+    if (s < 5) this.setData({ step: s + 1 });
+    else this.submit();
+  },
+
   input(e) { this.setData({ [e.currentTarget.dataset.f]: e.detail.value }); },
   toggleFlexible() { this.setData({ budgetFlexible: !this.data.budgetFlexible }); },
   toggleAgree() { this.setData({ agreed: !this.data.agreed }); },
@@ -68,9 +87,9 @@ Page({
             const up = await upload(f.path, { kind: isImage ? 'IMAGE' : 'MODEL' });
             this.setData({
               files: this.data.files.concat({
-                fileId: up.fileId,
+                fileId: up.id || up.fileId,
                 name: up.name || f.name,
-                sizeText: (up.sizeBytes / 1024 / 1024).toFixed(2) + 'MB',
+                sizeText: ((up.sizeBytes || 0) / 1024 / 1024).toFixed(2) + 'MB',
               }),
             });
           }

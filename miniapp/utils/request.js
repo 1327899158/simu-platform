@@ -1,85 +1,156 @@
-/** 统一请求封装：自动带 token、401 静默刷新并重放一次、错误统一 toast。 */
-const { BASE_URL } = require('./config');
+/**
+ * 统一请求封装（云开发版）。
+ * 使用 wx.cloud.callContainer 替代 wx.request + JWT Bearer token。
+ *
+ * 变化：
+ *   - 不再需要 token 管理（无 accessToken / refreshToken）
+ *   - 鉴权由微信网关注入 X-WX-OPENID 自动完成
+ *   - 401 无需重试刷新，直接跳登录（理论上不会出现，除非账号被封）
+ */
+const { ENV_ID, SERVICE_NAME, BASE_URL } = require('./config');
 
-const T = {
-  get access() { return wx.getStorageSync('accessToken') || ''; },
-  get refresh() { return wx.getStorageSync('refreshToken') || ''; },
-  save(t) {
-    wx.setStorageSync('accessToken', t.accessToken);
-    wx.setStorageSync('refreshToken', t.refreshToken);
-  },
-  clear() {
-    wx.removeStorageSync('accessToken');
-    wx.removeStorageSync('refreshToken');
-    wx.removeStorageSync('user');
-  },
-};
+/** 判断是否在开发者工具/本地（wx.cloud 不可用时降级到 wx.request） */
+function isCloudAvailable() {
+  return typeof wx.cloud !== 'undefined' && typeof wx.cloud.callContainer === 'function';
+}
 
-function raw(method, url, data, header = {}) {
+/**
+ * callContainer 封装：
+ *   request('GET', '/orders/mine', { status: 'QUOTING' })
+ *   GET 的 data 转 query string；POST/PATCH/DELETE 作为 body。
+ */
+function callCloud(method, path, data) {
   return new Promise((resolve, reject) => {
-    wx.request({
-      url: BASE_URL + url,
-      method,
-      data,
-      header: { 'Content-Type': 'application/json', ...header },
-      success: resolve,
+    wx.cloud.callContainer({
+      config: { env: ENV_ID },
+      path: '/api' + path,
+      method: method.toUpperCase(),
+      header: {
+        'X-WX-SERVICE': SERVICE_NAME,
+        'content-type': 'application/json',
+      },
+      data: data || {},
+      success: (r) => resolve(r),
       fail: (e) => reject(new Error(e.errMsg || '网络错误')),
     });
   });
 }
 
-let refreshing = null;
-function doRefresh() {
-  if (!refreshing) {
-    refreshing = raw('POST', '/auth/refresh', { refreshToken: T.refresh })
-      .then((res) => {
-        if (res.data && res.data.code === 0) { T.save(res.data.data); return true; }
-        return false;
-      })
-      .catch(() => false)
-      .finally(() => setTimeout(() => { refreshing = null; }, 0));
-  }
-  return refreshing;
+/** 本地调试降级：wx.request（需在开发者工具勾选「不校验合法域名」）*/
+function callHttp(method, path, data) {
+  return new Promise((resolve, reject) => {
+    const header = { 'Content-Type': 'application/json' };
+    // 本地调试时可在 .env 设置 DEV_OPENID，这里传递到自定义头
+    header['X-Dev-Openid'] = wx.getStorageSync('devOpenid') || 'test_openid_customer';
+    wx.request({
+      url: BASE_URL + path,
+      method: method.toUpperCase(),
+      data: data || {},
+      header,
+      success: (r) => resolve(r),
+      fail: (e) => reject(new Error(e.errMsg || '网络错误')),
+    });
+  });
 }
 
 function toLogin() {
-  T.clear();
   wx.reLaunch({ url: '/pages/login/index' });
 }
 
 /**
- * request('GET', '/orders/mine', { status: 'QUOTING' })
- * GET 的 data 转 query；错误默认 toast，可传 { silent: true } 关闭。
+ * 统一请求入口。
+ * opt.silent = true：错误不弹 Toast。
  */
-async function request(method, url, data, opt = {}) {
-  const header = {};
-  if (!opt.noAuth && T.access) header['Authorization'] = 'Bearer ' + T.access;
-  let res = await raw(method, url, data, header);
-  if (res.statusCode === 401 && !opt.noAuth && T.refresh) {
-    const okFlag = await doRefresh();
-    if (!okFlag) { toLogin(); throw new Error('登录已过期'); }
-    header['Authorization'] = 'Bearer ' + T.access;
-    res = await raw(method, url, data, header);
+async function request(method, path, data, opt = {}) {
+  let res;
+  if (isCloudAvailable()) {
+    res = await callCloud(method, path, data);
+  } else {
+    res = await callHttp(method, path, data);
   }
+
+  // callContainer 响应体在 res.data
   const body = res.data || {};
-  if (res.statusCode === 200 && body.code === 0) return body.data;
-  const msg = body.message || `请求失败(${res.statusCode})`;
+  const statusCode = res.statusCode || 200;
+
+  if (statusCode === 200 && body.code === 0) return body.data;
+
+  // 未登录 / 账号不可用
+  if (statusCode === 401) {
+    toLogin();
+    throw new Error('未登录');
+  }
+
+  const msg = body.message || `请求失败(${statusCode})`;
   if (!opt.silent) wx.showToast({ title: msg, icon: 'none' });
   const e = new Error(msg);
-  e.statusCode = res.statusCode;
+  e.statusCode = statusCode;
   e.code = body.code;
   throw e;
 }
 
-/** 上传文件（wx.uploadFile 走 multipart，与后端解析器对应） */
-function upload(filePath, { kind = 'DOC', orderId = '', name = '' } = {}) {
+/**
+ * 上传文件（云开发版：wx.cloud.uploadFile）。
+ * 上传成功后自动调 POST /api/files/commit 落库。
+ *
+ * 参数：
+ *   filePath   本地临时路径
+ *   options:
+ *     kind     MODEL | DOC | IMAGE | RESULT
+ *     orderId  关联订单 ID（可选）
+ *     name     文件名（可选，默认从路径提取）
+ */
+async function upload(filePath, { kind = 'DOC', orderId = '', name = '' } = {}) {
+  if (!isCloudAvailable()) {
+    // 本地调试降级：wx.uploadFile
+    return uploadHttp(filePath, { kind, orderId, name });
+  }
+
+  const ext = filePath.split('.').pop() || '';
+  const ts = Date.now();
+  const rand = Math.random().toString(36).slice(2, 8);
+  const filename = name || `${kind}_${ts}_${rand}.${ext}`;
+  const cloudPath = `orders/${orderId || 'tmp'}/${ts}_${rand}.${ext}`;
+
+  const uploadResult = await new Promise((resolve, reject) => {
+    wx.cloud.uploadFile({
+      config: { env: ENV_ID },
+      cloudPath,
+      filePath,
+      success: (r) => resolve(r),
+      fail: (e) => reject(new Error(e.errMsg || '上传失败')),
+    });
+  });
+
+  const fileID = uploadResult.fileID;
+  if (!fileID) throw new Error('上传失败：未获取到 fileID');
+
+  // 获取文件大小（小程序没有直接 API，这里用 0 占位，服务端可补充）
+  let sizeBytes = 0;
+  try {
+    const stat = await new Promise((resolve) => {
+      wx.getFileInfo({ filePath, success: (r) => resolve(r), fail: () => resolve({}) });
+    });
+    sizeBytes = stat.size || 0;
+  } catch (e) { /* 忽略 */ }
+
+  // 通知服务端落库
+  const meta = await request('POST', '/files/commit', { fileID, name: filename, kind, orderId, sizeBytes });
+  return { ...meta, fileID };
+}
+
+/** 本地调试降级上传（wx.uploadFile 走 multipart） */
+function uploadHttp(filePath, { kind = 'DOC', orderId = '', name = '' }) {
   return new Promise((resolve, reject) => {
+    const ext = filePath.split('.').pop() || '';
+    const ts = Date.now();
+    const filename = name || `${kind}_${ts}.${ext}`;
     wx.uploadFile({
-      url: BASE_URL + '/files/upload',
+      url: require('./config').BASE_URL + '/files/upload',
       filePath,
       name: 'file',
-      formData: { kind, orderId },
-      header: { Authorization: 'Bearer ' + T.access },
+      formData: { kind, orderId, filename },
+      header: { 'X-Dev-Openid': wx.getStorageSync('devOpenid') || 'test_openid_customer' },
       success(res) {
         try {
           const body = JSON.parse(res.data);
@@ -92,4 +163,4 @@ function upload(filePath, { kind = 'DOC', orderId = '', name = '' } = {}) {
   });
 }
 
-module.exports = { request, upload, tokens: T, toLogin };
+module.exports = { request, upload, toLogin };

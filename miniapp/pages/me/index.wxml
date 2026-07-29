@@ -1,10 +1,12 @@
 <view class="container">
   <view class="card row">
-    <view class="avatar">{{roleText[0]}}</view>
-    <view style="margin-left:24rpx">
+    <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar-img" />
+    <view wx:else class="avatar">{{roleText[0]}}</view>
+    <view style="margin-left:24rpx;flex:1">
       <view class="title">{{user.nickname || '未命名'}}</view>
       <view class="muted">角色：{{roleText}} <text wx:if="{{user.engineer}}"> · 认证：{{user.engineer.verifyStatus === 'APPROVED' ? '已通过' : '审核中'}}</text></view>
     </view>
+    <view class="edit-btn" bindtap="goEdit">编辑</view>
   </view>
   <view class="card" wx:if="{{user.engineer}}">
     <view class="title" style="font-size:28rpx">专业领域</view>
@@ -12,6 +14,10 @@
       <text class="tag" wx:for="{{user.engineer.specialties}}" wx:key="*this">{{item}}</text>
       <text class="tag" wx:for="{{user.engineer.softwares}}" wx:key="*this">{{item}}</text>
     </view>
+  </view>
+  <view class="card" wx:if="{{user.engineer && user.engineer.intro}}">
+    <view class="title" style="font-size:28rpx">个人简介</view>
+    <view style="margin-top:12rpx;color:#666;line-height:1.6;font-size:26rpx">{{user.engineer.intro}}</view>
   </view>
   <view class="card btn-outline" bindtap="switchRole">切换为{{user.role === 'ENGINEER' ? '客户' : '工程师'}}（演示）</view>
   <view class="card btn-danger-outline" bindtap="logout">退出登录</view>

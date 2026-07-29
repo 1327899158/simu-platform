@@ -1,162 +1,213 @@
 'use strict';
 /**
- * SQLite（node:sqlite 内置模块）数据访问层。
- * 表结构与 prisma/schema.prisma（生产版 MySQL 蓝图）字段一一对应；
- * 迁移到 NestJS+Prisma 时只需替换本文件的查询实现。
+ * 数据库访问层：MySQL（通过 mysql2/promise，连接云托管注入的 MySQL）。
+ * 迁移自 SQLite；表结构与 prisma/schema.prisma 一一对应。
+ *
+ * 导出：
+ *   query(sql, params) → 单次查询
+ *   queryOne(sql, params) → 第一行或 null
+ *   tx(fn) → 事务包装
+ *   nextOrderNo() → 订单编号
+ *   parseJson(s, dft) → 安全解析 JSON
+ *   init() → 建表/迁移（启动时调用一次）
  */
-const fs = require('node:fs');
-const path = require('node:path');
-const { DatabaseSync } = require('node:sqlite');
+const mysql = require('mysql2/promise');
 const { config } = require('./config');
 
-fs.mkdirSync(path.dirname(config.dbFile), { recursive: true });
-fs.mkdirSync(config.uploadDir, { recursive: true });
+let _pool = null;
 
-const db = new DatabaseSync(config.dbFile);
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA foreign_keys = ON;');
+function getPool() {
+  if (!_pool) {
+    _pool = mysql.createPool({
+      host: config.mysql.host,
+      port: config.mysql.port,
+      user: config.mysql.user,
+      password: config.mysql.password,
+      database: config.mysql.database,
+      charset: 'utf8mb4',
+      timezone: '+00:00',
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    });
+  }
+  return _pool;
+}
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS users (
-  id        TEXT PRIMARY KEY,
-  role      TEXT NOT NULL DEFAULT 'CUSTOMER',      -- CUSTOMER | ENGINEER | ADMIN
-  openid    TEXT UNIQUE,
-  nickname  TEXT,
-  avatarUrl TEXT,
-  phone     TEXT UNIQUE,
-  status    TEXT NOT NULL DEFAULT 'ACTIVE',        -- ACTIVE | BANNED | DELETED
-  createdAt TEXT NOT NULL,
-  updatedAt TEXT NOT NULL,
-  deletedAt TEXT
-);
-CREATE TABLE IF NOT EXISTS engineer_profiles (
-  userId       TEXT PRIMARY KEY REFERENCES users(id),
-  realName     TEXT,
-  specialties  TEXT NOT NULL DEFAULT '[]',         -- JSON 数组
-  softwares    TEXT NOT NULL DEFAULT '[]',         -- JSON 数组
-  intro        TEXT,
-  verifyStatus TEXT NOT NULL DEFAULT 'PENDING'     -- PENDING | APPROVED | REJECTED
-);
-CREATE TABLE IF NOT EXISTS orders (
-  id             TEXT PRIMARY KEY,
-  orderNo        TEXT NOT NULL UNIQUE,
-  customerId     TEXT NOT NULL REFERENCES users(id),
-  projectName    TEXT NOT NULL,
-  description    TEXT NOT NULL,
-  softwareTags   TEXT NOT NULL DEFAULT '[]',
-  directionTags  TEXT NOT NULL DEFAULT '[]',
-  budgetFen      INTEGER,
-  budgetFlexible INTEGER NOT NULL DEFAULT 1,
-  deliveryDays   INTEGER NOT NULL,
-  specialNote    TEXT,
-  status         TEXT NOT NULL DEFAULT 'QUOTING',
-  -- QUOTING | AWAITING_PAYMENT | IN_PROGRESS | DELIVERED | COMPLETED | CLOSED
-  selectedQuoteId TEXT UNIQUE,
-  finalAmountFen  INTEGER,
-  selectedAt     TEXT,
-  paidAt         TEXT,
-  deliveredAt    TEXT,
-  completedAt    TEXT,
-  createdAt      TEXT NOT NULL,
-  updatedAt      TEXT NOT NULL,
-  deletedAt      TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, createdAt);
-CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customerId, status);
-CREATE TABLE IF NOT EXISTS quotes (
-  id         TEXT PRIMARY KEY,
-  orderId    TEXT NOT NULL REFERENCES orders(id),
-  engineerId TEXT NOT NULL REFERENCES users(id),
-  amountFen  INTEGER NOT NULL,
-  days       INTEGER NOT NULL,
-  solution   TEXT NOT NULL,
-  status     TEXT NOT NULL DEFAULT 'PENDING',
-  -- PENDING | SELECTED | REJECTED | WITHDRAWN
-  createdAt  TEXT NOT NULL,
-  updatedAt  TEXT NOT NULL,
-  UNIQUE(orderId, engineerId)
-);
-CREATE INDEX IF NOT EXISTS idx_quotes_engineer ON quotes(engineerId, status);
-CREATE TABLE IF NOT EXISTS files (
-  id         TEXT PRIMARY KEY,
-  orderId    TEXT,
-  uploaderId TEXT NOT NULL REFERENCES users(id),
-  kind       TEXT NOT NULL DEFAULT 'DOC',          -- MODEL | DOC | IMAGE | RESULT
-  name       TEXT NOT NULL,
-  storePath  TEXT NOT NULL,
-  sizeBytes  INTEGER NOT NULL,
-  mime       TEXT,
-  createdAt  TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_files_order ON files(orderId);
-CREATE TABLE IF NOT EXISTS conversations (
-  id         TEXT PRIMARY KEY,
-  orderId    TEXT NOT NULL UNIQUE REFERENCES orders(id),
-  customerId TEXT NOT NULL,
-  engineerId TEXT NOT NULL,
-  lastMsgAt  TEXT NOT NULL,
-  createdAt  TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS messages (
-  id        INTEGER PRIMARY KEY AUTOINCREMENT,     -- 数字自增，天然支持 after 游标
-  convId    TEXT NOT NULL REFERENCES conversations(id),
-  senderId  TEXT NOT NULL,                          -- SYSTEM 消息为 'SYSTEM'
-  type      TEXT NOT NULL DEFAULT 'TEXT',           -- TEXT | IMAGE | FILE | SYSTEM
-  content   TEXT,
-  fileId    TEXT,
-  readAt    TEXT,
-  createdAt TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(convId, id);
-CREATE TABLE IF NOT EXISTS payments (
-  id            TEXT PRIMARY KEY,
-  orderId       TEXT NOT NULL REFERENCES orders(id),
-  outTradeNo    TEXT NOT NULL UNIQUE,
-  transactionId TEXT UNIQUE,
-  amountFen     INTEGER NOT NULL,
-  status        TEXT NOT NULL DEFAULT 'PENDING',   -- PENDING | SUCCESS | FAILED | REFUNDED
-  paidAt        TEXT,
-  raw           TEXT,
-  createdAt     TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(orderId);
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-  token     TEXT PRIMARY KEY,
-  userId    TEXT NOT NULL REFERENCES users(id),
-  expiresAt TEXT NOT NULL,
-  createdAt TEXT NOT NULL
-);
-`);
+async function query(sql, params = []) {
+  const [rows] = await getPool().execute(sql, params);
+  return rows;
+}
 
-/** 事务包装：fn 内抛错即回滚。node:sqlite 为同步 API。 */
-function tx(fn) {
-  db.exec('BEGIN IMMEDIATE');
+async function queryOne(sql, params = []) {
+  const rows = await query(sql, params);
+  return (rows && rows.length) ? rows[0] : null;
+}
+
+/**
+ * 事务包装：fn(conn) 内部通过 conn.execute() 操作，抛错自动 ROLLBACK。
+ * 使用方式：
+ *   const result = await tx(async (c) => {
+ *     await c.execute('UPDATE ...', [...]);
+ *     return await c.execute('SELECT ...', [...]);
+ *   });
+ */
+async function tx(fn) {
+  const conn = await getPool().getConnection();
+  await conn.beginTransaction();
   try {
-    const r = fn();
-    db.exec('COMMIT');
+    const r = await fn(conn);
+    await conn.commit();
     return r;
   } catch (e) {
-    db.exec('ROLLBACK');
+    await conn.rollback();
     throw e;
+  } finally {
+    conn.release();
   }
 }
 
-const q = {
-  one: (sql, ...p) => db.prepare(sql).get(...p),
-  all: (sql, ...p) => db.prepare(sql).all(...p),
-  run: (sql, ...p) => db.prepare(sql).run(...p),
-};
+/** 幂等建表 / 迁移（启动时跑一次） */
+async function init() {
+  const sqls = [
+    `CREATE TABLE IF NOT EXISTS users (
+      id          VARCHAR(32) PRIMARY KEY,
+      role        VARCHAR(16) NOT NULL DEFAULT 'CUSTOMER',
+      openid      VARCHAR(64) UNIQUE,
+      unionid     VARCHAR(64),
+      nickname    VARCHAR(60),
+      avatarUrl   VARCHAR(512),
+      phone       VARCHAR(20) UNIQUE,
+      status      VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+      createdAt   DATETIME(3) NOT NULL,
+      updatedAt   DATETIME(3) NOT NULL,
+      deletedAt   DATETIME(3)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
-/** 订单编号：SIM + yyyymmdd + 4位当日序号 */
-function nextOrderNo() {
+    `CREATE TABLE IF NOT EXISTS engineer_profiles (
+      userId        VARCHAR(32) PRIMARY KEY,
+      realName      VARCHAR(60),
+      specialties   JSON NOT NULL,
+      softwares     JSON NOT NULL,
+      intro         TEXT,
+      verifyStatus  VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+      FOREIGN KEY(userId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS orders (
+      id              VARCHAR(32) PRIMARY KEY,
+      orderNo         VARCHAR(24) NOT NULL UNIQUE,
+      customerId      VARCHAR(32) NOT NULL,
+      projectName     VARCHAR(120) NOT NULL,
+      description     TEXT NOT NULL,
+      softwareTags    JSON NOT NULL,
+      directionTags   JSON NOT NULL,
+      budgetFen       BIGINT,
+      budgetFlexible  TINYINT(1) NOT NULL DEFAULT 1,
+      deliveryDays    INT NOT NULL,
+      specialNote     TEXT,
+      status          VARCHAR(24) NOT NULL DEFAULT 'QUOTING',
+      selectedQuoteId VARCHAR(32) UNIQUE,
+      finalAmountFen  BIGINT,
+      selectedAt      DATETIME(3),
+      paidAt          DATETIME(3),
+      deliveredAt     DATETIME(3),
+      completedAt     DATETIME(3),
+      createdAt       DATETIME(3) NOT NULL,
+      updatedAt       DATETIME(3) NOT NULL,
+      deletedAt       DATETIME(3),
+      FOREIGN KEY(customerId) REFERENCES users(id),
+      INDEX idx_orders_status(status, createdAt),
+      INDEX idx_orders_customer(customerId, status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS quotes (
+      id          VARCHAR(32) PRIMARY KEY,
+      orderId     VARCHAR(32) NOT NULL,
+      engineerId  VARCHAR(32) NOT NULL,
+      amountFen   BIGINT NOT NULL,
+      days        INT NOT NULL,
+      solution    TEXT NOT NULL,
+      status      VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+      createdAt   DATETIME(3) NOT NULL,
+      updatedAt   DATETIME(3) NOT NULL,
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      FOREIGN KEY(engineerId) REFERENCES users(id),
+      UNIQUE KEY uq_order_engineer(orderId, engineerId),
+      INDEX idx_quotes_engineer(engineerId, status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS uploaded_files (
+      id          VARCHAR(32) PRIMARY KEY,
+      orderId     VARCHAR(32),
+      uploaderId  VARCHAR(32) NOT NULL,
+      kind        VARCHAR(16) NOT NULL DEFAULT 'DOC',
+      name        VARCHAR(256) NOT NULL,
+      fileID      VARCHAR(512) NOT NULL UNIQUE,
+      sizeBytes   BIGINT NOT NULL,
+      mime        VARCHAR(128),
+      createdAt   DATETIME(3) NOT NULL,
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      INDEX idx_files_order(orderId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS conversations (
+      id          VARCHAR(32) PRIMARY KEY,
+      orderId     VARCHAR(32) NOT NULL UNIQUE,
+      customerId  VARCHAR(32) NOT NULL,
+      engineerId  VARCHAR(32) NOT NULL,
+      lastMsgAt   DATETIME(3) NOT NULL,
+      createdAt   DATETIME(3) NOT NULL,
+      FOREIGN KEY(orderId) REFERENCES orders(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS messages (
+      id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+      convId      VARCHAR(32) NOT NULL,
+      senderId    VARCHAR(64) NOT NULL,
+      type        VARCHAR(16) NOT NULL DEFAULT 'TEXT',
+      content     TEXT,
+      fileId      VARCHAR(32),
+      readAt      DATETIME(3),
+      createdAt   DATETIME(3) NOT NULL,
+      FOREIGN KEY(convId) REFERENCES conversations(id),
+      INDEX idx_messages_conv(convId, id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS payments (
+      id            VARCHAR(32) PRIMARY KEY,
+      orderId       VARCHAR(32) NOT NULL,
+      outTradeNo    VARCHAR(64) NOT NULL UNIQUE,
+      transactionId VARCHAR(64) UNIQUE,
+      amountFen     BIGINT NOT NULL,
+      status        VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+      paidAt        DATETIME(3),
+      raw           JSON,
+      createdAt     DATETIME(3) NOT NULL,
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      INDEX idx_payments_order(orderId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  ];
+
+  for (const sql of sqls) {
+    await query(sql);
+  }
+  console.log(JSON.stringify({ t: new Date().toISOString(), evt: 'db-init-ok' }));
+}
+
+/** 订单编号：SIM + yyyymmdd + 4位序号 */
+async function nextOrderNo() {
   const d = new Date();
-  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  const row = q.one(`SELECT COUNT(*) AS c FROM orders WHERE orderNo LIKE ?`, `SIM${ymd}%`);
-  return `SIM${ymd}${String((row?.c || 0) + 1).padStart(4, '0')}`;
+  const ymd = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+  const prefix = `SIM${ymd}`;
+  const row = await queryOne(`SELECT COUNT(*) AS c FROM orders WHERE orderNo LIKE ?`, [`${prefix}%`]);
+  return `${prefix}${String(((row?.c) || 0) + 1).padStart(4, '0')}`;
 }
 
 const parseJson = (s, dft = []) => {
-  try { return s ? JSON.parse(s) : dft; } catch { return dft; }
+  if (!s) return dft;
+  if (typeof s !== 'string') return s; // mysql2 有时已自动解析 JSON 字段
+  try { return JSON.parse(s); } catch { return dft; }
 };
 
-module.exports = { db, q, tx, nextOrderNo, parseJson };
+module.exports = { query, queryOne, tx, init, nextOrderNo, parseJson };

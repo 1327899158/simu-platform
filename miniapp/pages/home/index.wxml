@@ -5,12 +5,12 @@
     <view class="hero">
       <view class="hero-title">有仿真需求？</view>
       <view class="hero-sub">发布需求，让专业工程师来报价</view>
-      <view class="hero-btn" bindtap="goPublish">+ 提报需求</view>
+      <view class="hero-btn" hover-class="hero-btn-hover" hover-stay-time="100" bindtap="goPublish">+ 提报需求</view>
     </view>
-    <view class="card">
+    <view class="card" bindtap="goOrders" hover-class="card-press" hover-stay-time="80">
       <view class="spread">
         <view class="title">我的订单</view>
-        <text class="muted" bindtap="goOrders">全部 ></text>
+        <text class="muted">全部 ></text>
       </view>
       <view class="stat-row">
         <view class="stat"><view class="num">{{counts.QUOTING}}</view><view class="muted">待报价</view></view>
@@ -34,9 +34,9 @@
 
   <!-- ========== 工程师视图（抢单大厅） ========== -->
   <block wx:if="{{role === 'ENGINEER'}}">
-    <view class="spread" style="margin-bottom:16rpx">
+    <view class="eng-header">
       <view class="title">抢单大厅</view>
-      <text class="muted" bindtap="goMyQuotes">我的报价 ></text>
+      <view class="my-quotes-btn" bindtap="goMyQuotes">我的报价</view>
     </view>
     <scroll-view scroll-x class="filter">
       <text wx:for="{{dicts.directions}}" wx:key="*this" class="chip {{fDirection===item?'on':''}}"

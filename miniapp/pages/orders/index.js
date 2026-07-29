@@ -7,10 +7,15 @@ const TABS = [
   { key: 'DELIVERED', label: '待验收' }, { key: 'COMPLETED', label: '已完成' },
 ];
 Page({
-  data: { tabs: TABS, tab: '', items: [] },
+  data: { tabs: TABS, tab: '', currentLabel: '全部', filterOpen: false, items: [] },
   onShow() { if (ensureLogin()) this.load(); },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
-  switchTab(e) { this.setData({ tab: e.currentTarget.dataset.key }, () => this.load()); },
+  toggleFilter() { this.setData({ filterOpen: !this.data.filterOpen }); },
+  pickTab(e) {
+    const key = e.currentTarget.dataset.key;
+    const t = TABS.find((x) => x.key === key);
+    this.setData({ tab: key, currentLabel: t ? t.label : '全部', filterOpen: false }, () => this.load());
+  },
   async load() {
     const data = await request('GET', '/orders/mine', this.data.tab ? { status: this.data.tab } : {});
     this.setData({

@@ -1,0 +1,9 @@
+{
+  "name": "auto-complete-orders",
+  "version": "1.0.0",
+  "description": "自动完成超过 7 天未确认的 DELIVERED 订单",
+  "main": "index.js",
+  "dependencies": {
+    "mysql2": "^3.9.7"
+  }
+}

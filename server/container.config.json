@@ -1,0 +1,19 @@
+{
+  "containerPort": 80,
+  "minNum": 1,
+  "maxNum": 5,
+  "cpu": 0.5,
+  "mem": 1,
+  "policyType": "cpu",
+  "policyThreshold": 60,
+  "healthCheck": {
+    "path": "/api/health",
+    "initialDelaySeconds": 5,
+    "periodSeconds": 15,
+    "failureThreshold": 3
+  },
+  "envParams": [
+    { "key": "NODE_ENV", "value": "production" },
+    { "key": "TZ", "value": "Asia/Shanghai" }
+  ]
+}

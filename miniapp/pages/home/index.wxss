@@ -1,14 +1,154 @@
+/* ========== 客户端 Hero · 霓虹渐变 ========== */
 .hero {
-  background: linear-gradient(135deg,#1890FF,#36A3FF); border-radius: 16rpx;
-  padding: 40rpx; color: #fff; margin-bottom: 24rpx;
+  position: relative;
+  background: var(--grad-neon);
+  border-radius: var(--r-xl);
+  padding: 52rpx 40rpx 44rpx;
+  color: #fff;
+  margin-bottom: 32rpx;
+  box-shadow: var(--glow-primary);
+  overflow: hidden;
+  animation: neon-rise 0.4s ease-out both;
 }
-.hero-title { font-size: 40rpx; font-weight: 700; }
-.hero-sub { font-size: 24rpx; opacity: .85; margin: 8rpx 0 24rpx; }
+/* 网格纹理叠层 */
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -40rpx;
+  right: -40rpx;
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  filter: blur(2rpx);
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1rpx, transparent 1rpx);
+  background-size: 44rpx 44rpx;
+  opacity: 0.5;
+}
+.hero-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 2rpx;
+  text-shadow: 0 0 24rpx rgba(255, 255, 255, 0.3);
+}
+.hero-sub {
+  font-size: 25rpx;
+  opacity: 0.88;
+  margin: 12rpx 0 36rpx;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 1rpx;
+}
 .hero-btn {
-  background: #fff; color: #1890FF; border-radius: 8rpx; text-align: center;
-  padding: 16rpx 0; font-size: 32rpx; font-weight: 600;
+  position: relative;
+  z-index: 1;
+  background: rgba(8, 6, 15, 0.45);
+  color: #fff;
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--r-md);
+  text-align: center;
+  padding: 22rpx 0;
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  box-shadow: inset 0 0 32rpx rgba(255, 255, 255, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
-.stat-row { display: flex; margin-top: 24rpx; }
-.stat { flex: 1; text-align: center; }
-.num { font-size: 40rpx; font-weight: 700; color: #1890FF; }
-.filter { white-space: nowrap; margin-bottom: 8rpx; }
+.hero-btn-hover {
+  transform: scale(0.97);
+  box-shadow: inset 0 0 32rpx rgba(34, 211, 238, 0.3), 0 0 24rpx rgba(34, 211, 238, 0.4);
+}
+
+/* ========== 统计行 · 数据仪表盘 ========== */
+.stat-row {
+  display: flex;
+  margin-top: 28rpx;
+  padding-top: 8rpx;
+}
+.stat {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+.stat:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1rpx;
+  background: linear-gradient(180deg, transparent, var(--c-border-strong), transparent);
+}
+.num {
+  font-size: 48rpx;
+  font-weight: 700;
+  background: var(--grad-cyan-blue);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--neon-cyan-2);
+  line-height: 1.2;
+  text-shadow: 0 0 20rpx rgba(34, 211, 238, 0.4);
+}
+.stat .muted {
+  margin-top: 6rpx;
+  letter-spacing: 1rpx;
+}
+
+/* ========== 工程师端 ========== */
+.eng-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+  padding: 8rpx 4rpx;
+  animation: neon-rise 0.4s ease-out both;
+}
+.eng-header .title {
+  font-size: 38rpx;
+  font-weight: 700;
+  background: var(--grad-violet-pink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--neon-violet-2);
+  letter-spacing: 2rpx;
+}
+.my-quotes-btn {
+  background: var(--grad-cyan-blue);
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 600;
+  padding: 14rpx 34rpx;
+  border-radius: var(--r-pill);
+  box-shadow: var(--glow-cyan);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.my-quotes-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 10rpx rgba(34, 211, 238, 0.3);
+}
+
+/* ========== 筛选器 ========== */
+.filter {
+  white-space: nowrap;
+  margin-bottom: 12rpx;
+  padding: 4rpx 0;
+}
+
+/* 可点标题行按下反馈 */
+.row-hover {
+  opacity: 0.6;
+}

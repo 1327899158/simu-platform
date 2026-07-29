@@ -1,17 +1,33 @@
 const { ensureLogin, login, getUser } = require('../../utils/auth');
 const { request, tokens } = require('../../utils/request');
+const { BASE_URL } = require('../../utils/config');
+
+const ORIGIN = BASE_URL.replace(/\/api$/, '');
+
+// 将相对路径头像 URL 补全为绝对路径，存入 storage 保证重启后仍可用
+function resolveAvatar(user) {
+  if (!user || !user.avatarUrl) return user;
+  const url = user.avatarUrl.startsWith('/') ? ORIGIN + user.avatarUrl : user.avatarUrl;
+  return { ...user, avatarUrl: url };
+}
+
 Page({
   data: { user: null, roleText: '' },
   async onShow() {
-    const user = ensureLogin();
-    if (!user) return;
+    // 先用缓存快速渲染（缓存里已是绝对路径，可直接显示）
+    const cached = ensureLogin();
+    if (!cached) return;
+    this.setData({ user: cached, roleText: cached.role === 'ENGINEER' ? '工程师' : '客户' });
+    // 后台刷新最新数据
     try {
       const fresh = await request('GET', '/me');
-      wx.setStorageSync('user', fresh);
-      this.setData({ user: fresh, roleText: fresh.role === 'ENGINEER' ? '工程师' : '客户' });
-    } catch (e) {
-      this.setData({ user, roleText: user.role === 'ENGINEER' ? '工程师' : '客户' });
-    }
+      const resolved = resolveAvatar(fresh);
+      wx.setStorageSync('user', resolved);   // 存绝对路径，下次启动可直接用
+      this.setData({ user: resolved, roleText: resolved.role === 'ENGINEER' ? '工程师' : '客户' });
+    } catch (e) { /* 离线时静默，沿用缓存 */ }
+  },
+  goEdit() {
+    wx.navigateTo({ url: '/pages/profile-edit/index' });
   },
   async switchRole() {
     const cur = getUser();

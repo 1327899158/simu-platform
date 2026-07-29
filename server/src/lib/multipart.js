@@ -34,9 +34,23 @@ function parseMultipart(buf, boundary) {
     const fileM = /filename="([^"]*)"/.exec(head);
     const ctM = /content-type:\s*([^\r\n]+)/i.exec(head);
     if (fileM) {
+      // 微信 wx.uploadFile 有时把文件名按 Latin-1 编码传入，实际是 UTF-8 字节
+      // 先尝试 decodeURIComponent，失败则做 Latin-1 → UTF-8 修复，最终兜底用原始字符串
+      let rawName = fileM[1] || 'file';
+      let decodedName = rawName;
+      try {
+        decodedName = decodeURIComponent(rawName);
+      } catch (_) {
+        // percent-decode 失败：尝试把 Latin-1 字符串重新解析为 UTF-8
+        try {
+          decodedName = Buffer.from(rawName, 'latin1').toString('utf8');
+        } catch (_2) {
+          decodedName = rawName;
+        }
+      }
       files.push({
         field: nameM[1],
-        filename: decodeURIComponent(fileM[1] || 'file'),
+        filename: decodedName,
         contentType: ctM ? ctM[1].trim() : 'application/octet-stream',
         data,
       });

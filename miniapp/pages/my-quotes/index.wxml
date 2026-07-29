@@ -1,17 +1,26 @@
 <view class="container">
-  <scroll-view scroll-x class="tabs">
+  <!-- 折叠分类筛选 -->
+  <view class="filter-trigger" bindtap="toggleFilter" hover-class="row-hover" hover-stay-time="80">
+    <text class="ft-label">分类筛选</text>
+    <text class="ft-value">{{currentLabel}}</text>
+    <text class="ft-arrow {{filterOpen?'open':''}}">▾</text>
+  </view>
+  <view class="filter-panel {{filterOpen?'show':''}}">
     <text wx:for="{{tabs}}" wx:key="key" class="chip {{tab===item.key?'on':''}}"
-      bindtap="switchTab" data-key="{{item.key}}">{{item.label}}</text>
-  </scroll-view>
+      bindtap="pickTab" data-key="{{item.key}}">{{item.label}}</text>
+  </view>
+
   <view class="empty" wx:if="{{!items.length}}">暂无报价记录</view>
-  <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-oid="{{item.orderId}}">
+  <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-oid="{{item.orderId}}"
+    hover-class="card-press" hover-stay-time="80">
     <view class="spread">
       <view class="title">{{item.order.projectName}}</view>
-      <text class="status st-blue">{{item.statusText}}</text>
+      <text class="status {{item.badgeCls}}">{{item.badgeText}}</text>
     </view>
     <view class="spread" style="margin-top:12rpx">
       <text class="muted">承诺 {{item.days}} 天 · {{item.time}}</text>
       <text class="money">¥{{item.amountY}}</text>
     </view>
+    <view class="muted" style="margin-top:8rpx;font-size:24rpx">订单号：{{item.order.orderNo}}</view>
   </view>
 </view>

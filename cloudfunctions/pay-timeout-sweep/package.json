@@ -1,0 +1,9 @@
+{
+  "name": "pay-timeout-sweep",
+  "version": "1.0.0",
+  "description": "定时扫描超时未支付订单，回退到 QUOTING 状态",
+  "main": "index.js",
+  "dependencies": {
+    "mysql2": "^3.9.7"
+  }
+}

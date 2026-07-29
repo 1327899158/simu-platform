@@ -1,12 +1,16 @@
 'use strict';
 /**
- * 仿真服务平台 · 最小闭环 Demo 后端
- * 零第三方依赖：node:http + node:sqlite + node:crypto（Node ≥ 22，需 --experimental-sqlite）
- * 启动：node --experimental-sqlite src/main.js
+ * 主入口（云开发版）。
+ * 变化：
+ *   - 启动时运行 db.init() 建表
+ *   - 移除 JWT/SQLite/文件相关中间件
+ *   - 支付回调 /api/pay/notify 路径（不带 /api/payments/mock-notify）
+ *   - CORS 仅允许开发调试，生产走云托管内部隧道不需要 CORS
  */
 const http = require('node:http');
 const { config } = require('./config');
 const { createRouter, sendJson, ApiError } = require('./lib/http');
+const { init: dbInit } = require('./db');
 const { startSweeper } = require('./services/pay-svc');
 
 const router = createRouter();
@@ -18,15 +22,19 @@ require('./routes/market').register(router);
 require('./routes/quotes').register(router);
 require('./routes/payments').register(router);
 require('./routes/chat').register(router);
+
 router.get('/api/health', async (_req, res) =>
   sendJson(res, 200, { code: 0, data: { ok: true, now: new Date().toISOString() } }));
 
 const server = http.createServer(async (req, res) => {
   const start = Date.now();
-  // CORS（开发者工具与本地联调友好；小程序真机不校验 CORS）
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+
+  // CORS：仅开发环境允许跨域（云托管生产环境走内部隧道，无 CORS 需求）
+  if (config.env !== 'production') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WX-OPENID, X-WX-APPID, X-WX-UNIONID, X-Dev-Openid');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+  }
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
   const u = new URL(req.url, 'http://local');
@@ -38,7 +46,7 @@ const server = http.createServer(async (req, res) => {
     if (e instanceof ApiError) {
       sendJson(res, e.status, { code: e.code, message: e.message });
     } else {
-      console.error('[500]', req.method, u.pathname, e);
+      console.error('[500]', req.method, u.pathname, e.message, e.stack);
       sendJson(res, 500, { code: 50000, message: '服务器内部错误' });
     }
   } finally {
@@ -49,12 +57,18 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(config.port, () => {
-  console.log(JSON.stringify({
-    t: new Date().toISOString(), evt: 'listening', port: config.port,
-    wxMock: config.wxMock, payProvider: config.payProvider, db: config.dbFile,
-  }));
-  startSweeper(); // 支付超时清扫（10s 一轮）
-});
+async function bootstrap() {
+  // 初始化数据库（建表）
+  await dbInit();
+  server.listen(config.port, '0.0.0.0', () => {
+    console.log(JSON.stringify({
+      t: new Date().toISOString(), evt: 'listening', port: config.port,
+      env: config.env, cloudbaseEnv: config.cloudbaseEnv,
+    }));
+    startSweeper(); // 支付超时清扫备用定时器（推荐用云函数触发器替代）
+  });
+}
+
+bootstrap().catch((e) => { console.error('[bootstrap]', e); process.exit(1); });
 
 module.exports = { server };

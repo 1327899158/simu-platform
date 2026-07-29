@@ -1,9 +1,27 @@
+# 环境变量
+.env
+.env.local
+.env.production
+.env.development
+
+# 依赖包（云托管构建时会自动 npm install）
 node_modules/
-server/data/
-server/uploads/
-server/test/e2e.db*
-server/test/e2e-uploads/
-server/test/e2e-report.json
-server/.env
+*/node_modules/
+
+# 临时和构建文件
 *.log
+npm-debug.log*
 .DS_Store
+dist/
+build/
+temp/
+tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+EOF

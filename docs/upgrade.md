@@ -47,4 +47,4 @@ API 契约（docs/api.md）与表结构（prisma/schema.prisma）保持不变，
 2. `prisma migrate dev` 用蓝图生成 MySQL 迁移；`src/db.js` 里的每条 SQL 对应一个 Prisma 查询。
 3. 事务：`tx(fn)` → `prisma.$transaction`；「带 where 状态条件的 UPDATE」→ `updateMany`（乐观锁写法一致）。
 4. 鉴权：`lib/auth-mw.js` → NestJS Guard；校验：`lib/util.js` 的 v.* → class-validator DTO。
-5. 迁移完成的判定标准：**不改一行小程序代码，`npm run e2e` 36 条用例全绿**（把 e2e 的 BASE 指向新服务即可）。
+5. 迁移完成的判定标准：**不改一行小程序代码，`npm run e2e` 39 条用例全绿**（把 e2e 的 BASE 指向新服务即可）。

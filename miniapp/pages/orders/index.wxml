@@ -1,10 +1,18 @@
 <view class="container">
-  <scroll-view scroll-x class="tabs">
+  <!-- 折叠分类筛选 -->
+  <view class="filter-trigger" bindtap="toggleFilter" hover-class="row-hover" hover-stay-time="80">
+    <text class="ft-label">分类筛选</text>
+    <text class="ft-value">{{currentLabel}}</text>
+    <text class="ft-arrow {{filterOpen?'open':''}}">▾</text>
+  </view>
+  <view class="filter-panel {{filterOpen?'show':''}}">
     <text wx:for="{{tabs}}" wx:key="key" class="chip {{tab===item.key?'on':''}}"
-      bindtap="switchTab" data-key="{{item.key}}">{{item.label}}</text>
-  </scroll-view>
+      bindtap="pickTab" data-key="{{item.key}}">{{item.label}}</text>
+  </view>
+
   <view class="empty" wx:if="{{!items.length}}">暂无订单，去首页发布一个需求吧</view>
-  <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+  <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-id="{{item.id}}"
+    hover-class="card-press" hover-stay-time="80">
     <view class="spread">
       <view class="title">{{item.projectName}}</view>
       <text class="status {{item.cls}}">{{item.statusText}}</text>

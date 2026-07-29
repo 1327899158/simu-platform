@@ -1,13 +1,23 @@
 {
-  "description": "仿真服务平台小程序（最小闭环Demo）",
+  "description": "仿真服务平台小程序（云开发版）",
   "projectname": "simu-platform",
-  "appid": "touristappid",
+  "appid": "wx14085d227567dd7d",
   "compileType": "miniprogram",
-  "libVersion": "3.4.0",
+  "libVersion": "3.7.3",
+  "cloudfunctionRoot": "cloudfunctions/",
   "setting": {
     "urlCheck": false,
     "es6": true,
     "postcss": true,
-    "minified": true
-  }
+    "minified": true,
+    "enhance": false,
+    "packNpmManually": false,
+    "minifyWXSS": true,
+    "minifyWXML": true
+  },
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

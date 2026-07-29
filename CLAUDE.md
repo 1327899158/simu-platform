@@ -4,7 +4,7 @@
 
 ## 命令
 - 启动后端：`cd server && npm start`（Node ≥22.5，零第三方依赖，SQLite 落盘 data/simu.db）
-- 闭环测试：`cd server && npm run e2e`（36 用例，必须全绿再提交改动）
+- 闭环测试：`cd server && npm run e2e`（39 用例，必须全绿再提交改动）
 - 小程序：微信开发者工具导入 miniapp/，本地设置勾选「不校验合法域名」
 
 ## 约定（改代码前必读）

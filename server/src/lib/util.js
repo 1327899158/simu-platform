@@ -1,46 +1,11 @@
 'use strict';
-/** JWT(HS256)、ID 生成、入参校验。零依赖实现。 */
+/** ID 生成、入参校验工具（云开发版，已移除 JWT/签名/密码相关） */
 const crypto = require('node:crypto');
 const { err } = require('./http');
 
-// ---------- JWT ----------
-function jwtSign(payload, secret, expiresInSec) {
-  const now = Math.floor(Date.now() / 1000);
-  const p1 = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const p2 = Buffer.from(JSON.stringify({ ...payload, iat: now, exp: now + expiresInSec }))
-    .toString('base64url');
-  const sig = crypto.createHmac('sha256', secret).update(`${p1}.${p2}`).digest('base64url');
-  return `${p1}.${p2}.${sig}`;
-}
-
-function jwtVerify(token, secret) {
-  if (typeof token !== 'string') return null;
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  const [p1, p2, sig] = parts;
-  const expect = crypto.createHmac('sha256', secret).update(`${p1}.${p2}`).digest('base64url');
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expect);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-  let body;
-  try {
-    body = JSON.parse(Buffer.from(p2, 'base64url').toString('utf8'));
-  } catch {
-    return null;
-  }
-  if (typeof body.exp !== 'number' || body.exp < Math.floor(Date.now() / 1000)) return null;
-  return body;
-}
-
 // ---------- ID ----------
 const newId = () => 'c' + crypto.randomBytes(12).toString('hex');
-const newToken = () => crypto.randomBytes(32).toString('base64url');
 const nowIso = () => new Date().toISOString();
-
-// 短时效签名（文件下载链接用）
-function signParams(str, secret) {
-  return crypto.createHmac('sha256', secret).update(str).digest('base64url').slice(0, 24);
-}
 
 // ---------- 校验 ----------
 const v = {
@@ -85,4 +50,4 @@ const v = {
   },
 };
 
-module.exports = { jwtSign, jwtVerify, newId, newToken, nowIso, signParams, v };
+module.exports = { newId, nowIso, v };

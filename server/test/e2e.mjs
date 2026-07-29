@@ -233,6 +233,20 @@ try {
   const raw = await fetch(`http://127.0.0.1:${PORT}` + urlRes.json.data.url);
   check('用例10d 签名链接可下载(200且字节数正确)',
     raw.status === 200 && (await raw.arrayBuffer()).byteLength === 64 * 1024);
+  // 10d2. 驳回交付（回到 IN_PROGRESS），再交付一次后才最终确认
+  const rejectOk = await api('POST', `/orders/${orderId}/reject-delivery`, {
+    token: cust.accessToken, body: { reason: '报告格式不符合要求' },
+  });
+  check('用例10d2 客户驳回交付成功(IN_PROGRESS)', rejectOk.json?.data?.rejected === true,
+    JSON.stringify(rejectOk.json));
+  const afterReject = await api('GET', `/orders/${orderId}`, { token: cust.accessToken });
+  check('用例10d3 驳回后订单恢复IN_PROGRESS', afterReject.json?.data?.status === 'IN_PROGRESS');
+  // 重新交付
+  const deliver2 = await api('POST', `/orders/${orderId}/deliver`, {
+    token: eng1.accessToken, body: { fileIds: [rup.json.data.fileId], note: '已修改格式' },
+  });
+  check('用例10d4 工程师可再次交付(DELIVERED)', deliver2.json?.data?.delivered === true);
+
   const confirm = await api('POST', `/orders/${orderId}/confirm`, { token: cust.accessToken });
   check('用例10e 客户确认完成(COMPLETED)', confirm.json?.data?.completed === true);
 

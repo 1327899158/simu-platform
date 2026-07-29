@@ -1,3 +1,135 @@
-.file-row { display: flex; align-items: center; margin-top: 16rpx; }
-.file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 16rpx; }
-.file-del { color: #FF4D4F; margin-left: 16rpx; }
+/* ========== 发布页 · 分步导航 ========== */
+.container {
+  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
+}
+
+/* 顶部 stepper */
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20rpx 16rpx 32rpx;
+  margin-bottom: 8rpx;
+}
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 84rpx;
+  flex-shrink: 0;
+}
+.step-dot {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 700;
+  background: rgba(245, 243, 255, 0.05);
+  border: 1rpx solid var(--c-border);
+  color: var(--c-text-3);
+  transition: transform 0.18s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.step-dot.reached {
+  border-color: rgba(34, 211, 238, 0.5);
+  color: var(--neon-cyan-2);
+  background: rgba(34, 211, 238, 0.1);
+}
+.step-dot.cur {
+  background: var(--grad-violet-pink);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: var(--glow-violet);
+  transform: scale(1.1);
+}
+.step-txt {
+  margin-top: 12rpx;
+  font-size: 20rpx;
+  color: var(--c-text-4);
+  letter-spacing: 1rpx;
+  transition: color 0.2s ease;
+}
+.step-txt.on {
+  color: var(--neon-violet-2);
+  font-weight: 600;
+}
+.step-item:active .step-dot {
+  transform: scale(0.92);
+}
+.step-line {
+  flex: 1;
+  height: 2rpx;
+  margin-top: 28rpx;
+  background: rgba(245, 243, 255, 0.1);
+  transition: background 0.3s ease;
+}
+.step-line.on {
+  background: var(--grad-pink-cyan);
+}
+
+/* 单步卡片入场 */
+.step-card {
+  animation: neon-rise 0.35s ease-out both;
+}
+
+/* 确认页汇总文字 */
+.summary {
+  line-height: 1.8;
+  font-size: 26rpx;
+}
+
+/* 底部步进 dock */
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: var(--bg-deep);
+  border-top: 1rpx solid var(--c-border);
+  box-shadow: 0 -4rpx 32rpx rgba(0, 0, 0, 0.4);
+  z-index: 50;
+}
+.dock-btn {
+  flex: 1;
+}
+.btn-press {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* ========== 发布页文件列表 · 霓虹 ========== */
+.file-row {
+  display: flex;
+  align-items: center;
+  margin-top: 16rpx;
+  padding: 18rpx 22rpx;
+  background: rgba(34, 211, 238, 0.06);
+  border: 1rpx solid rgba(34, 211, 238, 0.2);
+  border-radius: var(--r-md);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.file-row:active {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.4);
+}
+.file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 16rpx;
+  font-size: 27rpx;
+  color: var(--c-text);
+}
+.file-del {
+  color: var(--neon-red);
+  margin-left: 16rpx;
+  font-weight: 500;
+  letter-spacing: 1rpx;
+}

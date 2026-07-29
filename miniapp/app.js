@@ -1,3 +1,53 @@
+const { initCloud } = require('./utils/auth');
+const { request } = require('./utils/request');
+const UNREAD_POLL_MS = 10000;
+
 App({
   globalData: {},
+  _unreadTimer: null,
+
+  onLaunch() {
+    // 初始化云开发 SDK
+    initCloud();
+    // 刷新用户信息
+    this.refreshUser();
+  },
+  onShow() {
+    this.startUnreadPoll();
+  },
+  onHide() {
+    this.stopUnreadPoll();
+  },
+
+  async refreshUser() {
+    const { getUser, saveUser } = require('./utils/auth');
+    if (!getUser()) return;
+    try {
+      const user = await request('GET', '/me', null, { silent: true });
+      if (user) saveUser(user);
+    } catch (e) { /* 静默 */ }
+  },
+
+  startUnreadPoll() {
+    this.stopUnreadPoll();
+    this.fetchUnread();
+    this._unreadTimer = setInterval(() => this.fetchUnread(), UNREAD_POLL_MS);
+  },
+  stopUnreadPoll() {
+    if (this._unreadTimer) { clearInterval(this._unreadTimer); this._unreadTimer = null; }
+  },
+
+  async fetchUnread() {
+    const { isLoggedIn } = require('./utils/auth');
+    if (!isLoggedIn()) return;
+    try {
+      const list = await request('GET', '/conversations', null, { silent: true });
+      const total = (list || []).reduce((sum, c) => sum + (c.unread || 0), 0);
+      if (total > 0) {
+        wx.setTabBarBadge({ index: 1, text: total > 99 ? '99+' : String(total) });
+      } else {
+        wx.removeTabBarBadge({ index: 1 });
+      }
+    } catch (e) { /* 静默 */ }
+  },
 });

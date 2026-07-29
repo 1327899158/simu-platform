@@ -36,7 +36,8 @@
       <view class="quote" wx:for="{{quotes}}" wx:key="id">
         <view class="spread">
           <view class="row">
-            <view class="q-avatar">{{item.engineer.nickname[0]}}</view>
+            <image wx:if="{{item.engineer.avatarUrl}}" src="{{item.engineer.avatarUrl}}" class="q-avatar-img" />
+            <view wx:else class="q-avatar">{{item.engineer.nickname[0]}}</view>
             <view style="margin-left:16rpx">
               <view>{{item.engineer.nickname}} <text class="muted">已完成 {{item.engineer.completedCount}} 单</text></view>
               <view class="muted">承诺 {{item.days}} 天</view>

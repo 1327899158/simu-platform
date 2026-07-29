@@ -1,11 +1,14 @@
 /**
- * 后端地址：
- * - 开发者工具本地联调：http://127.0.0.1:3000/api（工具里勾选「不校验合法域名」）
- * - 真机预览：改为电脑局域网 IP，如 http://192.168.1.8:3000/api（手机与电脑同一 WiFi）
- * - 部署后：https://api.你的域名/api
- * WX_MOCK 与 server/.env 的 WX_MOCK 保持一致。
+ * 云开发初始化与请求封装（云开发版）。
+ * 使用 wx.cloud.callContainer 替代 wx.request + JWT Bearer token。
  */
+
+const ENV_ID = 'cloud1-d8gh7xyw56d7c185f'; // ← 改为你的云开发环境 ID
+const SERVICE_NAME = 'simu-api'; // 云托管服务名
+
 module.exports = {
+  ENV_ID,
+  SERVICE_NAME,
+  // 兼容旧代码，BASE_URL 仅本地调试用
   BASE_URL: 'http://127.0.0.1:3000/api',
-  WX_MOCK: true,
 };
