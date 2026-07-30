@@ -69,13 +69,14 @@ Page({
   },
 
   // ========== 账号密码 ==========
-  toggleRegister() {
-    this.setData({
-      isRegister: !this.data.isRegister,
-      username: '',
-      password: '',
-      passwordConfirm: '',
-    });
+  toggleRegister(e) {
+    // 根据 WXML 传入的 data-mode 设置登录/注册
+    const mode = e.currentTarget.dataset.mode;
+    if (mode === 'register') {
+      this.setData({ isRegister: true, username: '', password: '', passwordConfirm: '' });
+    } else {
+      this.setData({ isRegister: false, username: '', password: '', passwordConfirm: '' });
+    }
   },
 
   async accountLogin() {

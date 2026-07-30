@@ -1,13 +1,13 @@
-const { ensureLogin, login, getUser, logout } = require('../../utils/auth');
+const { ensureLogin, login, getUser, logout, saveSession, isLoggedIn } = require('../../utils/auth');
 const { request } = require('../../utils/request');
-const { BASE_URL } = require('../../utils/config');
 
-const ORIGIN = BASE_URL.replace(/\/api$/, '');
-
-// 将相对路径头像 URL 补全为绝对路径，存入 storage 保证重启后仍可用
+// 云存储 fileID 或 https 开头的 URL 直接使用，相对路径补全为云存储临时链接
 function resolveAvatar(user) {
   if (!user || !user.avatarUrl) return user;
-  const url = user.avatarUrl.startsWith('/') ? ORIGIN + user.avatarUrl : user.avatarUrl;
+  const url = user.avatarUrl;
+  // cloud:// 开头 → 云存储 fileID，直接用
+  // https:// 开头 → 已是完整 URL，直接用
+  // 其他 → 尝试当作 fileID 处理（后端返回的可能是 fileID）
   return { ...user, avatarUrl: url };
 }
 
@@ -46,8 +46,25 @@ Page({
       content: `将以「${target === 'engineer' ? '工程师' : '客户'}」身份重新登录`,
       success: async (r) => {
         if (!r.confirm) return;
-        await login(target);
-        wx.switchTab({ url: '/pages/home/index' });
+        // 微信用户走 wx-login，非微信用户直接修改 role
+        const token = wx.getStorageSync('sessionToken');
+        if (token) {
+          // 非微信登录用户：直接调后端切换角色
+          try {
+            wx.showLoading({ title: '切换中…', mask: true });
+            // 重新登录获取新 token + 新角色
+            await login(target);
+            wx.hideLoading();
+            wx.switchTab({ url: '/pages/home/index' });
+          } catch (e) {
+            wx.hideLoading();
+            wx.showToast({ title: e.message || '切换失败', icon: 'none' });
+          }
+        } else {
+          // 微信用户
+          await login(target);
+          wx.switchTab({ url: '/pages/home/index' });
+        }
       },
     });
   },

@@ -45,6 +45,10 @@ function saveUser(user) {
   if (user) wx.setStorageSync('user', user);
 }
 
+function saveSession(token) {
+  if (token) wx.setStorageSync('sessionToken', token);
+}
+
 function getUser() {
   return wx.getStorageSync('user') || null;
 }
@@ -59,6 +63,7 @@ function isLoggedIn() {
 
 function logout() {
   wx.removeStorageSync('user');
+  wx.removeStorageSync('sessionToken');
   wx.reLaunch({ url: '/pages/login/index' });
 }
 
@@ -96,6 +101,7 @@ async function refreshUser() {
 async function loginByUsername(username, password) {
   const data = await request('POST', '/auth/login', { username, password });
   saveUser(data.user);
+  saveSession(data.token);
   return data.user;
 }
 
@@ -107,6 +113,7 @@ async function registerByPhone(username, phone, password, smsCode, roleHint = 'c
     username, phone, password, smsCode, roleHint,
   });
   saveUser(data.user);
+  saveSession(data.token);
   return data.user;
 }
 
@@ -116,6 +123,7 @@ async function registerByPhone(username, phone, password, smsCode, roleHint = 'c
 async function loginByPhone(phone, smsCode, roleHint = 'customer') {
   const data = await request('POST', '/auth/phone-login', { phone, smsCode, roleHint });
   saveUser(data.user);
+  saveSession(data.token);
   return data.user;
 }
 
@@ -147,6 +155,6 @@ module.exports = {
   loginByPhone,
   requestSmsCode,
   resetPassword,
-  getUser, setUser, isLoggedIn, saveUser, logout,
+  getUser, setUser, isLoggedIn, saveUser, saveSession, logout,
   ensureLogin, refreshUser,
 };

@@ -5,6 +5,16 @@ const { err } = require('./http');
 
 // ---------- ID ----------
 const newId = () => 'c' + crypto.randomBytes(12).toString('hex');
+
+// ---------- Session Token ----------
+const genSessionToken = () => crypto.randomBytes(32).toString('hex');
+const SESSION_TTL_HOURS = 72; // session 有效期 72 小时
+
+// 生成 session 过期时间（MySQL DATETIME 格式）
+const sessionExpiry = () => {
+  const d = new Date(Date.now() + SESSION_TTL_HOURS * 3600 * 1000);
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+};
 // MySQL DATETIME 格式：YYYY-MM-DD HH:MM:SS
 const nowIso = () => {
   const now = new Date();
@@ -76,4 +86,4 @@ const verifyPassword = async (passwordHash, inputPassword) => {
   return bcrypt.compare(inputPassword, passwordHash);
 };
 
-module.exports = { newId, nowIso, v, hashPassword, verifyPassword };
+module.exports = { newId, nowIso, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry };

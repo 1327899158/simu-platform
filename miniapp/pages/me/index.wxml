@@ -13,7 +13,7 @@
   </view>
 
   <!-- 菜单（仅保留 simu-platform 已有功能的跳转） -->
-  <view class="menu">
+  <view class="menu" wx:if="{{user}}">
     <view class="menu-item" bindtap="goOrders">
       <text class="icon">📋</text>
       <text class="title">我的订单</text>
@@ -37,7 +37,7 @@
   </view>
 
   <!-- 操作 -->
-  <view class="actions">
+  <view class="actions" wx:if="{{user}}">
     <button class="btn-danger-block" bindtap="logout">退出登录</button>
   </view>
 

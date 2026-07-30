@@ -7,7 +7,7 @@
  * 4. 忘记密码重置
  */
 const { readJson, ok, err } = require('../lib/http');
-const { newId, nowIso, v, hashPassword, verifyPassword } = require('../lib/util');
+const { newId, nowIso, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry } = require('../lib/util');
 const { query, queryOne } = require('../db');
 const { getOrCreateUser, findUserByUsername, findUserByPhone, getOrCreateUserByPhone } = require('../lib/auth-mw');
 const { sendSmsCode, verifySmsCode } = require('../services/sms-svc');
@@ -22,6 +22,17 @@ function userView(u) {
     username: u.username,
     phone: u.phone,
   };
+}
+
+/** 为用户生成并存储 session token，返回 token 和 userView */
+async function issueSession(user) {
+  const token = genSessionToken();
+  const expires = sessionExpiry();
+  await query(
+    `UPDATE users SET sessionToken = ?, sessionExpiresAt = ?, updatedAt = ? WHERE id = ?`,
+    [token, expires, nowIso(), user.id]
+  );
+  return { token, user: userView(user) };
 }
 
 function register(router) {
@@ -110,7 +121,8 @@ function register(router) {
     }
 
     const user = await queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
-    ok(res, { user: userView(user), message: '注册成功' });
+    const session = await issueSession(user);
+    ok(res, { ...session, message: '注册成功' });
   });
 
   // POST /api/auth/login
@@ -128,7 +140,8 @@ function register(router) {
 
     if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
 
-    ok(res, { user: userView(user) });
+    const session = await issueSession(user);
+    ok(res, session);
   });
 
   // ========== 手机验证码登录 ==========
@@ -149,7 +162,8 @@ function register(router) {
 
     if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
 
-    ok(res, { user: userView(user) });
+    const session = await issueSession(user);
+    ok(res, session);
   });
 
   // ========== 忘记密码 ==========

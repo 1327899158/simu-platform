@@ -212,6 +212,8 @@ async function init() {
     // users 表补充字段
     { sql: `ALTER TABLE users ADD COLUMN username VARCHAR(20) UNIQUE`, check: "username" },
     { sql: `ALTER TABLE users ADD COLUMN passwordHash VARCHAR(255)`, check: "passwordHash" },
+    { sql: `ALTER TABLE users ADD COLUMN sessionToken VARCHAR(64)`, check: "sessionToken" },
+    { sql: `ALTER TABLE users ADD COLUMN sessionExpiresAt DATETIME(3)`, check: "sessionExpiresAt" },
   ];
 
   for (const m of migrations) {

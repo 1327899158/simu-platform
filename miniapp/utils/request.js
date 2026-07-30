@@ -21,14 +21,18 @@ function isCloudAvailable() {
  */
 function callCloud(method, path, data) {
   return new Promise((resolve, reject) => {
+    const header = {
+      'X-WX-SERVICE': SERVICE_NAME,
+      'content-type': 'application/json',
+    };
+    // 非微信登录用户带上 session token
+    const token = wx.getStorageSync('sessionToken');
+    if (token) header['X-Session-Token'] = token;
     wx.cloud.callContainer({
       config: { env: ENV_ID },
       path: '/api' + path,
       method: method.toUpperCase(),
-      header: {
-        'X-WX-SERVICE': SERVICE_NAME,
-        'content-type': 'application/json',
-      },
+      header,
       data: data || {},
       success: (r) => resolve(r),
       fail: (e) => reject(new Error(e.errMsg || '网络错误')),
@@ -40,8 +44,10 @@ function callCloud(method, path, data) {
 function callHttp(method, path, data) {
   return new Promise((resolve, reject) => {
     const header = { 'Content-Type': 'application/json' };
-    // 本地调试时可在 .env 设置 DEV_OPENID，这里传递到自定义头
     header['X-Dev-Openid'] = wx.getStorageSync('devOpenid') || 'test_openid_customer';
+    // 非微信登录用户带上 session token
+    const token = wx.getStorageSync('sessionToken');
+    if (token) header['X-Session-Token'] = token;
     wx.request({
       url: BASE_URL + path,
       method: method.toUpperCase(),

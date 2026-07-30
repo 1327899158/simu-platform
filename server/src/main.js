@@ -33,7 +33,7 @@ const server = http.createServer(async (req, res) => {
   // CORS：仅开发环境允许跨域（云托管生产环境走内部隧道，无 CORS 需求）
   if (config.env !== 'production') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WX-OPENID, X-WX-APPID, X-WX-UNIONID, X-Dev-Openid');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WX-OPENID, X-WX-APPID, X-WX-UNIONID, X-Dev-Openid, X-Session-Token');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
   }
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }

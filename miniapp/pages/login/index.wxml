@@ -56,8 +56,8 @@
   <view class="form-container" wx:if="{{tab === 'username'}}">
 
     <view class="sub-tab">
-      <view class="sub-tab-item {{!isRegister ? 'active' : ''}}" bindtap="toggleRegister">登录</view>
-      <view class="sub-tab-item {{isRegister ? 'active' : ''}}" bindtap="toggleRegister">注册</view>
+      <view class="sub-tab-item {{!isRegister ? 'active' : ''}}" data-mode="login" bindtap="toggleRegister">登录</view>
+      <view class="sub-tab-item {{isRegister ? 'active' : ''}}" data-mode="register" bindtap="toggleRegister">注册</view>
     </view>
 
     <view class="form-group">

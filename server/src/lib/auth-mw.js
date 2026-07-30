@@ -20,9 +20,7 @@ const { queryOne, query } = require('../db');
  * 本地开发：X-WX-OPENID（由调用者手动填）
  */
 function getOpenid(req) {
-  // 云托管正式注入的头
   let openid = req.headers['x-wx-openid'] || '';
-  // 本地开发辅助：允许显式设 openid（仅 development 环境）
   if (!openid && config.env === 'development') {
     openid = req.headers['x-dev-openid'] || process.env.DEV_OPENID || '';
   }
@@ -30,8 +28,14 @@ function getOpenid(req) {
 }
 
 /**
- * 获取（或按需创建）用户。
- * openid 由微信侧保证唯一性，第一次登录时自动建账号。
+ * 从请求中提取 session token（非微信登录用户用）。
+ */
+function getSessionToken(req) {
+  return req.headers['x-session-token'] || null;
+}
+
+/**
+ * 获取（或按需创建）用户 —— 微信登录用（通过 openid）。
  */
 async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
   let user = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
@@ -58,13 +62,32 @@ async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
   return user;
 }
 
-/** 必须登录（从头里拿 openid，自动 upsert 用户） */
+/** 必须登录（优先 openid，其次 session token） */
 async function requireUser(req, roleHint) {
+  // 1. 尝试微信 openid
   const openid = getOpenid(req);
-  if (!openid) throw err.unauth('未获取到用户身份（请通过小程序 wx.cloud.callContainer 调用）');
-  const user = await getOrCreateUser(openid, roleHint || req.headers['x-wx-role-hint']);
-  if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
-  return user;
+  if (openid) {
+    const user = await getOrCreateUser(openid, roleHint || req.headers['x-wx-role-hint']);
+    if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
+    return user;
+  }
+  // 2. 尝试 session token（账号密码 / 手机号登录用户）
+  const token = getSessionToken(req);
+  if (token) {
+    const user = await queryOne(
+      `SELECT * FROM users WHERE sessionToken = ? AND deletedAt IS NULL`,
+      [token]
+    );
+    if (!user) throw err.unauth('会话已过期，请重新登录');
+    // 检查过期
+    if (user.sessionExpiresAt) {
+      const exp = new Date(user.sessionExpiresAt);
+      if (exp < new Date()) throw err.unauth('会话已过期，请重新登录');
+    }
+    if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
+    return user;
+  }
+  throw err.unauth('未获取到用户身份（请通过小程序调用或重新登录）');
 }
 
 /** 必须是已认证工程师 */

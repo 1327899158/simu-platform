@@ -9,7 +9,10 @@ const parseJson = (str) => {
 };
 function timeShort(iso) {
   if (!iso) return '';
-  const d = new Date(iso);
+  // MySQL DATETIME 格式 'YYYY-MM-DD HH:MM:SS'，替换空格为 T 使其兼容 ISO
+  const normalized = typeof iso === 'string' && iso.includes(' ') ? iso.replace(' ', 'T') : iso;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return String(iso);
   const p = (n) => String(n).padStart(2, '0');
   const today = new Date();
   const sameDay = d.toDateString() === today.toDateString();
