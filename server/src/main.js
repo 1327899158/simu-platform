@@ -66,6 +66,23 @@ async function bootstrap() {
       env: config.env, cloudbaseEnv: config.cloudbaseEnv,
     }));
     startSweeper(); // 支付超时清扫备用定时器（推荐用云函数触发器替代）
+
+    // 云MySQL普通版防暂停心跳：每 15 分钟检测一次数据库连接
+    if (config.env === 'production') {
+      setInterval(async () => {
+        try {
+          const { query } = require('./db');
+          await query('SELECT 1');
+          console.log(JSON.stringify({
+            t: new Date().toISOString(), evt: 'db-heartbeat', status: 'ok'
+          }));
+        } catch (e) {
+          console.error(JSON.stringify({
+            t: new Date().toISOString(), evt: 'db-heartbeat', error: e.message
+          }));
+        }
+      }, 15 * 60 * 1000); // 15 分钟
+    }
   });
 }
 
