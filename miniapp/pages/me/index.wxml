@@ -1,25 +1,44 @@
-<view class="container">
-  <view class="card row">
-    <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar-img" />
-    <view wx:else class="avatar">{{roleText[0]}}</view>
-    <view style="margin-left:24rpx;flex:1">
-      <view class="title">{{user.nickname || '未命名'}}</view>
-      <view class="muted">角色：{{roleText}} <text wx:if="{{user.engineer}}"> · 认证：{{user.engineer.verifyStatus === 'APPROVED' ? '已通过' : '审核中'}}</text></view>
+<!-- pages/me/index.wxml · 布局迁移自 new_simu profile（浅色商务适配） -->
+<view class="page-container">
+
+  <!-- 用户卡片 -->
+  <view class="user-card" wx:if="{{user}}">
+    <image class="avatar" src="{{user.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+    <view class="info">
+      <text class="name">{{user.nickname || '用户'}}</text>
+      <text class="phone">{{user.phone || '未绑定手机'}}</text>
+      <text class="role">{{user.role === 'ENGINEER' ? '🛠️ 工程师' : '👤 客户'}}</text>
     </view>
-    <view class="edit-btn" bindtap="goEdit">编辑</view>
+    <button class="edit-btn" bindtap="goEdit">编辑</button>
   </view>
-  <view class="card" wx:if="{{user.engineer}}">
-    <view class="title" style="font-size:28rpx">专业领域</view>
-    <view style="margin-top:16rpx">
-      <text class="tag" wx:for="{{user.engineer.specialties}}" wx:key="*this">{{item}}</text>
-      <text class="tag" wx:for="{{user.engineer.softwares}}" wx:key="*this">{{item}}</text>
+
+  <!-- 菜单（仅保留 simu-platform 已有功能的跳转） -->
+  <view class="menu">
+    <view class="menu-item" bindtap="goOrders">
+      <text class="icon">📋</text>
+      <text class="title">我的订单</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goMyQuotes">
+      <text class="icon">💰</text>
+      <text class="title">我的报价</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goResetPassword">
+      <text class="icon">🔑</text>
+      <text class="title">重置密码</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="switchRole">
+      <text class="icon">🔄</text>
+      <text class="title">切换角色（演示）</text>
+      <text class="arrow">›</text>
     </view>
   </view>
-  <view class="card" wx:if="{{user.engineer && user.engineer.intro}}">
-    <view class="title" style="font-size:28rpx">个人简介</view>
-    <view style="margin-top:12rpx;color:#666;line-height:1.6;font-size:26rpx">{{user.engineer.intro}}</view>
+
+  <!-- 操作 -->
+  <view class="actions">
+    <button class="btn-danger-block" bindtap="logout">退出登录</button>
   </view>
-  <view class="card btn-outline" bindtap="switchRole">切换为{{user.role === 'ENGINEER' ? '客户' : '工程师'}}（演示）</view>
-  <view class="card btn-danger-outline" bindtap="logout">退出登录</view>
-  <view class="empty" style="padding-top:24rpx">Demo 版 · Mock 登录/Mock 支付<br/>正式版切换见 docs/upgrade.md</view>
+
 </view>

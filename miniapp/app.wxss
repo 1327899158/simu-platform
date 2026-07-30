@@ -1,48 +1,47 @@
 /* ================================================================
-   仿真服务平台 · 霓虹渐变未来风 Design Token 体系
-   深紫黑底 + 紫粉/青蓝霓虹渐变 + 玻璃拟态卡片
-   基于 miniprogram UI/UX 设计规范：rpx 优先、Flexbox 为主、
-   系统字体、触屏优先、对比度层级、留白呼吸感
+   仿真服务平台 · 浅色商务风 Design Token 体系
+   （L1 换肤：变量名与深色版保持一致，仅替换值——页面级 WXSS 无需大改）
+   浅灰底 + 白卡片 + 深蓝灰主色 + 浅阴影
    ================================================================ */
 
 /* ---------- Design Tokens ---------- */
 page {
-  /* ===== 底色 · 深紫黑空间 ===== */
-  --bg-deep: #08060F;
-  --bg-base: #0E0A1F;
-  --bg-elev: #160F30;
-  --bg-card: rgba(255, 255, 255, 0.045);
+  /* ===== 底色 · 浅灰空间 ===== */
+  --bg-deep: #EFEFEF;
+  --bg-base: #F5F5F5;
+  --bg-elev: #FFFFFF;
+  --bg-card: #FFFFFF;
 
-  /* ===== 霓虹色系 ===== */
-  --neon-violet: #A855F7;
-  --neon-violet-2: #C084FC;
-  --neon-pink: #EC4899;
-  --neon-pink-2: #F472B6;
-  --neon-cyan: #22D3EE;
-  --neon-cyan-2: #67E8F9;
-  --neon-blue: #3B82F6;
-  --neon-green: #34D399;
-  --neon-amber: #FBBF24;
-  --neon-red: #FB7185;
+  /* ===== 主色与语义色（沿用 neon-* 变量名，值换商务色） ===== */
+  --neon-violet: #2C3E50;
+  --neon-violet-2: #34495E;
+  --neon-pink: #E74C3C;
+  --neon-pink-2: #EC7063;
+  --neon-cyan: #3498DB;
+  --neon-cyan-2: #5DADE2;
+  --neon-blue: #3498DB;
+  --neon-green: #27AE60;
+  --neon-amber: #F39C12;
+  --neon-red: #E74C3C;
 
-  /* ===== 霓虹渐变 ===== */
-  --grad-neon: linear-gradient(135deg, #A855F7 0%, #EC4899 50%, #22D3EE 100%);
-  --grad-violet-pink: linear-gradient(135deg, #A855F7, #EC4899);
-  --grad-cyan-blue: linear-gradient(135deg, #22D3EE, #3B82F6);
-  --grad-pink-cyan: linear-gradient(90deg, #EC4899, #22D3EE);
-  --grad-gold: linear-gradient(135deg, #FBBF24, #FB7185);
+  /* ===== 渐变（商务化：低饱和同色系） ===== */
+  --grad-neon: linear-gradient(135deg, #2C3E50 0%, #3498DB 100%);
+  --grad-violet-pink: linear-gradient(135deg, #34495E, #2C3E50);
+  --grad-cyan-blue: linear-gradient(135deg, #5DADE2, #3498DB);
+  --grad-pink-cyan: linear-gradient(90deg, #EC7063, #5DADE2);
+  --grad-gold: linear-gradient(135deg, #F39C12, #E67E22);
 
   /* ===== 文字 ===== */
-  --c-text: #F5F3FF;
-  --c-text-2: rgba(245, 243, 255, 0.72);
-  --c-text-3: rgba(245, 243, 255, 0.5);
-  --c-text-4: rgba(245, 243, 255, 0.32);
-  --c-money: #FBBF24;
+  --c-text: #333333;
+  --c-text-2: #666666;
+  --c-text-3: #999999;
+  --c-text-4: #BBBBBB;
+  --c-money: #E74C3C;
 
   /* ===== 线条 ===== */
-  --c-border: rgba(168, 85, 247, 0.22);
-  --c-border-strong: rgba(34, 211, 238, 0.45);
-  --c-divider: rgba(245, 243, 255, 0.08);
+  --c-border: #E8E8E8;
+  --c-border-strong: #2C3E50;
+  --c-divider: #F0F0F0;
 
   /* ===== 间距 — 8px 基准 → rpx (×2) ===== */
   --sp-1: 8rpx;
@@ -60,31 +59,20 @@ page {
   --r-xl: 32rpx;
   --r-pill: 999rpx;
 
-  /* ===== 阴影 · 霓虹发光 ===== */
-  --shadow-sm: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 8rpx 32rpx rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 16rpx 48rpx rgba(0, 0, 0, 0.5);
-  --shadow-card: 0 8rpx 40rpx rgba(0, 0, 0, 0.45), inset 0 1rpx 0 rgba(255, 255, 255, 0.06);
-  --glow-cyan: 0 0 20rpx rgba(34, 211, 238, 0.4), 0 0 44rpx rgba(34, 211, 238, 0.16);
-  --glow-violet: 0 0 24rpx rgba(168, 85, 247, 0.45), 0 0 56rpx rgba(168, 85, 247, 0.2);
-  --glow-pink: 0 8rpx 32rpx rgba(236, 72, 153, 0.35);
-  --glow-primary: 0 8rpx 28rpx rgba(168, 85, 247, 0.45), 0 0 48rpx rgba(34, 211, 238, 0.12);
+  /* ===== 阴影 · 浅灰（沿用 glow-* 变量名，值换浅阴影） ===== */
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.10);
+  --shadow-card: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+  --glow-cyan: 0 4rpx 12rpx rgba(52, 152, 219, 0.18);
+  --glow-violet: 0 4rpx 12rpx rgba(44, 62, 80, 0.15);
+  --glow-pink: 0 4rpx 12rpx rgba(231, 76, 60, 0.18);
+  --glow-primary: 0 4rpx 14rpx rgba(44, 62, 80, 0.22);
 
   /* ===== 字体 ===== */
   --font-family: -apple-system, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
 
-  /* 页面背景：深紫黑底 + 顶部霓虹光晕（固定尺寸，不拉伸无接缝）+ 科技网格 */
   background-color: var(--bg-base);
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.28), transparent 400rpx),
-    radial-gradient(circle at 88% 4%, rgba(34, 211, 238, 0.22), transparent 360rpx),
-    linear-gradient(rgba(168, 85, 247, 0.05) 1rpx, transparent 1rpx),
-    linear-gradient(90deg, rgba(34, 211, 238, 0.045) 1rpx, transparent 1rpx);
-  background-size:
-    100% 400rpx, 100% 360rpx,
-    52rpx 52rpx, 52rpx 52rpx;
-  background-repeat: no-repeat, no-repeat, repeat, repeat;
-  background-attachment: scroll;
   font-size: 28rpx;
   color: var(--c-text);
   font-family: var(--font-family);
@@ -100,37 +88,25 @@ page {
 /* ---------- 卡片 ---------- */
 .card {
   position: relative;
-  background: var(--bg-elev);
+  background: var(--bg-card);
   border: 1rpx solid var(--c-border);
   border-radius: var(--r-lg);
   padding: var(--sp-3);
   margin-bottom: var(--sp-3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   transition: transform 0.18s ease, border-color 0.2s ease;
 }
-/* 卡片顶部霓虹高光带 */
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 1rpx;
-  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.6), rgba(168, 85, 247, 0.6), transparent);
-  opacity: 0.7;
-}
 .card:active {
   transform: scale(0.985);
-  border-color: var(--c-border-strong);
+  border-color: #D0D0D0;
 }
 /* 整框可点反馈（hover-class 用） */
 .card-press {
-  opacity: 0.8;
-  border-color: var(--c-border-strong);
+  opacity: 0.85;
 }
 
-/* ---------- 按钮 · 霓虹 ---------- */
+/* ---------- 按钮 · 商务 ---------- */
 .btn-primary {
   background: var(--grad-violet-pink);
   color: #fff;
@@ -144,48 +120,36 @@ page {
   overflow: hidden;
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
-/* 按钮内扫光 */
-.btn-primary::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -60%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-  transform: skewX(-20deg);
-}
 .btn-primary:active {
   transform: scale(0.97);
-  box-shadow: 0 4rpx 16rpx rgba(168, 85, 247, 0.35);
+  background: #1A252F;
 }
 .btn-primary.disabled {
-  background: rgba(168, 85, 247, 0.25);
+  background: #B0B7BD;
   box-shadow: none;
-  opacity: 0.55;
+  opacity: 0.7;
 }
 
 .btn-outline {
   border: 1rpx solid var(--neon-cyan);
-  color: var(--neon-cyan-2);
-  background: rgba(34, 211, 238, 0.06);
+  color: var(--neon-cyan);
+  background: rgba(52, 152, 219, 0.06);
   border-radius: var(--r-md);
   font-size: 30rpx;
   font-weight: 500;
   padding: 20rpx 0;
   text-align: center;
-  box-shadow: inset 0 0 24rpx rgba(34, 211, 238, 0.08);
   transition: transform 0.15s ease, background 0.15s ease;
 }
 .btn-outline:active {
   transform: scale(0.98);
-  background: rgba(34, 211, 238, 0.14);
+  background: rgba(52, 152, 219, 0.12);
 }
 
 .btn-danger-outline {
   border: 1rpx solid var(--neon-red);
   color: var(--neon-red);
-  background: rgba(251, 113, 133, 0.06);
+  background: rgba(231, 76, 60, 0.05);
   border-radius: var(--r-md);
   font-size: 30rpx;
   font-weight: 500;
@@ -195,7 +159,7 @@ page {
 }
 .btn-danger-outline:active {
   transform: scale(0.98);
-  background: rgba(251, 113, 133, 0.14);
+  background: rgba(231, 76, 60, 0.12);
 }
 
 /* ---------- 通用工具类 ---------- */
@@ -211,36 +175,26 @@ page {
   font-size: 24rpx;
 }
 .money {
-  background: var(--grad-gold);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
   color: var(--c-money);
   font-weight: 700;
 }
 
-/* 渐变文字工具类 */
+/* 强调文字工具类（原渐变文字，浅色底改纯色） */
 .grad-text {
-  background: var(--grad-violet-pink);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--neon-violet-2);
+  color: var(--neon-violet);
+  font-weight: 600;
 }
 .grad-text-cyan {
-  background: var(--grad-cyan-blue);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--neon-cyan-2);
+  color: var(--neon-cyan);
+  font-weight: 600;
 }
 
 /* ---------- 标签 Tag ---------- */
 .tag {
   display: inline-block;
-  background: rgba(34, 211, 238, 0.1);
-  border: 1rpx solid rgba(34, 211, 238, 0.3);
-  color: var(--neon-cyan-2);
+  background: #EBF5FB;
+  border: 1rpx solid #D6EAF8;
+  color: #2874A6;
   border-radius: var(--r-sm);
   padding: 6rpx 16rpx;
   margin: 0 var(--sp-2) var(--sp-2) 0;
@@ -251,25 +205,24 @@ page {
 /* ---------- Chip 选择标签 ---------- */
 .chip {
   display: inline-block;
-  border: 1rpx solid rgba(168, 85, 247, 0.3);
+  border: 1rpx solid #D5D8DC;
   color: var(--c-text-2);
   border-radius: var(--r-pill);
   padding: 12rpx 30rpx;
   margin: 0 var(--sp-2) var(--sp-2) 0;
   font-size: 26rpx;
-  background: rgba(255, 255, 255, 0.03);
+  background: #FAFAFA;
   transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 .chip:active { transform: scale(0.95); }
 .chip.on {
   border-color: transparent;
   color: #fff;
-  background: var(--grad-violet-pink);
+  background: var(--neon-violet);
   font-weight: 600;
-  box-shadow: var(--glow-violet);
 }
 
-/* ---------- 状态徽章 · 霓虹深色底 ---------- */
+/* ---------- 状态徽章 · 浅底深字 ---------- */
 .status {
   font-size: 22rpx;
   font-weight: 600;
@@ -278,12 +231,12 @@ page {
   white-space: nowrap;
   border: 1rpx solid transparent;
 }
-.st-blue { background: rgba(59, 130, 246, 0.16); color: #60A5FA; border-color: rgba(59, 130, 246, 0.4); }
-.st-orange { background: rgba(251, 191, 36, 0.16); color: var(--neon-amber); border-color: rgba(251, 191, 36, 0.4); }
-.st-cyan { background: rgba(34, 211, 238, 0.16); color: var(--neon-cyan-2); border-color: rgba(34, 211, 238, 0.45); }
-.st-purple { background: rgba(168, 85, 247, 0.18); color: var(--neon-violet-2); border-color: rgba(168, 85, 247, 0.45); }
-.st-green { background: rgba(52, 211, 153, 0.16); color: var(--neon-green); border-color: rgba(52, 211, 153, 0.45); }
-.st-gray { background: rgba(245, 243, 255, 0.08); color: var(--c-text-3); border-color: rgba(245, 243, 255, 0.18); }
+.st-blue { background: #E3F2FD; color: #1976D2; border-color: #BBDEFB; }
+.st-orange { background: #FFF3E0; color: #F57C00; border-color: #FFE0B2; }
+.st-cyan { background: #E0F7FA; color: #0097A7; border-color: #B2EBF2; }
+.st-purple { background: #F3E5F5; color: #7B1FA2; border-color: #E1BEE7; }
+.st-green { background: #E8F5E9; color: #388E3C; border-color: #C8E6C9; }
+.st-gray { background: #F5F5F5; color: #999999; border-color: #E0E0E0; }
 
 /* ---------- 空状态 ---------- */
 .empty {
@@ -296,19 +249,18 @@ page {
 
 /* ---------- 表单 ---------- */
 .input {
-  background: rgba(8, 6, 15, 0.6);
+  background: #FFFFFF;
   border-radius: var(--r-md);
   padding: 20rpx 24rpx;
   margin-top: 12rpx;
   font-size: 28rpx;
   color: var(--c-text);
-  border: 1rpx solid rgba(168, 85, 247, 0.22);
+  border: 1rpx solid #DDDDDD;
   transition: border-color 0.2s ease, background 0.2s ease;
   box-sizing: border-box;
 }
 .input:focus {
-  border-color: var(--neon-cyan);
-  background: rgba(8, 6, 15, 0.85);
+  border-color: var(--neon-violet);
 }
 .input::placeholder {
   color: var(--c-text-4);
@@ -326,35 +278,22 @@ page {
   margin: 0 0 var(--sp-2);
   display: flex;
   align-items: center;
-  background: var(--grad-violet-pink);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--neon-violet-2);
+  color: var(--neon-violet);
 }
 .step-title::before {
   content: "";
   display: inline-block;
   width: 6rpx;
   height: 32rpx;
-  background: var(--grad-violet-pink);
+  background: var(--neon-violet);
   border-radius: var(--r-pill);
   margin-right: var(--sp-2);
-  box-shadow: var(--glow-violet);
 }
 
-/* ---------- 入场动画 ---------- */
+/* ---------- 入场动画（保留，无视觉侵入） ---------- */
 @keyframes neon-rise {
   from { opacity: 0; transform: translateY(24rpx); }
   to { opacity: 1; transform: translateY(0); }
-}
-@keyframes neon-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-@keyframes neon-scan {
-  0% { transform: translateX(-160%); }
-  100% { transform: translateX(260%); }
 }
 .rise {
   animation: neon-rise 0.4s ease-out both;

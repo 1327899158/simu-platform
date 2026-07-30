@@ -59,4 +59,23 @@ Page({
     });
   },
   open(e) { wx.navigateTo({ url: `/pages/order-detail/index?id=${e.currentTarget.dataset.oid}&mode=market` }); },
+  // 撤回报价（后端支持：仅 PENDING 状态可撤回）
+  withdraw(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.showModal({
+      title: '撤回报价',
+      content: '撤回后该报价将不再参与此需求竞争，确定撤回吗？',
+      success: async (r) => {
+        if (!r.confirm) return;
+        try {
+          await request('DELETE', `/quotes/${id}`);
+          wx.showToast({ title: '已撤回', icon: 'success' });
+          this.load();
+        } catch (err2) {
+          wx.showToast({ title: err2.message || '撤回失败', icon: 'none' });
+        }
+      },
+    });
+  },
+  gotoMarket() { wx.switchTab({ url: '/pages/home/index' }); },
 });

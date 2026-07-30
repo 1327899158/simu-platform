@@ -29,6 +29,15 @@ Page({
   goEdit() {
     wx.navigateTo({ url: '/pages/profile-edit/index' });
   },
+  goOrders() {
+    wx.navigateTo({ url: '/pages/orders/index' });
+  },
+  goMyQuotes() {
+    wx.navigateTo({ url: '/pages/my-quotes/index' });
+  },
+  goResetPassword() {
+    wx.navigateTo({ url: '/pages/reset-password/index' });
+  },
   async switchRole() {
     const cur = getUser();
     const target = cur.role === 'ENGINEER' ? 'customer' : 'engineer';

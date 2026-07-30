@@ -1,28 +1,28 @@
-/* 忘记密码页面样式 */
+/* 忘记密码页面样式 · 浅色商务 */
 .page {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-base);
   min-height: 100vh;
   padding: 40rpx 0;
-  color: #333;
+  color: var(--c-text);
 }
 
 .header {
   text-align: center;
   margin-bottom: 40rpx;
-  color: white;
 }
 
 .header .title {
   font-size: 48rpx;
   font-weight: bold;
+  color: var(--neon-violet);
 }
 
 .form-card {
-  background: white;
+  background: var(--bg-card);
   margin: 0 20rpx;
   padding: 40rpx;
-  border-radius: 8rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
 }
 
 .form-group {
@@ -33,22 +33,25 @@
   display: block;
   margin-bottom: 8rpx;
   font-size: 28rpx;
-  color: #333;
+  color: var(--c-text-2);
   font-weight: 500;
 }
 
 .form-group input {
   width: 100%;
-  padding: 12rpx 16rpx;
-  border: 1rpx solid #e0e0e0;
-  border-radius: 6rpx;
+  height: 80rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid #DDDDDD;
+  border-radius: var(--r-md);
   font-size: 28rpx;
+  background: #FAFAFA;
+  color: var(--c-text);
   box-sizing: border-box;
 }
 
 .sms-input {
   display: flex;
-  gap: 8rpx;
+  gap: 16rpx;
 }
 
 .sms-input input {
@@ -56,31 +59,34 @@
 }
 
 .btn-sms {
-  flex: 0 0 140rpx;
-  padding: 12rpx 0;
-  background: #f5f5f5;
-  border: 1rpx solid #e0e0e0;
-  border-radius: 6rpx;
+  flex: 0 0 170rpx;
+  height: 80rpx;
+  padding: 0;
+  background: #FFFFFF;
+  border: 1rpx solid var(--neon-violet);
+  border-radius: var(--r-md);
   font-size: 24rpx;
-  color: #667eea;
-  line-height: 1.5;
+  color: var(--neon-violet);
+  line-height: 78rpx;
 }
 
 .btn-sms[disabled] {
-  background: #f0f0f0;
-  color: #999;
+  background: #F0F0F0;
+  border-color: #DDDDDD;
+  color: #999999;
 }
 
 .btn-primary {
   width: 100%;
-  padding: 16rpx 0;
+  padding: 20rpx 0;
   margin-top: 16rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--grad-violet-pink);
+  color: #FFFFFF;
   border: none;
-  border-radius: 8rpx;
+  border-radius: var(--r-md);
   font-size: 32rpx;
   font-weight: bold;
+  box-shadow: var(--glow-primary);
 }
 
 .btn-primary[disabled] {

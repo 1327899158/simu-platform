@@ -1,15 +1,28 @@
-<view class="room">
-  <scroll-view class="list" scroll-y scroll-top="{{scrollTop}}">
+<view class="chat-container">
+
+  <!-- 顶部导航 -->
+  <view class="chat-header">
+    <text class="header-title">💬 {{peer.nickname || '聊天'}}</text>
+  </view>
+
+  <!-- 消息列表 -->
+  <scroll-view class="message-list" scroll-y scroll-top="{{scrollTop}}" scroll-with-animation>
     <view wx:for="{{msgs}}" wx:key="id" id="{{item.anchor}}">
-      <view class="sys" wx:if="{{item.sys}}">{{item.content}}</view>
-      <view class="bubble-row {{item.mine?'mine':''}}" wx:else>
-        <image wx:if="{{!item.mine && item.senderAvatar}}" src="{{item.senderAvatar}}" class="peer-avatar" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx" />
-        <view wx:if="{{!item.mine && !item.senderAvatar}}" class="peer-avatar-text" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;font-size:{{avatarSize/2}}rpx">对</view>
-        <view class="bubble {{item.mine?'b-mine':'b-peer'}}" style="max-width:{{bubbleMaxWidth}}">
+      <!-- 系统消息 -->
+      <view class="sys-msg" wx:if="{{item.sys}}">{{item.content}}</view>
+
+      <!-- 普通消息 -->
+      <view class="message-item {{item.mine ? 'self' : 'other'}}" wx:else>
+        <image wx:if="{{!item.mine && item.senderAvatar}}" src="{{item.senderAvatar}}" class="msg-avatar"
+          mode="aspectFill" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx" />
+        <view wx:if="{{!item.mine && !item.senderAvatar}}" class="msg-avatar avatar-placeholder"
+          style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;font-size:{{avatarSize/2}}rpx">对</view>
+
+        <view class="message-content {{item.mine ? 'content-self' : 'content-other'}}" style="max-width:{{bubbleMaxWidth}}">
           <!-- 文字消息 -->
-          <view wx:if="{{item.type==='TEXT'}}">{{item.content}}</view>
-          <!-- 图片消息：直接渲染缩略图，点击全屏预览 -->
-          <view wx:elif="{{item.type==='IMAGE'}}">
+          <view wx:if="{{item.type === 'TEXT'}}" class="message-text">{{item.content}}</view>
+          <!-- 图片消息 -->
+          <view wx:elif="{{item.type === 'IMAGE'}}">
             <image wx:if="{{item.imgUrl}}" class="msg-img" src="{{item.imgUrl}}"
               mode="widthFix" style="width:{{imageWidth}}rpx" bindtap="previewImg" data-url="{{item.imgUrl}}" />
             <view wx:else class="filemsg-loading">图片加载中…</view>
@@ -18,18 +31,29 @@
           <view wx:else class="filemsg" bindtap="openFile" data-fid="{{item.fileId}}">
             📎 {{item.content || '[文件]'}}
           </view>
-          <view class="t">{{item.time}}</view>
+          <text class="message-time">{{item.time}}</text>
         </view>
-        <image wx:if="{{item.mine && item.senderAvatar}}" src="{{item.senderAvatar}}" class="my-avatar" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx" />
-        <view wx:if="{{item.mine && !item.senderAvatar}}" class="my-avatar-text" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;font-size:{{avatarSize/2}}rpx">我</view>
+
+        <image wx:if="{{item.mine && item.senderAvatar}}" src="{{item.senderAvatar}}" class="msg-avatar"
+          mode="aspectFill" style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx" />
+        <view wx:if="{{item.mine && !item.senderAvatar}}" class="msg-avatar avatar-placeholder mine"
+          style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;font-size:{{avatarSize/2}}rpx">我</view>
       </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-message" wx:if="{{!msgs.length}}">
+      <text>暂无消息，开始聊天吧</text>
     </view>
     <view style="height:24rpx"></view>
   </scroll-view>
-  <view class="inputbar">
-    <view class="plus" bindtap="sendImage">图</view>
-    <input class="ipt" value="{{text}}" bindinput="input" confirm-type="send"
-      bindconfirm="send" placeholder="输入消息…" />
-    <view class="sendbtn {{sending?'dim':''}}" bindtap="send">发送</view>
+
+  <!-- 底部输入 -->
+  <view class="chat-input-area">
+    <view class="img-btn" bindtap="sendImage">🖼️</view>
+    <input class="chat-input" placeholder="输入消息..." value="{{text}}" bindinput="input"
+      confirm-type="send" bindconfirm="send" adjust-position />
+    <button class="send-btn {{sending ? 'dim' : ''}}" bindtap="send" disabled="{{!text}}">发送</button>
   </view>
+
 </view>

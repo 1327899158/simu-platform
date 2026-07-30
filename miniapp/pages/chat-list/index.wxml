@@ -1,23 +1,41 @@
-<view class="container">
-  <view class="empty" wx:if="{{!items.length}}">支付成功后会自动创建与对方的会话</view>
-  <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
-    <view class="spread">
-      <view class="row">
-        <image wx:if="{{item.peer.avatarUrl}}" src="{{item.peer.avatarUrl}}" class="c-avatar-img" />
-        <view wx:else class="c-avatar">{{item.peer.nickname[0]}}</view>
-        <view style="margin-left:16rpx">
-          <view class="title" style="font-size:28rpx">{{item.peer.nickname}}</view>
-          <view class="muted">{{item.order.projectName}}</view>
+<view class="page-container">
+
+  <!-- 顶部 -->
+  <view class="page-header">
+    <text class="page-title">💬 我的消息</text>
+    <text class="unread-badge" wx:if="{{unreadTotal > 0}}">{{unreadTotal > 99 ? '99+' : unreadTotal}}</text>
+  </view>
+
+  <!-- 会话列表 -->
+  <view class="conversation-list">
+    <view class="conv-item" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}"
+      bindtap="open" hover-class="conv-item-hover" hover-stay-time="80">
+      <view class="conv-avatar">
+        <image wx:if="{{item.peer.avatarUrl}}" src="{{item.peer.avatarUrl}}" class="avatar-img" mode="aspectFill" />
+        <text wx:else class="avatar-text">{{item.peer.nickname[0]}}</text>
+      </view>
+      <view class="conv-info">
+        <view class="conv-top">
+          <text class="conv-name">{{item.peer.nickname}}</text>
+          <text class="conv-time">{{item.time}}</text>
+        </view>
+        <view class="conv-order" catchtap="goOrder" data-oid="{{item.orderId}}" data-role="{{role}}">
+          📋 {{item.order.projectName}} ›
+        </view>
+        <view class="conv-bottom">
+          <text class="conv-last-msg">{{item.lastText}}</text>
+          <view class="unread-dot" wx:if="{{item.unread}}">{{item.unread > 99 ? '99+' : item.unread}}</view>
         </view>
       </view>
-      <view style="text-align:right">
-        <view class="muted">{{item.time}}</view>
-        <view class="badge" wx:if="{{item.unread}}">{{item.unread}}</view>
-      </view>
+      <text class="conv-arrow">›</text>
     </view>
-    <view class="muted last">{{item.lastText}}</view>
-    <view class="order-link" catchtap="goOrder" data-oid="{{item.orderId}}" data-role="{{role}}">
-      查看订单详情 &gt;
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!items.length}}">
+      <text class="empty-icon">💬</text>
+      <text class="empty-text">暂无消息</text>
+      <text class="empty-desc">支付成功后会自动创建与对方的会话</text>
     </view>
   </view>
+
 </view>

@@ -22,8 +22,11 @@ Page({
       items: data.items.map((o) => ({
         ...o, budgetY: fenToYuan(o.budgetFen), time: timeShort(o.createdAt),
         cls: STATUS_CLASS[o.status] || 'st-gray',
+        softwareText: (o.softwareTags || []).join('、'),
+        directionText: (o.directionTags || []).join('、'),
       })),
     });
   },
   open(e) { wx.navigateTo({ url: `/pages/order-detail/index?id=${e.currentTarget.dataset.id}&mode=customer` }); },
+  gotoPublish() { wx.navigateTo({ url: '/pages/publish/index' }); },
 });

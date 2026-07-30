@@ -1,66 +1,154 @@
-<view class="container">
+<view class="page-container">
 
   <!-- ========== 客户视图 ========== -->
   <block wx:if="{{role === 'CUSTOMER'}}">
-    <view class="hero">
-      <view class="hero-title">有仿真需求？</view>
-      <view class="hero-sub">发布需求，让专业工程师来报价</view>
-      <view class="hero-btn" hover-class="hero-btn-hover" hover-stay-time="100" bindtap="goPublish">+ 提报需求</view>
-    </view>
-    <view class="card" bindtap="goOrders" hover-class="card-press" hover-stay-time="80">
-      <view class="spread">
-        <view class="title">我的订单</view>
-        <text class="muted">全部 ></text>
-      </view>
-      <view class="stat-row">
-        <view class="stat"><view class="num">{{counts.QUOTING}}</view><view class="muted">待报价</view></view>
-        <view class="stat"><view class="num">{{counts.AWAITING_PAYMENT}}</view><view class="muted">待支付</view></view>
-        <view class="stat"><view class="num">{{counts.IN_PROGRESS}}</view><view class="muted">执行中</view></view>
-        <view class="stat"><view class="num">{{counts.DELIVERED}}</view><view class="muted">待验收</view></view>
+    <!-- 顶部欢迎卡片 -->
+    <view class="welcome-card">
+      <image wx:if="{{user.avatarUrl}}" class="avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="avatar avatar-fallback">{{user.nickname ? user.nickname[0] : '客'}}</view>
+      <view class="welcome-text">
+        <text class="greeting">你好，{{user.nickname || '客户'}}</text>
+        <text class="role-badge">👤 客户</text>
       </view>
     </view>
-    <view class="empty" wx:if="{{!recent.length}}">还没有订单，点上方按钮发布第一个需求</view>
-    <view class="card" wx:for="{{recent}}" wx:key="id" bindtap="openMine" data-id="{{item.id}}">
-      <view class="spread">
-        <view class="title">{{item.projectName}}</view>
+
+    <!-- 快捷操作 -->
+    <view class="quick-actions">
+      <view class="action-item" bindtap="goPublish">
+        <text class="action-icon">📝</text>
+        <text class="action-label">发布需求</text>
+      </view>
+      <view class="action-item" bindtap="goOrders">
+        <text class="action-icon">📋</text>
+        <text class="action-label">我的订单</text>
+      </view>
+      <view class="action-item" bindtap="goMessages">
+        <text class="action-icon">💬</text>
+        <text class="action-label">消息</text>
+      </view>
+      <view class="action-item" bindtap="goMe">
+        <text class="action-icon">👤</text>
+        <text class="action-label">个人中心</text>
+      </view>
+    </view>
+
+    <!-- 订单状态统计 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">我的订单</text>
+        <text class="section-more" bindtap="goOrders">查看全部 ›</text>
+      </view>
+      <view class="order-stats">
+        <view class="stat-item" bindtap="goOrders">
+          <text class="stat-number">{{counts.QUOTING}}</text>
+          <text class="stat-label">待报价</text>
+        </view>
+        <view class="stat-item" bindtap="goOrders">
+          <text class="stat-number">{{counts.AWAITING_PAYMENT}}</text>
+          <text class="stat-label">待支付</text>
+        </view>
+        <view class="stat-item" bindtap="goOrders">
+          <text class="stat-number">{{counts.IN_PROGRESS}}</text>
+          <text class="stat-label">执行中</text>
+        </view>
+        <view class="stat-item" bindtap="goOrders">
+          <text class="stat-number">{{counts.DELIVERED}}</text>
+          <text class="stat-label">待验收</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 我的需求列表 -->
+    <view class="section">
+      <text class="section-title">我的需求</text>
+      <view wx:for="{{recent}}" wx:key="id" class="order-item" data-id="{{item.id}}"
+        bindtap="openMine" hover-class="order-item-hover" hover-stay-time="80">
+        <view class="order-item-main">
+          <text class="order-title">{{item.projectName}}</text>
+          <text class="order-meta">{{item.time}} · {{item.quoteCount}} 人报价 · ¥{{item.budgetY}}</text>
+        </view>
         <text class="status {{item.cls}}">{{item.statusText}}</text>
       </view>
-      <view class="spread" style="margin-top:8rpx">
-        <text class="muted">{{item.time}} · {{item.quoteCount}} 人报价</text>
-        <text class="money">¥{{item.budgetY}}</text>
+      <view class="empty-state" wx:if="{{!recent.length}}">
+        <text class="empty-icon">📭</text>
+        <text class="empty-text">暂无需求</text>
+        <text class="empty-desc">点上方「发布需求」创建第一个需求</text>
       </view>
     </view>
   </block>
 
   <!-- ========== 工程师视图（抢单大厅） ========== -->
   <block wx:if="{{role === 'ENGINEER'}}">
-    <view class="eng-header">
-      <view class="title">抢单大厅</view>
-      <view class="my-quotes-btn" bindtap="goMyQuotes">我的报价</view>
+    <!-- 顶部欢迎卡片 -->
+    <view class="welcome-card">
+      <image wx:if="{{user.avatarUrl}}" class="avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="avatar avatar-fallback">{{user.nickname ? user.nickname[0] : '工'}}</view>
+      <view class="welcome-text">
+        <text class="greeting">🛠️ 你好，{{user.nickname || '工程师'}}</text>
+        <text class="role-badge">工程师</text>
+      </view>
+      <view class="welcome-right" bindtap="goProfile">
+        <text class="profile-link">查看资料 ›</text>
+      </view>
     </view>
-    <scroll-view scroll-x class="filter">
-      <text wx:for="{{dicts.directions}}" wx:key="*this" class="chip {{fDirection===item?'on':''}}"
-        bindtap="pickDirection" data-v="{{item}}">{{item}}</text>
-    </scroll-view>
-    <scroll-view scroll-x class="filter">
-      <text wx:for="{{dicts.softwares}}" wx:key="*this" class="chip {{fSoftware===item?'on':''}}"
-        bindtap="pickSoftware" data-v="{{item}}">{{item}}</text>
-    </scroll-view>
-    <view class="empty" wx:if="{{!hall.length}}">暂无可报价的需求，下拉刷新试试</view>
-    <view class="card" wx:for="{{hall}}" wx:key="id" bindtap="openMarket" data-id="{{item.id}}">
-      <view class="spread">
-        <view class="title">{{item.projectName}}</view>
-        <text class="money">¥{{item.budgetY}}</text>
+
+    <!-- 快捷操作 -->
+    <view class="quick-actions three">
+      <view class="action-item" bindtap="goMyQuotes">
+        <text class="action-icon">📋</text>
+        <text class="action-label">我的报价</text>
       </view>
-      <view class="muted" style="margin-top:8rpx">{{item.description}}</view>
-      <view style="margin-top:12rpx">
-        <text class="tag" wx:for="{{item.directionTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
-        <text class="tag" wx:for="{{item.softwareTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+      <view class="action-item" bindtap="goMessages">
+        <text class="action-icon">💬</text>
+        <text class="action-label">消息</text>
       </view>
-      <view class="spread" style="margin-top:8rpx">
-        <text class="muted">工期 {{item.deliveryDays}} 天 · 已 {{item.quoteCount}} 人报价 · {{item.time}}</text>
-        <text class="status st-blue" wx:if="{{item.myQuote}}">已报价</text>
+      <view class="action-item" bindtap="goMe">
+        <text class="action-icon">👤</text>
+        <text class="action-label">个人中心</text>
+      </view>
+    </view>
+
+    <!-- 可接单需求列表 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">📌 可接单需求</text>
+      </view>
+
+      <!-- 筛选 -->
+      <scroll-view scroll-x class="filter-row" enhanced show-scrollbar="{{false}}">
+        <text wx:for="{{dicts.directions}}" wx:key="*this" class="chip {{fDirection===item?'on':''}}"
+          bindtap="pickDirection" data-v="{{item}}">{{item}}</text>
+      </scroll-view>
+      <scroll-view scroll-x class="filter-row" enhanced show-scrollbar="{{false}}">
+        <text wx:for="{{dicts.softwares}}" wx:key="*this" class="chip {{fSoftware===item?'on':''}}"
+          bindtap="pickSoftware" data-v="{{item}}">{{item}}</text>
+      </scroll-view>
+
+      <view wx:for="{{hall}}" wx:key="id" class="demand-item" data-id="{{item.id}}"
+        bindtap="openMarket" hover-class="demand-item-hover" hover-stay-time="80">
+        <view class="demand-info">
+          <text class="demand-title">{{item.projectName}}</text>
+          <view class="demand-tags">
+            <text class="tag" wx:for="{{item.directionTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+          </view>
+          <view class="demand-meta">
+            <text class="meta-item">💰 ¥{{item.budgetY}}</text>
+            <text class="meta-item">📅 工期{{item.deliveryDays}}天</text>
+            <text class="meta-item">💬 {{item.quoteCount}}人报价</text>
+          </view>
+        </view>
+        <button wx:if="{{!item.myQuote}}" class="btn-quote"
+          data-id="{{item.id}}" data-flexible="{{item.budgetFlexible ? 1 : 0}}" data-fen="{{item.budgetFen}}"
+          catchtap="quickQuote">报价</button>
+        <view wx:else class="quoted-badge">已报价</view>
+      </view>
+
+      <view class="empty-state" wx:if="{{!hall.length}}">
+        <text class="empty-icon">📭</text>
+        <text class="empty-text">暂无需求</text>
+        <text class="empty-desc">当前没有可接单的需求，下拉刷新试试</text>
       </view>
     </view>
   </block>
+
 </view>

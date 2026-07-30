@@ -206,6 +206,27 @@ async function init() {
   for (const sql of sqls) {
     await query(sql);
   }
+
+  // 增量迁移：为旧表补充新字段（CREATE TABLE IF NOT EXISTS 不会改已存在的表）
+  const migrations = [
+    // users 表补充字段
+    { sql: `ALTER TABLE users ADD COLUMN username VARCHAR(20) UNIQUE`, check: "username" },
+    { sql: `ALTER TABLE users ADD COLUMN passwordHash VARCHAR(255)`, check: "passwordHash" },
+  ];
+
+  for (const m of migrations) {
+    try {
+      // 检查列是否已存在
+      const cols = await query(`SHOW COLUMNS FROM users LIKE '${m.check}'`);
+      if (!cols || cols.length === 0) {
+        await query(m.sql);
+        console.log(`[migrate] Added column ${m.check} to users`);
+      }
+    } catch (e) {
+      // 忽略已存在的列错误
+    }
+  }
+
   console.log(JSON.stringify({ t: new Date().toISOString(), evt: 'db-init-ok' }));
 }
 

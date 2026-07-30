@@ -14,21 +14,21 @@
     "pages/reset-password/index"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#0E0A1F",
+    "navigationBarBackgroundColor": "#2C3E50",
     "navigationBarTextStyle": "white",
-    "navigationBarTitleText": "随风仿真服务平台",
-    "backgroundColor": "#0E0A1F",
-    "backgroundTextStyle": "light"
+    "navigationBarTitleText": "仿真服务平台",
+    "backgroundColor": "#F5F5F5",
+    "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "rgba(245,243,255,0.4)",
-    "selectedColor": "#22D3EE",
-    "backgroundColor": "#0E0A1F",
-    "borderStyle": "black",
+    "color": "#999999",
+    "selectedColor": "#2C3E50",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/home/index", "text": "首页", "iconPath": "images/tab-home.png", "selectedIconPath": "images/tab-home.png" },
-      { "pagePath": "pages/chat-list/index", "text": "消息", "iconPath": "images/tab-chat.png", "selectedIconPath": "images/tab-chat.png" },
-      { "pagePath": "pages/me/index", "text": "我的", "iconPath": "images/tab-me.png", "selectedIconPath": "images/tab-me.png" }
+      { "pagePath": "pages/home/index", "text": "首页" },
+      { "pagePath": "pages/chat-list/index", "text": "消息" },
+      { "pagePath": "pages/me/index", "text": "我的" }
     ]
   },
   "sitemapLocation": "sitemap.json",

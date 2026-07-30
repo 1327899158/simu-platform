@@ -9,7 +9,7 @@ function resolveUrl(url) {
 }
 
 Page({
-  data: { items: [], role: '' },
+  data: { items: [], role: '', unreadTotal: 0 },
   onShow() {
     const user = ensureLogin();
     if (user) { this.setData({ role: user.role }); this.load(); }
@@ -18,16 +18,18 @@ Page({
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
     const data = await request('GET', '/conversations', null, { silent: true }).catch(() => []);
+    const list = (data || []).map((c) => ({
+      ...c,
+      peer: { ...c.peer, avatarUrl: resolveUrl(c.peer?.avatarUrl) },
+      time: timeShort(c.lastMsgAt),
+      lastText: c.lastMessage
+        ? (c.lastMessage.type === 'TEXT' || c.lastMessage.type === 'SYSTEM'
+          ? c.lastMessage.content : '[文件]')
+        : '暂无消息',
+    }));
     this.setData({
-      items: (data || []).map((c) => ({
-        ...c,
-        peer: { ...c.peer, avatarUrl: resolveUrl(c.peer?.avatarUrl) },
-        time: timeShort(c.lastMsgAt),
-        lastText: c.lastMessage
-          ? (c.lastMessage.type === 'TEXT' || c.lastMessage.type === 'SYSTEM'
-            ? c.lastMessage.content : '[文件]')
-          : '暂无消息',
-      })),
+      items: list,
+      unreadTotal: list.reduce((s, c) => s + (c.unread || 0), 0),
     });
   },
   open(e) { wx.navigateTo({ url: `/pages/chat-room/index?id=${e.currentTarget.dataset.id}` }); },

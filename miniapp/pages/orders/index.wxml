@@ -1,28 +1,69 @@
-<view class="container">
-  <!-- 折叠分类筛选 -->
-  <view class="filter-trigger" bindtap="toggleFilter" hover-class="row-hover" hover-stay-time="80">
-    <text class="ft-label">分类筛选</text>
-    <text class="ft-value">{{currentLabel}}</text>
-    <text class="ft-arrow {{filterOpen?'open':''}}">▾</text>
-  </view>
-  <view class="filter-panel {{filterOpen?'show':''}}">
-    <text wx:for="{{tabs}}" wx:key="key" class="chip {{tab===item.key?'on':''}}"
-      bindtap="pickTab" data-key="{{item.key}}">{{item.label}}</text>
+<view class="page-container">
+
+  <!-- 顶部导航 -->
+  <view class="page-header">
+    <text class="page-title">📋 我的订单</text>
+    <text class="order-count">共 {{items.length}} 个</text>
   </view>
 
-  <view class="empty" wx:if="{{!items.length}}">暂无订单，去首页发布一个需求吧</view>
-  <view class="card" wx:for="{{items}}" wx:key="id" bindtap="open" data-id="{{item.id}}"
-    hover-class="card-press" hover-stay-time="80">
-    <view class="spread">
-      <view class="title">{{item.projectName}}</view>
-      <text class="status {{item.cls}}">{{item.statusText}}</text>
-    </view>
-    <view style="margin-top:12rpx">
-      <text class="tag" wx:for="{{item.directionTags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
-    </view>
-    <view class="spread" style="margin-top:8rpx">
-      <text class="muted">{{item.orderNo}} · {{item.time}} · {{item.quoteCount}} 人报价</text>
-      <text class="money">¥{{item.budgetY}}</text>
+  <!-- 状态筛选栏 -->
+  <view class="filter-bar">
+    <view wx:for="{{tabs}}" wx:key="key"
+      class="filter-item {{tab === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}" bindtap="pickTab">
+      <text class="filter-label">{{item.label}}</text>
     </view>
   </view>
+
+  <!-- 订单列表 -->
+  <view class="order-list">
+    <view wx:for="{{items}}" wx:key="id" class="order-card" data-id="{{item.id}}"
+      bindtap="open" hover-class="order-card-hover" hover-stay-time="80">
+      <view class="order-header">
+        <view class="order-title-wrap">
+          <text class="order-title">{{item.projectName}}</text>
+        </view>
+        <text class="status {{item.cls}}">{{item.statusText}}</text>
+      </view>
+
+      <view class="order-body">
+        <view class="order-info-row">
+          <text class="info-label">预算</text>
+          <text class="info-value budget">¥{{item.budgetY}}</text>
+        </view>
+        <view class="order-info-row" wx:if="{{item.deliveryDays}}">
+          <text class="info-label">周期</text>
+          <text class="info-value">{{item.deliveryDays}} 天</text>
+        </view>
+        <view class="order-info-row" wx:if="{{item.softwareText}}">
+          <text class="info-label">软件</text>
+          <text class="info-value">{{item.softwareText}}</text>
+        </view>
+        <view class="order-info-row" wx:if="{{item.directionText}}">
+          <text class="info-label">方向</text>
+          <text class="info-value">{{item.directionText}}</text>
+        </view>
+        <view class="order-info-row" wx:if="{{item.quoteCount > 0}}">
+          <text class="info-label">报价</text>
+          <text class="info-value">💬 {{item.quoteCount}} 个工程师报价</text>
+        </view>
+      </view>
+
+      <view class="order-footer">
+        <text class="order-time">📆 {{item.time}} · {{item.orderNo}}</text>
+        <view class="order-actions">
+          <button class="btn-action detail" data-id="{{item.id}}" catchtap="open">查看详情</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!items.length}}">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无订单</text>
+      <text class="empty-desc">还没有相关订单，快去发布需求吧</text>
+      <button class="btn-sm" bindtap="gotoPublish">发布需求</button>
+    </view>
+  </view>
+
 </view>

@@ -6,6 +6,7 @@ const { fenToYuan, timeShort, STATUS_CLASS } = require('../../utils/format');
 Page({
   data: {
     role: '',
+    user: null,
     // 客户
     recent: [],
     counts: { QUOTING: 0, AWAITING_PAYMENT: 0, IN_PROGRESS: 0, DELIVERED: 0 },
@@ -18,7 +19,7 @@ Page({
   async onShow() {
     const user = ensureLogin();
     if (!user) return;
-    this.setData({ role: user.role });
+    this.setData({ role: user.role, user });
     if (!this.data.dicts) {
       try { this.setData({ dicts: await request('GET', '/dicts', null, { silent: true }) }); } catch (e) {}
     }
@@ -44,6 +45,9 @@ Page({
   },
   goPublish() { wx.navigateTo({ url: '/pages/publish/index' }); },
   goOrders() { wx.navigateTo({ url: '/pages/orders/index' }); },
+  goMessages() { wx.switchTab({ url: '/pages/chat-list/index' }); },
+  goMe() { wx.switchTab({ url: '/pages/me/index' }); },
+  goProfile() { wx.navigateTo({ url: '/pages/profile-edit/index' }); },
 
   // ---------- 工程师 ----------
   async loadHall() {
@@ -66,6 +70,13 @@ Page({
     this.setData({ fSoftware: this.data.fSoftware === v ? '' : v }, () => this.loadHall());
   },
   goMyQuotes() { wx.navigateTo({ url: '/pages/my-quotes/index' }); },
+  // 大厅卡片上的快捷报价：与 order-detail 的 goQuote 参数格式保持一致
+  quickQuote(e) {
+    const { id, flexible, fen } = e.currentTarget.dataset;
+    let url = `/pages/quote-form/index?orderId=${id}&flexible=${flexible}`;
+    if (String(flexible) === '0' && fen) url += `&fixedFen=${fen}`;
+    wx.navigateTo({ url });
+  },
   openMarket(e) {
     wx.navigateTo({ url: `/pages/order-detail/index?id=${e.currentTarget.dataset.id}&mode=market` });
   },

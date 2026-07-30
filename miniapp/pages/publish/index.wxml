@@ -1,121 +1,218 @@
 <wxs module="u">
-/* WXML 插值不支持调用数组方法（indexOf 会静默失效），选中态判断放在 WXS 里 */
+/* WXML 插值不支持调用数组方法，选中态判断与展示映射放在 WXS 里 */
+var ICONS = { fast: '⚡', standard: '📊', relaxed: '☕', custom: '✏️' };
+var SHORT_LABELS = { fast: '快速', standard: '标准', relaxed: '宽松', custom: '自定义' };
+var DAYS_TEXT = { fast: '1-3天', standard: '4-7天', relaxed: '8-15天', custom: '自己输入' };
 module.exports = {
-  has: function (arr, v) { return arr && arr.indexOf(v) > -1; }
+  has: function (arr, v) { return arr && arr.indexOf(v) > -1; },
+  joinText: function (arr) { return arr && arr.length ? arr.join('、') : '未选择'; },
+  iconOf: function (key) { return ICONS[key] || '📅'; },
+  shortLabel: function (item) { return SHORT_LABELS[item.key] || item.label; },
+  daysText: function (item) { return DAYS_TEXT[item.key] || ''; },
+  deliverySummary: function (opts, key, customDays) {
+    if (!opts) return '';
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].key === key) {
+        return opts[i].days ? opts[i].label : ('自定义（' + (customDays || '?') + '天）');
+      }
+    }
+    return '';
+  }
 };
 </wxs>
-<view class="container">
+<view class="page-container">
 
-  <!-- ========== 顶部分步导航 ========== -->
-  <view class="stepper">
-    <view class="step-item" bindtap="toStep" data-s="1">
-      <view class="step-dot {{step>=1?'reached':''}} {{step===1?'cur':''}}">1</view>
-      <view class="step-txt {{step===1?'on':''}}">基本</view>
+  <!-- 顶部导航 -->
+  <view class="page-header">
+    <text class="page-title">🚀 发布需求</text>
+    <text class="step-indicator">{{step}}/5</text>
+  </view>
+
+  <!-- 5步进度条 -->
+  <view class="progress-steps">
+    <view class="step {{step >= 1 ? 'active' : ''}}"><text>1</text></view>
+    <view class="step-line {{step >= 2 ? 'active' : ''}}"></view>
+    <view class="step {{step >= 2 ? 'active' : ''}}"><text>2</text></view>
+    <view class="step-line {{step >= 3 ? 'active' : ''}}"></view>
+    <view class="step {{step >= 3 ? 'active' : ''}}"><text>3</text></view>
+    <view class="step-line {{step >= 4 ? 'active' : ''}}"></view>
+    <view class="step {{step >= 4 ? 'active' : ''}}"><text>4</text></view>
+    <view class="step-line {{step >= 5 ? 'active' : ''}}"></view>
+    <view class="step {{step >= 5 ? 'active' : ''}}"><text>5</text></view>
+  </view>
+  <view class="step-labels">
+    <text>基本信息</text>
+    <text>仿真配置</text>
+    <text>详细说明</text>
+    <text>文件上传</text>
+    <text>确认提交</text>
+  </view>
+
+  <!-- ===== 步骤1：基本信息 ===== -->
+  <view class="form-section" wx:if="{{step === 1}}">
+    <text class="section-title">📋 基本信息</text>
+    <view class="form-group">
+      <text class="form-label">项目名称 <text class="required">*</text></text>
+      <input class="form-input" placeholder="请输入项目名称（至少4个字）" value="{{projectName}}"
+        bindinput="input" data-f="projectName" maxlength="60" />
+      <text class="char-count">{{projectName.length}}/60</text>
     </view>
-    <view class="step-line {{step>1?'on':''}}"></view>
-    <view class="step-item" bindtap="toStep" data-s="2">
-      <view class="step-dot {{step>=2?'reached':''}} {{step===2?'cur':''}}">2</view>
-      <view class="step-txt {{step===2?'on':''}}">配置</view>
+    <view class="form-group">
+      <text class="form-label">项目描述 <text class="required">*</text></text>
+      <textarea class="form-textarea" placeholder="请简要描述项目需求和目标（至少20字）" value="{{description}}"
+        bindinput="input" data-f="description" maxlength="5000" />
     </view>
-    <view class="step-line {{step>2?'on':''}}"></view>
-    <view class="step-item" bindtap="toStep" data-s="3">
-      <view class="step-dot {{step>=3?'reached':''}} {{step===3?'cur':''}}">3</view>
-      <view class="step-txt {{step===3?'on':''}}">工期</view>
+    <view class="form-group">
+      <text class="form-label">预算（元，可不填）</text>
+      <input class="form-input" type="digit" placeholder="如 5000" value="{{budgetYuan}}"
+        bindinput="input" data-f="budgetYuan" />
     </view>
-    <view class="step-line {{step>3?'on':''}}"></view>
-    <view class="step-item" bindtap="toStep" data-s="4">
-      <view class="step-dot {{step>=4?'reached':''}} {{step===4?'cur':''}}">4</view>
-      <view class="step-txt {{step===4?'on':''}}">文件</view>
+    <view class="form-group">
+      <text class="form-label">预算弹性</text>
+      <view class="flexible-row" bindtap="toggleFlexible">
+        <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" color="#2C3E50" />
+        <text class="form-hint">预算有弹性，可与工程师协商</text>
+      </view>
     </view>
-    <view class="step-line {{step>4?'on':''}}"></view>
-    <view class="step-item" bindtap="toStep" data-s="5">
-      <view class="step-dot {{step>=5?'reached':''}} {{step===5?'cur':''}}">5</view>
-      <view class="step-txt {{step===5?'on':''}}">确认</view>
+    <button class="btn-primary-block" bindtap="next">下一步 ›</button>
+  </view>
+
+  <!-- ===== 步骤2：仿真配置 ===== -->
+  <view class="form-section" wx:if="{{step === 2}}">
+    <text class="section-title">⚙️ 仿真配置</text>
+    <text class="section-desc">请选择需要的仿真软件和方向（可多选）</text>
+    <view class="form-group">
+      <text class="form-label">仿真软件 <text class="required">*</text></text>
+      <view class="multi-select-grid three-col">
+        <view wx:for="{{dicts.softwares}}" wx:key="*this"
+          class="select-item {{u.has(softwareTags, item) ? 'selected' : ''}}"
+          bindtap="toggleTag" data-f="softwareTags" data-v="{{item}}">
+          <text class="select-label">{{item}}</text>
+          <text class="select-checkbox" wx:if="{{u.has(softwareTags, item)}}">✓</text>
+        </view>
+      </view>
+      <text class="selected-count">已选 {{softwareTags.length}} 个</text>
+    </view>
+    <view class="form-group">
+      <text class="form-label">仿真方向 <text class="required">*</text></text>
+      <view class="multi-select-grid three-col">
+        <view wx:for="{{dicts.directions}}" wx:key="*this"
+          class="select-item {{u.has(directionTags, item) ? 'selected' : ''}}"
+          bindtap="toggleTag" data-f="directionTags" data-v="{{item}}">
+          <text class="select-label">{{item}}</text>
+          <text class="select-checkbox" wx:if="{{u.has(directionTags, item)}}">✓</text>
+        </view>
+      </view>
+      <text class="selected-count">已选 {{directionTags.length}} 个</text>
+    </view>
+    <view class="form-actions-row">
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
+      <button class="btn-primary-sm" bindtap="next">下一步 ›</button>
     </view>
   </view>
 
-  <!-- ========== 步骤 1 · 基本信息 ========== -->
-  <view class="card step-card" wx:if="{{step===1}}">
-    <view class="step-title">步骤 1 · 基本信息</view>
-    <view class="label">项目名称</view>
-    <input class="input" placeholder="如：支架静力学分析" value="{{projectName}}"
-      bindinput="input" data-f="projectName" maxlength="60" />
-    <view class="label">项目描述（至少20字）</view>
-    <textarea class="input" style="height:160rpx" placeholder="分析对象、目标、评价指标、交付物要求…"
-      value="{{description}}" bindinput="input" data-f="description" maxlength="5000" />
-    <view class="label">预算（元，可不填）</view>
-    <input class="input" type="digit" placeholder="如 5000" value="{{budgetYuan}}"
-      bindinput="input" data-f="budgetYuan" />
-    <view class="row" style="margin-top:16rpx" bindtap="toggleFlexible">
-      <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" />
-      <text class="muted">预算有弹性，可与工程师协商</text>
+  <!-- ===== 步骤3：详细说明 ===== -->
+  <view class="form-section" wx:if="{{step === 3}}">
+    <text class="section-title">📄 详细说明</text>
+    <view class="form-group">
+      <text class="form-label">期望工期 <text class="required">*</text></text>
+      <view class="deadline-options">
+        <view wx:for="{{dicts.deliveryOptions}}" wx:key="key"
+          class="deadline-item {{deliveryKey === item.key ? 'active' : ''}}"
+          data-k="{{item.key}}" bindtap="pickDelivery">
+          <text class="deadline-icon">{{u.iconOf(item.key)}}</text>
+          <text class="deadline-label">{{u.shortLabel(item)}}</text>
+          <text class="deadline-days">{{u.daysText(item)}}</text>
+        </view>
+      </view>
+      <view class="custom-days" wx:if="{{deliveryKey === 'custom'}}">
+        <input class="form-input" type="number" placeholder="请输入天数（1-90）" value="{{customDays}}"
+          bindinput="input" data-f="customDays" />
+        <text class="form-hint">请输入期望完成的天数</text>
+      </view>
+    </view>
+    <view class="form-group">
+      <text class="form-label">特殊要求</text>
+      <textarea class="form-textarea" placeholder="如：保密要求、特殊材料、特定工程师偏好等" value="{{specialNote}}"
+        bindinput="input" data-f="specialNote" maxlength="2000" />
+    </view>
+    <view class="form-actions-row">
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
+      <button class="btn-primary-sm" bindtap="next">下一步 ›</button>
     </view>
   </view>
 
-  <!-- ========== 步骤 2 · 仿真配置 ========== -->
-  <view class="card step-card" wx:if="{{step===2}}">
-    <view class="step-title">步骤 2 · 仿真配置</view>
-    <view class="label">仿真软件（多选）</view>
-    <view style="margin-top:12rpx">
-      <text wx:for="{{dicts.softwares}}" wx:key="*this"
-        class="chip {{u.has(softwareTags, item) ? 'on' : ''}}"
-        bindtap="toggleTag" data-f="softwareTags" data-v="{{item}}">{{item}}</text>
+  <!-- ===== 步骤4：文件上传 ===== -->
+  <view class="form-section" wx:if="{{step === 4}}">
+    <text class="section-title">📎 文件上传</text>
+    <text class="section-desc">上传模型文件、设计文档、参考图片等</text>
+
+    <!-- 上传须知 -->
+    <view class="upload-rule-box">
+      <text class="rule-icon">⚠️</text>
+      <view class="rule-content">
+        <text class="rule-title">上传须知</text>
+        <text class="rule-item">• 📱 手机端：请先将文件发送到「文件传输助手」再选择</text>
+        <text class="rule-item">• 💻 电脑端：可直接从本地文件夹选择</text>
+        <text class="rule-item">• 模型文件支持 .stp, .iges, .step, .rar, .zip 等格式</text>
+        <text class="rule-item">• 图片支持 JPG/PNG/GIF</text>
+        <text class="rule-item">• 单个文件建议不超过 25MB</text>
+      </view>
     </view>
-    <view class="label">仿真方向（多选）</view>
-    <view style="margin-top:12rpx">
-      <text wx:for="{{dicts.directions}}" wx:key="*this"
-        class="chip {{u.has(directionTags, item) ? 'on' : ''}}"
-        bindtap="toggleTag" data-f="directionTags" data-v="{{item}}">{{item}}</text>
+
+    <view class="form-group">
+      <text class="form-label">📦 需求附件 <text class="form-hint">（每次最多选3个）</text></text>
+      <view class="upload-area" bindtap="chooseFile">
+        <text class="upload-icon">📦</text>
+        <text class="upload-text">{{uploading ? '上传中…' : '上传文件'}}</text>
+        <text class="upload-hint">支持模型、文档、图片等格式</text>
+      </view>
+      <view class="file-list" wx:if="{{files.length > 0}}">
+        <view wx:for="{{files}}" wx:key="fileId" class="file-item">
+          <text class="file-icon">📄</text>
+          <text class="file-name">{{item.name}}</text>
+          <text class="file-size">{{item.sizeText}}</text>
+          <text class="file-delete" data-i="{{index}}" catchtap="removeFile">✕</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-actions-row">
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
+      <button class="btn-primary-sm" bindtap="next">下一步 ›</button>
     </view>
   </view>
 
-  <!-- ========== 步骤 3 · 工期与要求 ========== -->
-  <view class="card step-card" wx:if="{{step===3}}">
-    <view class="step-title">步骤 3 · 工期与要求</view>
-    <view style="margin-top:12rpx">
-      <text wx:for="{{dicts.deliveryOptions}}" wx:key="key"
-        class="chip {{deliveryKey===item.key?'on':''}}"
-        bindtap="pickDelivery" data-k="{{item.key}}">{{item.label}}</text>
+  <!-- ===== 步骤5：确认提交 ===== -->
+  <view class="form-section" wx:if="{{step === 5}}">
+    <text class="section-title">✅ 确认并提交</text>
+    <text class="section-desc">请仔细核对以下信息</text>
+    <view class="summary-card">
+      <view class="summary-item"><text class="summary-label">项目名称</text><text class="summary-value">{{projectName || '未填写'}}</text></view>
+      <view class="summary-item"><text class="summary-label">项目描述</text><text class="summary-value">{{description || '未填写'}}</text></view>
+      <view class="summary-item"><text class="summary-label">预算</text><text class="summary-value price">{{budgetYuan ? '¥' + budgetYuan : '未填写'}}</text></view>
+      <view class="summary-item"><text class="summary-label">预算弹性</text><text class="summary-value">{{budgetFlexible ? '可协商' : '固定'}}</text></view>
+      <view class="summary-item"><text class="summary-label">仿真软件</text><text class="summary-value">{{u.joinText(softwareTags)}}</text></view>
+      <view class="summary-item"><text class="summary-label">仿真方向</text><text class="summary-value">{{u.joinText(directionTags)}}</text></view>
+      <view class="summary-item"><text class="summary-label">工期</text><text class="summary-value">{{u.deliverySummary(dicts.deliveryOptions, deliveryKey, customDays)}}</text></view>
+      <view class="summary-item" wx:if="{{specialNote}}"><text class="summary-label">特殊要求</text><text class="summary-value">{{specialNote}}</text></view>
+      <view class="summary-item"><text class="summary-label">附件</text><text class="summary-value">{{files.length}} 个文件</text></view>
     </view>
-    <input wx:if="{{deliveryKey==='custom'}}" class="input" type="number"
-      placeholder="自定义天数（1-90）" value="{{customDays}}" bindinput="input" data-f="customDays" />
-    <view class="label">特殊要求（可选）</view>
-    <textarea class="input" style="height:120rpx" placeholder="保密要求、汇报形式、验收标准…"
-      value="{{specialNote}}" bindinput="input" data-f="specialNote" maxlength="2000" />
-  </view>
 
-  <!-- ========== 步骤 4 · 文件上传 ========== -->
-  <view class="card step-card" wx:if="{{step===4}}">
-    <view class="step-title">步骤 4 · 文件上传</view>
-    <view class="muted">支持模型（.stp/.step/.zip 等）与图片，Demo 单文件 ≤ 25MB</view>
-    <view class="file-row" wx:for="{{files}}" wx:key="fileId">
-      <text class="file-name">{{item.name}}</text>
-      <text class="muted">{{item.sizeText}}</text>
-      <text class="file-del" bindtap="removeFile" data-i="{{index}}">删除</text>
+    <view class="terms" bindtap="toggleAgree">
+      <view class="checkbox-box {{agreed ? 'checked' : ''}}">
+        <text wx:if="{{agreed}}">✓</text>
+      </view>
+      <text class="terms-text">我已阅读并同意 <text class="terms-link">《平台服务协议》《隐私政策》</text></text>
     </view>
-    <view class="btn-outline" style="margin-top:16rpx" bindtap="chooseFile">
-      {{uploading ? '上传中…' : '+ 选择文件（从聊天记录）'}}
-    </view>
-  </view>
 
-  <!-- ========== 步骤 5 · 确认提交 ========== -->
-  <view class="card step-card" wx:if="{{step===5}}">
-    <view class="step-title">步骤 5 · 确认提交</view>
-    <view class="muted summary">
-      {{projectName || '未命名项目'}} · {{directionTags.length}}个方向 · {{softwareTags.length}}款软件 ·
-      {{files.length}}个文件{{budgetYuan ? ' · 预算¥' + budgetYuan : ''}}
-    </view>
-    <view class="row" style="margin-top:24rpx" bindtap="toggleAgree">
-      <checkbox checked="{{agreed}}" style="transform:scale(.8)" />
-      <text class="muted">已阅读并同意《平台服务协议》《隐私政策》</text>
+    <button class="btn-success-block {{submitting ? 'disabled' : ''}}" bindtap="next">
+      {{submitting ? '提交中…' : '🚀 确认发布'}}
+    </button>
+
+    <view class="form-actions-row">
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
     </view>
   </view>
 
-  <!-- ========== 底部步进导航 ========== -->
-  <view class="dock">
-    <view class="btn-outline dock-btn" wx:if="{{step>1}}" bindtap="prev" hover-class="btn-press">上一步</view>
-    <view class="btn-primary dock-btn {{submitting?'disabled':''}}" bindtap="next" hover-class="btn-press">
-      {{step===5 ? (submitting?'提交中…':'确认发布') : '下一步'}}
-    </view>
-  </view>
 </view>
