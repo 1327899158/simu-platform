@@ -86,35 +86,37 @@ async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
   return user;
 }
 
-/** 必须登录（优先 openid，其次 session token）——只查不改角色 */
+/** 必须登录（session token 优先，其次 openid）——只查不改角色 */
 async function requireUser(req, roleHint) {
-  // 1. 尝试微信 openid
-  const openid = getOpenid(req);
-  if (openid) {
-    // 有 roleHint 时才创建/切换角色（仅 wx-login 路由会传）
-    if (roleHint) {
-      const user = await getOrCreateUser(openid, roleHint);
-      if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
-      return user;
-    }
-    // 无 roleHint 时只查不改（/api/me、/api/orders 等普通请求）
-    const user = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
-    if (!user) throw err.unauth('用户不存在，请重新登录');
-    if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
-    return user;
-  }
-  // 2. 尝试 session token（账号密码 / 手机号登录用户）
+  // 1. 有 session token 时优先使用（账号密码 / 手机号登录用户）
+  //    微信云托管 callContainer 每次都会注入 X-WX-OPENID，
+  //    所以必须先查 session token，否则非微信登录用户永远被识别为微信用户
   const token = getSessionToken(req);
   if (token) {
     const user = await queryOne(
       `SELECT * FROM users WHERE sessionToken = ? AND deletedAt IS NULL`,
       [token]
     );
-    if (!user) throw err.unauth('会话已过期，请重新登录');
-    if (user.sessionExpiresAt) {
-      const exp = new Date(user.sessionExpiresAt);
-      if (exp < new Date()) throw err.unauth('会话已过期，请重新登录');
+    if (user) {
+      if (user.sessionExpiresAt) {
+        const exp = new Date(user.sessionExpiresAt);
+        if (exp < new Date()) throw err.unauth('会话已过期，请重新登录');
+      }
+      if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
+      return user;
     }
+    // token 无效，继续尝试 openid
+  }
+  // 2. 尝试微信 openid
+  const openid = getOpenid(req);
+  if (openid) {
+    if (roleHint) {
+      const user = await getOrCreateUser(openid, roleHint);
+      if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
+      return user;
+    }
+    const user = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
+    if (!user) throw err.unauth('用户不存在，请重新登录');
     if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
     return user;
   }

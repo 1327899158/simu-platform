@@ -14,7 +14,7 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne } = require('../db');
-const { requireUser } = require('../lib/auth-mw');
+const { requireUser, getOrCreateUser, getOpenid } = require('../lib/auth-mw');
 const { parseJson } = require('../db');
 
 function userView(u, profile) {
@@ -49,7 +49,33 @@ function register(router) {
   router.post('/api/auth/wx-login', async (req, res) => {
     const body = await readJson(req);
     const roleHint = body.roleHint === 'engineer' ? 'ENGINEER' : 'CUSTOMER';
-    const user = await requireUser(req, roleHint);
+    let user = await requireUser(req, roleHint);
+
+    // 如果用户角色和 roleHint 不一致，切换角色
+    if (user.role !== roleHint) {
+      const openid = getOpenid(req);
+      if (openid) {
+        // 微信用户走 getOrCreateUser 切换
+        user = await getOrCreateUser(openid, roleHint);
+      } else {
+        // 非微信用户直接改角色
+        const now = nowIso();
+        await query(`UPDATE users SET role = ?, updatedAt = ? WHERE id = ?`, [roleHint, now, user.id]);
+        if (roleHint === 'ENGINEER') {
+          const has = await queryOne(`SELECT userId FROM engineer_profiles WHERE userId = ?`, [user.id]);
+          if (!has) {
+            await query(
+              `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
+               VALUES(?, ?, ?, 'APPROVED')`,
+              [user.id, JSON.stringify([]), JSON.stringify([])]
+            );
+          } else {
+            await query(`UPDATE engineer_profiles SET verifyStatus = 'APPROVED' WHERE userId = ?`, [user.id]);
+          }
+        }
+        user = await queryOne(`SELECT * FROM users WHERE id = ?`, [user.id]);
+      }
+    }
 
     // 更新昵称 / 头像（首次登录时一并写入）
     const nickname = body.nickname ? v.str(body.nickname, '昵称', { max: 60, optional: true }) : null;
