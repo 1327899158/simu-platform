@@ -103,7 +103,7 @@ function register(router) {
     const status = q_.get('status');
     const cond = ['engineerId = ?'];
     const args = [user.id];
-    if (status) { cond.push('status = ?'); args.push(status); }
+    if (status && status.trim()) { cond.push('status = ?'); args.push(status); }
     const rows = await query(
       `SELECT * FROM quotes WHERE ${cond.join(' AND ')} ORDER BY updatedAt DESC LIMIT 100`, args);
     const result = await Promise.all(rows.map(async (qt) => {

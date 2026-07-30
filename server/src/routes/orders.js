@@ -88,8 +88,8 @@ function register(router) {
     const cursor = q_.get('cursor');
     const cond = ['customerId = ?', 'deletedAt IS NULL'];
     const args = [user.id];
-    if (status) { cond.push('status = ?'); args.push(status); }
-    if (cursor) { cond.push('createdAt < ?'); args.push(cursor); }
+    if (status && status.trim()) { cond.push('status = ?'); args.push(status); }
+    if (cursor && cursor.trim()) { cond.push('createdAt < ?'); args.push(cursor); }
     const rows = await query(
       `SELECT * FROM orders WHERE ${cond.join(' AND ')} ORDER BY createdAt DESC LIMIT ?`,
       [...args, limit]);
