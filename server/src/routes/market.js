@@ -20,8 +20,8 @@ function register(router) {
     if (q_.get('software')) { cond.push(`softwareTags LIKE ?`); args.push(`%${q_.get('software')}%`); }
     if (cursor) { cond.push('createdAt < ?'); args.push(cursor); }
     const rows = await query(
-      `SELECT * FROM orders WHERE ${cond.join(' AND ')} ORDER BY createdAt DESC LIMIT ?`,
-      [...args, limit]);
+      `SELECT * FROM orders WHERE ${cond.join(' AND ')} ORDER BY createdAt DESC LIMIT ${limit}`,
+      args);
     const items = await Promise.all(rows.map(async (o) => {
       const mine = await queryOne(
         `SELECT id, status FROM quotes WHERE orderId=? AND engineerId=?`, [o.id, user.id]);

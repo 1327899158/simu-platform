@@ -69,8 +69,8 @@ function register(router) {
     const limit = Math.min(parseInt(query_.get('limit') || '50', 10) || 50, 100);
     const rows = await query(
       `SELECT m.* FROM messages m
-       WHERE m.convId = ? AND m.id > ? ORDER BY m.id LIMIT ?`,
-      [c.id, after, limit]);
+       WHERE m.convId = ? AND m.id > ? ORDER BY m.id LIMIT ${limit}`,
+      [c.id, after]);
 
     // 置已读
     await query(

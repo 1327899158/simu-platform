@@ -91,8 +91,8 @@ function register(router) {
     if (status && status.trim()) { cond.push('status = ?'); args.push(status); }
     if (cursor && cursor.trim()) { cond.push('createdAt < ?'); args.push(cursor); }
     const rows = await query(
-      `SELECT * FROM orders WHERE ${cond.join(' AND ')} ORDER BY createdAt DESC LIMIT ?`,
-      [...args, limit]);
+      `SELECT * FROM orders WHERE ${cond.join(' AND ')} ORDER BY createdAt DESC LIMIT ${limit}`,
+      args);
     const items = await Promise.all(rows.map(async (o) => orderView(o, { quoteCount: await quoteCountOf(o.id) })));
     ok(res, {
       items,
