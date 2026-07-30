@@ -76,4 +76,51 @@ async function requireEngineer(req) {
   return user;
 }
 
-module.exports = { getOpenid, getOrCreateUser, requireUser, requireEngineer };
+// -------- 账号密码 & 短信登录方式 --------
+
+/**
+ * 通过用户名查找用户
+ */
+async function findUserByUsername(username) {
+  return queryOne(`SELECT * FROM users WHERE username = ? AND deletedAt IS NULL`, [username]);
+}
+
+/**
+ * 通过手机号查找用户
+ */
+async function findUserByPhone(phone) {
+  return queryOne(`SELECT * FROM users WHERE phone = ? AND deletedAt IS NULL`, [phone]);
+}
+
+/**
+ * 账号密码登录 / 注册后的用户获取或创建
+ */
+async function getOrCreateUserByPhone(phone, roleHint = 'CUSTOMER') {
+  let user = await findUserByPhone(phone);
+  if (!user) {
+    const { newId, nowIso } = require('../lib/util');
+    const id = newId();
+    const now = nowIso();
+    const role = roleHint === 'ENGINEER' ? 'ENGINEER' : 'CUSTOMER';
+    await query(
+      `INSERT INTO users(id, role, phone, nickname, createdAt, updatedAt)
+       VALUES(?, ?, ?, ?, ?, ?)`,
+      [id, role, phone, role === 'ENGINEER' ? '仿真工程师' : '仿真客户', now, now]
+    );
+    if (role === 'ENGINEER') {
+      await query(
+        `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
+         VALUES(?, ?, ?, ?)`,
+        [id, JSON.stringify([]), JSON.stringify([]),
+         config.env === 'development' ? 'APPROVED' : 'PENDING']
+      );
+    }
+    user = await queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
+  }
+  return user;
+}
+
+module.exports = {
+  getOpenid, getOrCreateUser, requireUser, requireEngineer,
+  findUserByUsername, findUserByPhone, getOrCreateUserByPhone
+};

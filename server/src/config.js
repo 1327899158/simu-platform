@@ -57,6 +57,17 @@ const config = {
   payAmountOverrideFen: int(process.env.PAY_AMOUNT_OVERRIDE_FEN, 0) || null,
   payTimeoutSec: int(process.env.PAY_TIMEOUT_SEC, 30 * 60),
 
+  // 腾讯云短信（验证码、忘记密码等）
+  sms: {
+    secretId: process.env.TENCENT_SMS_SECRET_ID || '',
+    secretKey: process.env.TENCENT_SMS_SECRET_KEY || '',
+    region: process.env.TENCENT_SMS_REGION || 'ap-beijing',
+    signName: process.env.TENCENT_SMS_SIGN_NAME || '【仿真工坊】',
+    templateId: process.env.TENCENT_SMS_TEMPLATE_ID || 'SMS_XXXXXX', // 需自己申请
+    codeExpires: 5 * 60, // 验证码有效期：5 分钟
+    sendCooldown: 60, // 同一手机号重复发送冷却：60 秒
+  },
+
   // 内容安全 Mock 词表
   bannedWords: (process.env.BANNED_WORDS || '违禁词,代刷,加微信私聊')
     .split(',').map((s) => s.trim()).filter(Boolean),

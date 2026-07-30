@@ -15,6 +15,7 @@ const { startSweeper } = require('./services/pay-svc');
 
 const router = createRouter();
 require('./routes/auth').register(router);
+require('./routes/auth-multi').register(router);  // 新增：多种登录方式
 require('./routes/dicts').register(router);
 require('./routes/files').register(router);
 require('./routes/orders').register(router);

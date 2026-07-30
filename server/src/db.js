@@ -71,17 +71,19 @@ async function tx(fn) {
 async function init() {
   const sqls = [
     `CREATE TABLE IF NOT EXISTS users (
-      id          VARCHAR(32) PRIMARY KEY,
-      role        VARCHAR(16) NOT NULL DEFAULT 'CUSTOMER',
-      openid      VARCHAR(64) UNIQUE,
-      unionid     VARCHAR(64),
-      nickname    VARCHAR(60),
-      avatarUrl   VARCHAR(512),
-      phone       VARCHAR(20) UNIQUE,
-      status      VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
-      createdAt   DATETIME(3) NOT NULL,
-      updatedAt   DATETIME(3) NOT NULL,
-      deletedAt   DATETIME(3)
+      id              VARCHAR(32) PRIMARY KEY,
+      role            VARCHAR(16) NOT NULL DEFAULT 'CUSTOMER',
+      openid          VARCHAR(64) UNIQUE,
+      unionid         VARCHAR(64),
+      username        VARCHAR(20) UNIQUE,
+      phone           VARCHAR(20) UNIQUE,
+      passwordHash    VARCHAR(255),
+      nickname        VARCHAR(60),
+      avatarUrl       VARCHAR(512),
+      status          VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+      createdAt       DATETIME(3) NOT NULL,
+      updatedAt       DATETIME(3) NOT NULL,
+      deletedAt       DATETIME(3)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS engineer_profiles (
@@ -186,6 +188,18 @@ async function init() {
       createdAt     DATETIME(3) NOT NULL,
       FOREIGN KEY(orderId) REFERENCES orders(id),
       INDEX idx_payments_order(orderId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS sms_codes (
+      id        VARCHAR(32) PRIMARY KEY,
+      phone     VARCHAR(20) NOT NULL,
+      code      VARCHAR(6) NOT NULL,
+      type      VARCHAR(16) NOT NULL DEFAULT 'LOGIN',
+      expiresAt DATETIME(3) NOT NULL,
+      usedAt    DATETIME(3),
+      createdAt DATETIME(3) NOT NULL,
+      INDEX idx_sms_phone_type(phone, type, usedAt),
+      INDEX idx_sms_expires(expiresAt)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   ];
 

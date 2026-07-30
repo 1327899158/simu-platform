@@ -55,4 +55,25 @@ const v = {
   },
 };
 
-module.exports = { newId, nowIso, v };
+// ---------- 密码相关（用于账号密码登录） ----------
+// 使用 bcrypt 进行密码加密
+let bcrypt;
+try {
+  bcrypt = require('bcrypt');
+} catch (e) {
+  console.warn('bcrypt 未安装，密码功能不可用');
+}
+
+const hashPassword = async (password) => {
+  if (!bcrypt) throw new Error('bcrypt 未安装');
+  if (!password || password.length < 6) throw err.bad('密码至少 6 个字符');
+  return bcrypt.hash(password, 10);
+};
+
+const verifyPassword = async (passwordHash, inputPassword) => {
+  if (!bcrypt) throw new Error('bcrypt 未安装');
+  if (!passwordHash || !inputPassword) return false;
+  return bcrypt.compare(inputPassword, passwordHash);
+};
+
+module.exports = { newId, nowIso, v, hashPassword, verifyPassword };

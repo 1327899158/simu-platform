@@ -88,10 +88,65 @@ async function refreshUser() {
   }
 }
 
+// -------- 多种登录方式 --------
+
+/**
+ * 账号密码登录
+ */
+async function loginByUsername(username, password) {
+  const data = await request('POST', '/auth/login', { username, password });
+  saveUser(data.user);
+  return data.user;
+}
+
+/**
+ * 账号密码注册（需要先请求短信验证码）
+ */
+async function registerByPhone(username, phone, password, smsCode, roleHint = 'customer') {
+  const data = await request('POST', '/auth/register', {
+    username, phone, password, smsCode, roleHint,
+  });
+  saveUser(data.user);
+  return data.user;
+}
+
+/**
+ * 手机号登录（验证码方式）
+ */
+async function loginByPhone(phone, smsCode, roleHint = 'customer') {
+  const data = await request('POST', '/auth/phone-login', { phone, smsCode, roleHint });
+  saveUser(data.user);
+  return data.user;
+}
+
+/**
+ * 请求短信验证码
+ * type: 'REGISTER' | 'LOGIN' | 'RESET_PWD'
+ */
+async function requestSmsCode(phone, type = 'LOGIN') {
+  const data = await request('POST', '/auth/request-sms', { phone, type });
+  return data; // { sent: true, nextRetry: 60 }
+}
+
+/**
+ * 忘记密码重置
+ */
+async function resetPassword(phone, newPassword, smsCode) {
+  const data = await request('POST', '/auth/reset-password', {
+    phone, newPassword, smsCode,
+  });
+  return data;
+}
+
 module.exports = {
   initCloud,
   login,
   promoteToEngineer,
+  loginByUsername,
+  registerByPhone,
+  loginByPhone,
+  requestSmsCode,
+  resetPassword,
   getUser, setUser, isLoggedIn, saveUser, logout,
   ensureLogin, refreshUser,
 };
