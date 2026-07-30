@@ -1,0 +1,215 @@
+/* 登录页样式 */
+.page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 40rpx 0;
+  color: #333;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  color: white;
+}
+
+.header .title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-bottom: 16rpx;
+}
+
+.header .subtitle {
+  display: block;
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+/* Tab 导航 */
+.tabs {
+  display: flex;
+  background: white;
+  margin: 0 20rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  margin-bottom: 40rpx;
+}
+
+.tab {
+  flex: 1;
+  padding: 16rpx;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+  border-bottom: 4rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+/* 标签页内容 */
+.tab-content {
+  background: white;
+  margin: 0 20rpx;
+  padding: 40rpx;
+  border-radius: 8rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 表单组 */
+.form-group {
+  margin-bottom: 24rpx;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12rpx 16rpx;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 6rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #667eea;
+  outline: none;
+}
+
+/* 短信输入 */
+.sms-input {
+  display: flex;
+  gap: 8rpx;
+}
+
+.sms-input input {
+  flex: 1;
+}
+
+.btn-sms {
+  flex: 0 0 140rpx;
+  padding: 12rpx 0;
+  background: #f5f5f5;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 6rpx;
+  font-size: 24rpx;
+  color: #667eea;
+  transition: all 0.3s;
+}
+
+.btn-sms:not([disabled]):active {
+  background: #e8e8e8;
+}
+
+.btn-sms[disabled] {
+  background: #f0f0f0;
+  color: #999;
+}
+
+/* 按钮 */
+.btn-primary {
+  width: 100%;
+  padding: 16rpx 0;
+  margin-top: 16rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.btn-primary:active:not([disabled]) {
+  opacity: 0.9;
+  transform: scale(0.98);
+}
+
+.btn-primary[disabled] {
+  opacity: 0.5;
+}
+
+/* 链接按钮 */
+.links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24rpx;
+  gap: 16rpx;
+}
+
+.link-btn {
+  flex: 1;
+  padding: 12rpx 0;
+  background: transparent;
+  border: 1rpx solid #667eea;
+  color: #667eea;
+  border-radius: 6rpx;
+  font-size: 26rpx;
+  transition: all 0.3s;
+}
+
+.link-btn:active {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+/* 角色选择器 */
+.role-selector {
+  margin: 32rpx 0;
+}
+
+.role-selector .label {
+  display: block;
+  margin-bottom: 16rpx;
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.roles {
+  display: flex;
+  gap: 16rpx;
+}
+
+.role {
+  flex: 1;
+  padding: 20rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  text-align: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.role.selected {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.role .icon {
+  display: block;
+  font-size: 40rpx;
+  margin-bottom: 8rpx;
+}
+
+.role text {
+  display: block;
+  font-size: 26rpx;
+  color: #333;
+}
+
+.role.selected text {
+  color: #667eea;
+  font-weight: bold;
+}
