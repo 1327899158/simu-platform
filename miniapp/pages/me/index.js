@@ -1,5 +1,5 @@
-const { ensureLogin, login, getUser } = require('../../utils/auth');
-const { request, tokens } = require('../../utils/request');
+const { ensureLogin, login, getUser, logout } = require('../../utils/auth');
+const { request } = require('../../utils/request');
 const { BASE_URL } = require('../../utils/config');
 
 const ORIGIN = BASE_URL.replace(/\/api$/, '');
@@ -43,7 +43,6 @@ Page({
     });
   },
   logout() {
-    tokens.clear();
-    wx.reLaunch({ url: '/pages/login/index' });
+    logout();
   },
 });
