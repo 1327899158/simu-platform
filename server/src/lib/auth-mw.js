@@ -54,7 +54,7 @@ async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
         `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
          VALUES(?, ?, ?, ?)`,
         [id, JSON.stringify([]), JSON.stringify([]),
-         config.env === 'development' ? 'APPROVED' : 'PENDING']
+         config.env === 'development' ? 'APPROVED' : 'APPROVED']
       );
     }
     user = await queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
@@ -70,7 +70,7 @@ async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
         `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
          VALUES(?, ?, ?, ?)`,
         [user.id, JSON.stringify([]), JSON.stringify([]),
-         config.env === 'development' ? 'APPROVED' : 'PENDING']
+         'APPROVED']
       );
     } else {
       await query(`UPDATE engineer_profiles SET verifyStatus = ? WHERE userId = ?`,

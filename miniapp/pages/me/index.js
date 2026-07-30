@@ -71,4 +71,22 @@ Page({
   logout() {
     logout();
   },
+  // 微信授权获取手机号
+  async onGetPhoneNumber(e) {
+    if (e.detail.errMsg !== 'getPhoneNumber:ok') {
+      return wx.showToast({ title: '已取消授权', icon: 'none' });
+    }
+    try {
+      wx.showLoading({ title: '绑定中…', mask: true });
+      const data = await request('POST', '/auth/bind-phone', { code: e.detail.code });
+      wx.hideLoading();
+      // 更新本地缓存
+      wx.setStorageSync('user', data.user);
+      this.setData({ user: data.user });
+      wx.showToast({ title: '手机号已绑定', icon: 'success' });
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: e.message || '绑定失败', icon: 'none' });
+    }
+  },
 });

@@ -7,7 +7,10 @@
     <image class="avatar" wx:else src="{{user.avatarUrl}}" mode="aspectFill"></image>
     <view class="info">
       <text class="name">{{user.nickname || '用户'}}</text>
-      <text class="phone">{{user.phone || '未绑定手机'}}</text>
+      <view class="phone-row">
+        <text class="phone">{{user.phone || '未绑定手机'}}</text>
+        <button wx:if="{{!user.phone}}" class="bind-phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">绑定手机号</button>
+      </view>
       <text class="role">{{user.role === 'ENGINEER' ? '🛠️ 工程师' : '👤 客户'}}</text>
     </view>
     <button class="edit-btn" bindtap="goEdit">编辑</button>

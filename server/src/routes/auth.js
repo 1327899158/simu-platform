@@ -137,6 +137,54 @@ function register(router) {
     }
     ok(res, await loadUserView(user.id));
   });
+
+  // POST /api/auth/bind-phone { code }
+  // 微信授权获取手机号：前端 button open-type="getPhoneNumber" → e.detail.code → 这里换号
+  router.post('/api/auth/bind-phone', async (req, res) => {
+    const user = await requireUser(req);
+    const body = await readJson(req);
+    const code = v.str(body.code, '手机号授权code', { min: 1 });
+    let phoneNumber = null;
+    try {
+      // 云托管内部调用微信 API（云 sidecar 自动注入 access_token）
+      const http = require('node:http');
+      const postData = JSON.stringify({ code });
+      const resp = await new Promise((resolve, reject) => {
+        const r = http.request({
+          hostname: 'api.weixin.qq.com',
+          path: '/wxa/business/getuserphonenumber',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+        }, (res) => {
+          let data = '';
+          res.on('data', (c) => data += c);
+          res.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } });
+        });
+        r.on('error', reject);
+        r.write(postData);
+        r.end();
+      });
+      if (resp.errcode && resp.errcode !== 0) {
+        throw new Error(`微信API错误: ${resp.errmsg || resp.errcode}`);
+      }
+      phoneNumber = resp.phone_info?.phoneNumber || resp.phone_info?.purePhoneNumber;
+    } catch (e) {
+      // 本地开发降级：直接用传入的手机号（仅 dev）
+      if (process.env.NODE_ENV === 'development' && body.phone) {
+        phoneNumber = body.phone;
+      } else {
+        throw err.bad('获取手机号失败: ' + e.message);
+      }
+    }
+    if (!phoneNumber) throw err.bad('未获取到手机号');
+
+    // 检查手机号是否被其他用户占用
+    const existing = await queryOne(`SELECT id FROM users WHERE phone = ? AND id != ? AND deletedAt IS NULL`, [phoneNumber, user.id]);
+    if (existing) throw err.conflict('该手机号已被其他账号绑定');
+
+    await query(`UPDATE users SET phone = ?, updatedAt = ? WHERE id = ?`, [phoneNumber, nowIso(), user.id]);
+    ok(res, { phone: phoneNumber, user: await loadUserView(user.id) });
+  });
 }
 
 module.exports = { register, loadUserView };
