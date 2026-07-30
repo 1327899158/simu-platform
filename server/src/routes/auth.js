@@ -47,26 +47,9 @@ function register(router) {
   // POST /api/auth/wx-login { roleHint?, nickname?, avatarUrl? }
   // 云开发版：openid 从 X-WX-OPENID 头取，无需 jscode2session
   router.post('/api/auth/wx-login', async (req, res) => {
-    const user = await requireUser(req, null);
     const body = await readJson(req);
-
-    // 如果是首次登录并传来了 roleHint，更新角色（仅在 CUSTOMER 时允许升级为 ENGINEER）
-    const roleHint = body.roleHint === 'engineer' ? 'ENGINEER' : null;
-    const now = nowIso();
-
-    if (roleHint && user.role === 'CUSTOMER') {
-      await query(`UPDATE users SET role = 'ENGINEER', updatedAt = ? WHERE id = ?`, [now, user.id]);
-      // 初始化工程师档案
-      const hasProfile = await queryOne(`SELECT userId FROM engineer_profiles WHERE userId = ?`, [user.id]);
-      if (!hasProfile) {
-        await query(
-          `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
-           VALUES(?, ?, ?, ?)`,
-          [user.id, JSON.stringify([]), JSON.stringify([]),
-           process.env.NODE_ENV === 'development' ? 'APPROVED' : 'PENDING']
-        );
-      }
-    }
+    const roleHint = body.roleHint === 'engineer' ? 'ENGINEER' : 'CUSTOMER';
+    const user = await requireUser(req, roleHint);
 
     // 更新昵称 / 头像（首次登录时一并写入）
     const nickname = body.nickname ? v.str(body.nickname, '昵称', { max: 60, optional: true }) : null;

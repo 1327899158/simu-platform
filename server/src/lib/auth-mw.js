@@ -36,7 +36,7 @@ function getOpenid(req) {
 async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
   let user = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
   if (!user) {
-    const { newId, nowIso } = require('./lib/util');
+    const { newId, nowIso } = require('../lib/util');
     const id = newId();
     const now = nowIso();
     const role = roleHint === 'ENGINEER' ? 'ENGINEER' : 'CUSTOMER';
