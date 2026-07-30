@@ -142,9 +142,17 @@ Page({
     if (!/^\d{11}$/.test(this.data.phone)) return wx.showToast({ title: '手机号格式不对', icon: 'none' });
     if (this.data.smsCountdown > 0) return;
 
+    // 根据当前页面状态决定验证码类型
+    let type = 'LOGIN';
+    if (this.data.tab === 'username' && this.data.isRegister) {
+      type = 'REGISTER';
+    } else if (this.data.tab === 'phone') {
+      type = 'LOGIN';
+    }
+
     this.setData({ smsSending: true });
     try {
-      const result = await requestSmsCode(this.data.phone, 'LOGIN');
+      const result = await requestSmsCode(this.data.phone, type);
       wx.showToast({ title: '验证码已发送', icon: 'success' });
       // 倒计时
       this.setData({ smsCountdown: result.nextRetry || 60 });
