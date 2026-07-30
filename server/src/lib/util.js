@@ -5,7 +5,12 @@ const { err } = require('./http');
 
 // ---------- ID ----------
 const newId = () => 'c' + crypto.randomBytes(12).toString('hex');
-const nowIso = () => new Date().toISOString();
+// MySQL DATETIME 格式：YYYY-MM-DD HH:MM:SS
+const nowIso = () => {
+  const now = new Date();
+  return now.toISOString().slice(0, 19).replace('T', ' ');
+  // 例：'2026-07-30 03:39:08'
+};
 
 // ---------- 校验 ----------
 const v = {
