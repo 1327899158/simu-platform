@@ -1,34 +1,151 @@
-<view class="wrap">
-  <view class="logo-row">
-    <image class="logo-img" src="/images/logo.jpg" mode="aspectFit" />
-    <view class="logo">仿真服务平台</view>
+<!--登录页（云开发版 + 多种登录方式）-->
+<view class="page">
+  <view class="header">
+    <text class="title">仿真工坊</text>
+    <text class="subtitle">多种登录方式可选</text>
   </view>
-  <view class="slogan">连接仿真需求与专业工程师</view>
 
-  <!-- 角色选择 -->
-  <view class="role-btn customer {{role==='customer'?'selected':''}}" bindtap="selectRole" data-role="customer">
-    <image class="role-icon" src="/images/customer.png" mode="aspectFit" />
-    <view class="role-info">
-      <view class="role-name">我是客户</view>
-      <view class="role-desc">发布仿真需求，选择工程师</view>
+  <!--Tab导航-->
+  <view class="tabs">
+    <view class="tab {{tab === 'wechat' ? 'active' : ''}}" data-tab="wechat" bindtap="switchTab">
+      <text>微信登录</text>
     </view>
-    <view class="check-mark" wx:if="{{role==='customer'}}">✓</view>
-  </view>
-
-  <view class="role-btn engineer {{role==='engineer'?'selected':''}}" bindtap="selectRole" data-role="engineer">
-    <image class="role-icon" src="/images/engineer.png" mode="aspectFit" />
-    <view class="role-info">
-      <view class="role-name">我是工程师</view>
-      <view class="role-desc">进入抢单大厅，报价接单</view>
+    <view class="tab {{tab === 'username' ? 'active' : ''}}" data-tab="username" bindtap="switchTab">
+      <text>账号密码</text>
     </view>
-    <view class="check-mark" wx:if="{{role==='engineer'}}">✓</view>
+    <view class="tab {{tab === 'phone' ? 'active' : ''}}" data-tab="phone" bindtap="switchTab">
+      <text>手机验证码</text>
+    </view>
   </view>
 
-  <!-- 微信一键登录 -->
-  <view class="btn-wx-login {{(loading||!role)?'disabled':''}}" bindtap="doLogin">
-    <view wx:if="{{loading}}">登录中…</view>
-    <view wx:else>微信一键登录</view>
+  <!--微信一键登录-->
+  <view wx:if="{{tab === 'wechat'}}" class="tab-content">
+    <view class="role-selector">
+      <text class="label">选择身份</text>
+      <view class="roles">
+        <view class="role {{role === 'customer' ? 'selected' : ''}}" data-role="customer" bindtap="selectRole">
+          <text class="icon">👤</text>
+          <text>仿真客户</text>
+        </view>
+        <view class="role {{role === 'engineer' ? 'selected' : ''}}" data-role="engineer" bindtap="selectRole">
+          <text class="icon">👨‍💼</text>
+          <text>仿真工程师</text>
+        </view>
+      </view>
+    </view>
+    <button class="btn-primary" bindtap="wxLogin" disabled="{{loading}}">
+      {{loading ? '登录中...' : '微信一键登录'}}
+    </button>
   </view>
 
-  <view class="tip">登录即同意《用户服务协议》和《隐私政策》</view>
+  <!--账号密码-->
+  <view wx:if="{{tab === 'username'}}" class="tab-content">
+    <view wx:if="{{!isRegister}}">
+      <view class="form-group">
+        <label>用户名</label>
+        <input type="text" placeholder="请输入用户名" value="{{username}}" bindinput="onUsername" />
+      </view>
+      <view class="form-group">
+        <label>密码</label>
+        <input type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPassword" />
+      </view>
+      <button class="btn-primary" bindtap="accountLogin" disabled="{{loading}}">
+        {{loading ? '登录中...' : '登录'}}
+      </button>
+      <view class="links">
+        <button class="link-btn" bindtap="toggleRegister">没有账号？注册</button>
+        <button class="link-btn" bindtap="goResetPassword">忘记密码</button>
+      </view>
+    </view>
+
+    <view wx:else>
+      <view class="form-group">
+        <label>用户名（6-12位数字）</label>
+        <input type="text" placeholder="请输入6-12位数字用户名" value="{{username}}" bindinput="onUsername" />
+      </view>
+      <view class="form-group">
+        <label>手机号</label>
+        <input type="tel" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhone" />
+      </view>
+      <view class="form-group">
+        <label>验证码</label>
+        <view class="sms-input">
+          <input type="text" placeholder="请输入验证码" value="{{smsCode}}" bindinput="onSmsCode" />
+          <button
+            class="btn-sms"
+            bindtap="phoneRequestSms"
+            disabled="{{smsSending || smsCountdown > 0}}"
+          >
+            {{smsCountdown > 0 ? smsCountdown + 's' : '获取验证码'}}
+          </button>
+        </view>
+      </view>
+      <view class="form-group">
+        <label>密码</label>
+        <input type="password" placeholder="请输入密码（至少6位）" value="{{password}}" bindinput="onPassword" />
+      </view>
+      <view class="form-group">
+        <label>确认密码</label>
+        <input type="password" placeholder="请再次输入密码" value="{{passwordConfirm}}" bindinput="onPasswordConfirm" />
+      </view>
+
+      <!-- 角色选择 -->
+      <view class="role-selector">
+        <text class="label">注册为</text>
+        <view class="roles">
+          <view class="role {{role === 'customer' ? 'selected' : ''}}" data-role="customer" bindtap="selectRole">
+            <text class="icon">👤</text>
+            <text>客户</text>
+          </view>
+          <view class="role {{role === 'engineer' ? 'selected' : ''}}" data-role="engineer" bindtap="selectRole">
+            <text class="icon">👨‍💼</text>
+            <text>工程师</text>
+          </view>
+        </view>
+      </view>
+
+      <button class="btn-primary" bindtap="accountRegister" disabled="{{loading}}">
+        {{loading ? '注册中...' : '注册'}}
+      </button>
+      <button class="link-btn" bindtap="toggleRegister">已有账号？登录</button>
+    </view>
+  </view>
+
+  <!--手机验证码登录-->
+  <view wx:if="{{tab === 'phone'}}" class="tab-content">
+    <view class="role-selector">
+      <text class="label">选择身份</text>
+      <view class="roles">
+        <view class="role {{role === 'customer' ? 'selected' : ''}}" data-role="customer" bindtap="selectRole">
+          <text class="icon">👤</text>
+          <text>仿真客户</text>
+        </view>
+        <view class="role {{role === 'engineer' ? 'selected' : ''}}" data-role="engineer" bindtap="selectRole">
+          <text class="icon">👨‍💼</text>
+          <text>仿真工程师</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <label>手机号</label>
+      <input type="tel" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhone" />
+    </view>
+    <view class="form-group">
+      <label>验证码</label>
+      <view class="sms-input">
+        <input type="text" placeholder="请输入验证码" value="{{smsCode}}" bindinput="onSmsCode" />
+        <button
+          class="btn-sms"
+          bindtap="phoneRequestSms"
+          disabled="{{smsSending || smsCountdown > 0}}"
+        >
+          {{smsCountdown > 0 ? smsCountdown + 's' : '获取验证码'}}
+        </button>
+      </view>
+    </view>
+    <button class="btn-primary" bindtap="phoneLogin" disabled="{{loading}}">
+      {{loading ? '登录中...' : '登录'}}
+    </button>
+  </view>
 </view>

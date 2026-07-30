@@ -10,7 +10,8 @@
     "pages/chat-list/index",
     "pages/chat-room/index",
     "pages/me/index",
-    "pages/profile-edit/index"
+    "pages/profile-edit/index",
+    "pages/reset-password/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#0E0A1F",
