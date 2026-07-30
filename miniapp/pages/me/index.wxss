@@ -25,6 +25,12 @@
   background: var(--bg-deep);
   flex-shrink: 0;
   border: 2rpx solid var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  color: var(--c-text-3);
+  overflow: hidden;
 }
 .info {
   flex: 1;

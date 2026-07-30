@@ -58,6 +58,30 @@ async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
       );
     }
     user = await queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
+  } else if (roleHint === 'ENGINEER' && user.role !== 'ENGINEER') {
+    // 已有用户切换为工程师
+    const { nowIso } = require('../lib/util');
+    const now = nowIso();
+    await query(`UPDATE users SET role = 'ENGINEER', updatedAt = ? WHERE id = ?`, [now, user.id]);
+    // 创建工程师档案（如果不存在）
+    const hasProfile = await queryOne(`SELECT userId FROM engineer_profiles WHERE userId = ?`, [user.id]);
+    if (!hasProfile) {
+      await query(
+        `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
+         VALUES(?, ?, ?, ?)`,
+        [user.id, JSON.stringify([]), JSON.stringify([]),
+         config.env === 'development' ? 'APPROVED' : 'PENDING']
+      );
+    } else {
+      await query(`UPDATE engineer_profiles SET verifyStatus = ? WHERE userId = ?`,
+        [config.env === 'development' ? 'APPROVED' : 'PENDING', user.id]);
+    }
+    user = await queryOne(`SELECT * FROM users WHERE id = ?`, [user.id]);
+  } else if (roleHint === 'CUSTOMER' && user.role === 'ENGINEER') {
+    // 工程师切换回客户
+    const { nowIso } = require('../lib/util');
+    await query(`UPDATE users SET role = 'CUSTOMER', updatedAt = ? WHERE id = ?`, [nowIso(), user.id]);
+    user = await queryOne(`SELECT * FROM users WHERE id = ?`, [user.id]);
   }
   return user;
 }

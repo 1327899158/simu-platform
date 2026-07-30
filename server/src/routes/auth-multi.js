@@ -36,15 +36,7 @@ async function issueSession(user) {
 }
 
 function register(router) {
-  // ========== 微信一键登录（现有逻辑复用） ==========
-  router.post('/api/auth/wx-login', async (req, res) => {
-    const b = await readJson(req);
-    const openid = b.openid; // 小程序通过 wx.login 获取
-    if (!openid) throw err.bad('缺少 openid 参数');
-    const roleHint = b.roleHint || 'CUSTOMER';
-    const user = await getOrCreateUser(openid, roleHint);
-    ok(res, { user: userView(user) });
-  });
+  // ========== 微信一键登录由 routes/auth.js 处理（不重复注册） ==========
 
   // ========== 短信验证码相关 ==========
 

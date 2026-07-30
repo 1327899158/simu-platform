@@ -1,8 +1,6 @@
 const { ensureLogin } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
 const { parseJson } = require('../../utils/format');
-const { BASE_URL } = require('../../utils/config');
-const ORIGIN = BASE_URL.replace(/\/api$/, '');
 
 Page({
   data: {
@@ -15,7 +13,7 @@ Page({
     softwares: [],
     specialtiesStr: '',
     softwaresStr: '',
-    avatarUrl: '',       // 仅用于预览显示（签名URL）
+    avatarUrl: '',       // 预览显示（cloud:// 或临时路径）
     avatarFileId: '',    // 保存到后端用
     uploading: false,
     saving: false,
@@ -30,7 +28,7 @@ Page({
       role: user.role,
       nickname: user.nickname || '',
       avatarUrl: user.avatarUrl || '',
-      avatarFileId: '',   // 未修改头像时为空，保存时跳过
+      avatarFileId: '',
       realName: user.engineer?.realName || '',
       intro: user.engineer?.intro || '',
       specialties,
@@ -40,23 +38,20 @@ Page({
     });
   },
 
-  pickAvatar() {
-    const that = this;
-    wx.chooseMedia({
-      count: 1, mediaType: ['image'], sizeType: ['original', 'compressed'],
-      success: async (r) => {
-        that.setData({ uploading: true });
-        try {
-          const up = await upload(r.tempFiles[0].tempFilePath, { kind: 'IMAGE' });
-          // 只保存 fileId，显示用临时预览路径
-          const previewUrl = r.tempFiles[0].tempFilePath;
-          that.setData({ avatarUrl: previewUrl, avatarFileId: up.fileId, uploading: false });
-        } catch (e) {
-          that.setData({ uploading: false });
-          wx.showToast({ title: '上传失败', icon: 'none' });
-        }
-      },
-    });
+  // chooseAvatar 方式获取头像（微信推荐方式）
+  onChooseAvatar(e) {
+    const tempPath = e.detail.avatarUrl;
+    this.setData({ avatarUrl: tempPath, avatarFileId: '' });
+    // 异步上传到云存储
+    this.setData({ uploading: true });
+    upload(tempPath, { kind: 'IMAGE', name: 'avatar.jpg' })
+      .then((up) => {
+        this.setData({ avatarUrl: up.fileID, avatarFileId: up.fileID, uploading: false });
+      })
+      .catch(() => {
+        this.setData({ uploading: false });
+        wx.showToast({ title: '头像上传失败', icon: 'none' });
+      });
   },
 
   inputNickname(e) { this.setData({ nickname: e.detail.value }); },
@@ -86,15 +81,11 @@ Page({
     this.setData({ saving: true });
     try {
       const payload = { nickname: nickname.trim() };
-      if (avatarFileId) payload.avatarFileId = avatarFileId;  // 只有改了头像才传
+      if (avatarFileId) payload.avatarUrl = avatarFileId;
       if (user.role === 'ENGINEER') {
         payload.engineer = { realName, intro, specialties, softwares };
       }
       const updated = await request('PATCH', '/me', payload);
-      // 头像 URL 是相对路径，存 storage 前补全为绝对路径，重启后直接可用
-      if (updated.avatarUrl && updated.avatarUrl.startsWith('/')) {
-        updated.avatarUrl = ORIGIN + updated.avatarUrl;
-      }
       wx.setStorageSync('user', updated);
       wx.showToast({ title: '保存成功', icon: 'success' });
       setTimeout(() => wx.navigateBack(), 500);

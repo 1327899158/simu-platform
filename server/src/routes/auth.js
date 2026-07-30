@@ -55,6 +55,7 @@ function register(router) {
     const nickname = body.nickname ? v.str(body.nickname, '昵称', { max: 60, optional: true }) : null;
     const avatarUrl = body.avatarUrl ? v.str(body.avatarUrl, '头像URL', { max: 512, optional: true }) : null;
     if (nickname || avatarUrl) {
+      const now = nowIso();
       await query(
         `UPDATE users SET
            nickname = COALESCE(?, nickname),

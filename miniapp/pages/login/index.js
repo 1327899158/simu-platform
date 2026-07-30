@@ -1,46 +1,48 @@
 /**
  * 登录页（云开发版 + 多种登录方式）。
- * 支持三种登录：微信一键、账号密码、手机验证码。
+ * 微信登录流程：wx.login 静默登录 → 检测昵称 → 无则弹资料完善卡片
  */
 const {
   login, loginByUsername, registerByPhone, loginByPhone,
-  requestSmsCode, isLoggedIn, logout
+  requestSmsCode, isLoggedIn, logout, saveUser
 } = require('../../utils/auth');
+const { request, upload } = require('../../utils/request');
 
 Page({
   data: {
-    tab: 'wechat',      // wechat | username | phone
-    role: '',           // customer | engineer
+    tab: 'wechat',
+    role: '',
     roleText: '',
     loading: false,
 
-    // 账号密码标签页
-    isRegister: false,  // 注册 vs 登录
+    // 账号密码
+    isRegister: false,
     username: '',
     password: '',
     passwordConfirm: '',
 
-    // 手机验证码标签页
+    // 手机验证码
     phone: '',
     smsCode: '',
     smsCountdown: 0,
     smsSending: false,
 
-    // 共通的角色选择
-    selectingRole: false,
+    // 资料完善（微信登录后如果没昵称则显示）
+    needProfile: false,
+    tempAvatarPath: '',   // chooseAvatar 返回的临时路径
+    nickname: '',
   },
 
   onLoad() {
     if (isLoggedIn()) wx.switchTab({ url: '/pages/home/index' });
   },
 
-  // ========== Tab 切换 ==========
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab;
-    this.setData({ tab, role: '', username: '', password: '', phone: '', smsCode: '' });
+    this.setData({ tab, role: '', username: '', password: '', phone: '', smsCode: '', needProfile: false });
   },
 
-  // ========== 微信一键登录 ==========
+  // ========== 微信登录 ==========
   async wxLogin() {
     if (!this.data.role) {
       return wx.showToast({ title: '请先选择身份', icon: 'none' });
@@ -49,15 +51,22 @@ Page({
     this.setData({ loading: true });
     try {
       wx.showLoading({ title: '登录中…', mask: true });
-      await login(this.data.role);
+      const user = await login(this.data.role);
       wx.hideLoading();
-      wx.showToast({ title: '登录成功', icon: 'success' });
-      setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 800);
+      // 检查是否已有昵称
+      if (!user.nickname || user.nickname === '仿真客户' || user.nickname === '仿真工程师') {
+        this.setData({ needProfile: true, loading: false });
+        wx.showToast({ title: '请完善资料', icon: 'none' });
+      } else {
+        wx.showToast({ title: '登录成功', icon: 'success' });
+        setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 800);
+        this.setData({ loading: false });
+      }
     } catch (e) {
       wx.hideLoading();
       wx.showToast({ title: e.message || '登录失败', icon: 'none' });
+      this.setData({ loading: false });
     }
-    this.setData({ loading: false });
   },
 
   selectRole(e) {
@@ -68,9 +77,52 @@ Page({
     });
   },
 
+  // ========== 资料完善（chooseAvatar + nickname） ==========
+  onChooseAvatar(e) {
+    const tempPath = e.detail.avatarUrl;
+    this.setData({ tempAvatarPath: tempPath });
+  },
+
+  onNicknameInput(e) {
+    this.setData({ nickname: e.detail.value });
+  },
+
+  async saveProfile() {
+    if (!this.data.nickname || !this.data.nickname.trim()) {
+      return wx.showToast({ title: '请输入昵称', icon: 'none' });
+    }
+    if (!this.data.tempAvatarPath) {
+      return wx.showToast({ title: '请选择头像', icon: 'none' });
+    }
+    if (this.data.loading) return;
+    this.setData({ loading: true });
+    try {
+      wx.showLoading({ title: '保存中…', mask: true });
+      // 1. 上传头像到云存储
+      const uploadResult = await upload(this.data.tempAvatarPath, { kind: 'IMAGE', name: 'avatar.jpg' });
+      // 2. 更新用户资料
+      const updated = await request('PATCH', '/me', {
+        nickname: this.data.nickname.trim(),
+        avatarUrl: uploadResult.fileID,
+      });
+      saveUser(updated);
+      wx.hideLoading();
+      wx.showToast({ title: '资料已保存', icon: 'success' });
+      setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 800);
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: e.message || '保存失败', icon: 'none' });
+    }
+    this.setData({ loading: false });
+  },
+
+  skipProfile() {
+    wx.showToast({ title: '登录成功', icon: 'success' });
+    setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 500);
+  },
+
   // ========== 账号密码 ==========
   toggleRegister(e) {
-    // 根据 WXML 传入的 data-mode 设置登录/注册
     const mode = e.currentTarget.dataset.mode;
     if (mode === 'register') {
       this.setData({ isRegister: true, username: '', password: '', passwordConfirm: '' });
@@ -99,30 +151,19 @@ Page({
 
   async accountRegister() {
     if (!this.data.username) return wx.showToast({ title: '请输入用户名（6-12位数字）', icon: 'none' });
-    if (!/^\d{6,12}$/.test(this.data.username)) {
-      return wx.showToast({ title: '用户名只能是6-12位数字', icon: 'none' });
-    }
+    if (!/^\d{6,12}$/.test(this.data.username)) return wx.showToast({ title: '用户名只能是6-12位数字', icon: 'none' });
     if (!this.data.phone) return wx.showToast({ title: '请输入手机号', icon: 'none' });
     if (!/^\d{11}$/.test(this.data.phone)) return wx.showToast({ title: '手机号格式不对', icon: 'none' });
     if (!this.data.password) return wx.showToast({ title: '请输入密码（至少6位）', icon: 'none' });
     if (this.data.password.length < 6) return wx.showToast({ title: '密码至少6位', icon: 'none' });
-    if (this.data.password !== this.data.passwordConfirm) {
-      return wx.showToast({ title: '两次密码不一致', icon: 'none' });
-    }
+    if (this.data.password !== this.data.passwordConfirm) return wx.showToast({ title: '两次密码不一致', icon: 'none' });
     if (!this.data.smsCode) return wx.showToast({ title: '请输入验证码', icon: 'none' });
     if (!/^\d{6}$/.test(this.data.smsCode)) return wx.showToast({ title: '验证码格式不对', icon: 'none' });
-
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
       wx.showLoading({ title: '注册中…', mask: true });
-      await registerByPhone(
-        this.data.username,
-        this.data.phone,
-        this.data.password,
-        this.data.smsCode,
-        this.data.role || 'customer'
-      );
+      await registerByPhone(this.data.username, this.data.phone, this.data.password, this.data.smsCode, this.data.role || 'customer');
       wx.hideLoading();
       wx.showToast({ title: '注册成功', icon: 'success' });
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 800);
@@ -142,20 +183,12 @@ Page({
     if (!this.data.phone) return wx.showToast({ title: '请输入手机号', icon: 'none' });
     if (!/^\d{11}$/.test(this.data.phone)) return wx.showToast({ title: '手机号格式不对', icon: 'none' });
     if (this.data.smsCountdown > 0) return;
-
-    // 根据当前页面状态决定验证码类型
     let type = 'LOGIN';
-    if (this.data.tab === 'username' && this.data.isRegister) {
-      type = 'REGISTER';
-    } else if (this.data.tab === 'phone') {
-      type = 'LOGIN';
-    }
-
+    if (this.data.tab === 'username' && this.data.isRegister) type = 'REGISTER';
     this.setData({ smsSending: true });
     try {
       const result = await requestSmsCode(this.data.phone, type);
       wx.showToast({ title: '验证码已发送', icon: 'success' });
-      // 倒计时
       this.setData({ smsCountdown: result.nextRetry || 60 });
       const timer = setInterval(() => {
         if (this.data.smsCountdown <= 0) {

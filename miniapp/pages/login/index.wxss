@@ -375,3 +375,58 @@
   letter-spacing: 2rpx;
   flex-shrink: 0;
 }
+
+/* ===== 资料完善卡片 ===== */
+.profile-setup {
+  text-align: center;
+  padding: 8rpx 0;
+}
+.profile-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--neon-violet);
+  margin-bottom: 8rpx;
+}
+.profile-desc {
+  display: block;
+  font-size: 24rpx;
+  color: var(--c-text-3);
+  margin-bottom: 28rpx;
+}
+
+/* 头像选择器 */
+.avatar-picker-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28rpx;
+}
+.avatar-picker {
+  width: 160rpx;
+  height: 160rpx;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--bg-deep);
+  border: 2rpx dashed var(--c-border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.4;
+}
+.avatar-picker::after { border: none; }
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.avatar-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 22rpx;
+  color: var(--c-text-3);
+}
+.avatar-placeholder text {
+  display: block;
+}

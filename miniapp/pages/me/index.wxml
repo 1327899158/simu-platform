@@ -3,7 +3,8 @@
 
   <!-- 用户卡片 -->
   <view class="user-card" wx:if="{{user}}">
-    <image class="avatar" src="{{user.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+    <view class="avatar" wx:if="{{!user.avatarUrl}}">{{user.nickname ? user.nickname[0] : '👤'}}</view>
+    <image class="avatar" wx:else src="{{user.avatarUrl}}" mode="aspectFill"></image>
     <view class="info">
       <text class="name">{{user.nickname || '用户'}}</text>
       <text class="phone">{{user.phone || '未绑定手机'}}</text>

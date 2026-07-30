@@ -1,18 +1,18 @@
 <view class="container">
   <view class="section">
     <view class="section-title">头像</view>
-    <view class="avatar-picker" bindtap="pickAvatar">
+    <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
       <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" />
-      <view wx:else class="avatar-placeholder">{{user.nickname ? user.nickname[0] : '头'}}</view>
+      <view wx:else class="avatar-placeholder">点击选择头像</view>
       <view wx:if="{{uploading}}" class="uploading">上传中…</view>
-    </view>
+    </button>
   </view>
 
   <view class="section">
     <view class="section-title">基本信息</view>
     <view class="form-group">
       <label>昵称 *</label>
-      <input type="text" value="{{nickname}}" bindinput="inputNickname" placeholder="请输入昵称" />
+      <input type="nickname" value="{{nickname}}" bindinput="inputNickname" placeholder="点击输入昵称" />
     </view>
   </view>
 

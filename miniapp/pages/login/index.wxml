@@ -29,25 +29,59 @@
        ============================================================ -->
   <view class="form-container" wx:if="{{tab === 'wechat'}}">
 
-    <view class="role-select">
-      <text class="role-label">选择身份</text>
-      <view class="role-options">
-        <view class="role-item {{role === 'customer' ? 'active' : ''}}" data-role="customer" bindtap="selectRole">
-          <text class="role-icon">👤</text>
-          <text class="role-text">我是客户</text>
+    <!-- 资料完善卡片（首次登录无昵称时显示） -->
+    <view wx:if="{{needProfile}}" class="profile-setup">
+      <text class="profile-title">完善个人资料</text>
+      <text class="profile-desc">选择头像并输入昵称，其他用户将看到这些信息</text>
+
+      <!-- 头像选择：open-type="chooseAvatar" -->
+      <view class="avatar-picker-row">
+        <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+          <image wx:if="{{tempAvatarPath}}" src="{{tempAvatarPath}}" mode="aspectFill" class="avatar-img" />
+          <view wx:else class="avatar-placeholder">
+            <text>点击选择</text>
+            <text>头像</text>
+          </view>
+        </button>
+      </view>
+
+      <!-- 昵称输入：type="nickname" -->
+      <view class="form-group">
+        <text class="form-label">昵称</text>
+        <view class="input-wrapper">
+          <text class="input-prefix">✏️</text>
+          <input class="form-input" type="nickname" placeholder="点击输入昵称" value="{{nickname}}" bindinput="onNicknameInput" />
         </view>
-        <view class="role-item {{role === 'engineer' ? 'active' : ''}}" data-role="engineer" bindtap="selectRole">
-          <text class="role-icon">👨‍💼</text>
-          <text class="role-text">我是工程师</text>
-        </view>
+      </view>
+
+      <button class="btn btn-primary btn-block" loading="{{loading}}" bindtap="saveProfile">保存并进入</button>
+      <view class="switch-login" bindtap="skipProfile">
+        <text>暂跳过 →</text>
       </view>
     </view>
 
-    <button class="btn btn-wechat btn-block" loading="{{loading}}" bindtap="wxLogin">
-      <text class="wechat-icon">💚</text> 微信一键登录
-    </button>
+    <!-- 正常登录界面 -->
+    <view wx:else>
+      <view class="role-select">
+        <text class="role-label">选择身份</text>
+        <view class="role-options">
+          <view class="role-item {{role === 'customer' ? 'active' : ''}}" data-role="customer" bindtap="selectRole">
+            <text class="role-icon">👤</text>
+            <text class="role-text">我是客户</text>
+          </view>
+          <view class="role-item {{role === 'engineer' ? 'active' : ''}}" data-role="engineer" bindtap="selectRole">
+            <text class="role-icon">👨‍💼</text>
+            <text class="role-text">我是工程师</text>
+          </view>
+        </view>
+      </view>
 
-    <view class="form-tip">首次登录将自动注册账号</view>
+      <button class="btn btn-wechat btn-block" loading="{{loading}}" bindtap="wxLogin">
+        <text class="wechat-icon">💚</text> 微信一键登录
+      </button>
+
+      <view class="form-tip">点击登录后将获取你的微信头像和昵称</view>
+    </view>
   </view>
 
   <!-- ============================================================
