@@ -134,7 +134,7 @@ Page({
     this.setData({ paying: true });
     try {
       // 云开发版：服务端通过云托管开放接口代签名，返回 wx.requestPayment 五参数
-      const p = await request('POST', `/orders/${this.data.id}/pay`);
+      const p = await request('POST', `/orders/${this.data.id}/pay`, {}, { silent: true });
 
       if (p.mode === 'mock') {
         const confirmed = await new Promise((resolve) => {
@@ -151,7 +151,7 @@ Page({
           this.setData({ paying: false });
           return;
         }
-        await request('POST', `/orders/${this.data.id}/pay/mock-confirm`, {});
+        await request('POST', `/orders/${this.data.id}/pay/mock-confirm`, {}, { silent: true });
         wx.showToast({ title: '支付成功（模拟）', icon: 'success' });
         this.load();
         this.setData({ paying: false });
@@ -185,7 +185,10 @@ Page({
       } else {
         throw new Error('微信支付下单返回参数不完整');
       }
-    } catch (e) { this.setData({ paying: false }); }
+    } catch (e) {
+      this.setData({ paying: false });
+      wx.showToast({ title: e.message || '支付处理失败', icon: 'none' });
+    }
   },
   confirmDone() {
     wx.showModal({
