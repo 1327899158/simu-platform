@@ -56,6 +56,10 @@ const config = {
   // 演示价开关：设为 1 则实付 0.01 元；生产必须留空
   payAmountOverrideFen: int(process.env.PAY_AMOUNT_OVERRIDE_FEN, 0) || null,
   payTimeoutSec: int(process.env.PAY_TIMEOUT_SEC, 30 * 60),
+  // 支付模式：默认真实微信支付；仅显式设置 PAYMENT_MODE=mock 时启用模拟支付。
+  paymentMode: String(process.env.PAYMENT_MODE || 'wechat').trim().toLowerCase() === 'mock'
+    ? 'mock'
+    : 'wechat',
 
   // 工程师资格演示开关：当前阶段允许登录用户自主核验通过，便于联调。
   // 正式上线前设置 ALLOW_ENGINEER_SELF_VERIFY=false 关闭。

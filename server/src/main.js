@@ -66,6 +66,7 @@ async function bootstrap() {
       t: new Date().toISOString(), evt: 'listening', port: config.port,
       env: config.env, cloudbaseEnv: config.cloudbaseEnv,
       engineerSelfVerify: config.allowEngineerSelfVerify,
+      paymentMode: config.paymentMode,
     }));
     startSweeper(); // 支付超时清扫备用定时器（推荐用云函数触发器替代）
 

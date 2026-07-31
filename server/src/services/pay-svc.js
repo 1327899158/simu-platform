@@ -86,7 +86,7 @@ async function createJsapiOrder(order, openid) {
     throw err.bad(`微信支付下单失败(${resp.status}): ${JSON.stringify(resp.body)}`);
   }
   // resp.body 包含 prepay_id 及签名后的调起参数
-  return { outTradeNo: payment.outTradeNo, amountFen, ...resp.body };
+  return { mode: 'wechat', outTradeNo: payment.outTradeNo, amountFen, ...resp.body };
 }
 
 /**

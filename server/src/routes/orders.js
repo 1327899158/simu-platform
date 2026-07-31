@@ -8,7 +8,8 @@ const { query, queryOne, tx, nextOrderNo, parseJson } = require('../db');
 const { requireUser } = require('../lib/auth-mw');
 const { getOpenid } = require('../lib/auth-mw');
 const { DICTS } = require('./dicts');
-const { createJsapiOrder } = require('../services/pay-svc');
+const { createPayment, createJsapiOrder } = require('../services/pay-svc');
+const { config } = require('../config');
 const { systemMessageForOrder } = require('../services/chat-svc');
 
 function orderView(o, extra = {}) {
@@ -161,12 +162,25 @@ function register(router) {
   // POST /api/orders/:id/pay
   router.post('/api/orders/:id/pay', async (req, res, params) => {
     const user = await requireUser(req);
-    const openid = user.openid; // 小程序 openid，用于 JSAPI 下单
     const o = await queryOne(
       `SELECT * FROM orders WHERE id=? AND customerId=? AND deletedAt IS NULL`,
       [params.id, user.id]);
     if (!o) throw err.notFound('订单不存在');
     if (o.status !== 'AWAITING_PAYMENT') throw err.conflict('订单不在待支付状态');
+
+    // 模拟支付只创建正常支付单，不访问微信支付接口。
+    if (config.paymentMode === 'mock') {
+      const payment = await createPayment(o);
+      ok(res, {
+        mode: 'mock',
+        outTradeNo: payment.outTradeNo,
+        amountFen: Number(payment.amountFen),
+        paymentStatus: payment.status,
+      });
+      return;
+    }
+
+    const openid = user.openid; // 小程序 openid，用于 JSAPI 下单
     if (!openid) throw err.bad('无法获取用户 openid，请通过小程序调用');
     const jsapiParams = await createJsapiOrder(o, openid);
     ok(res, jsapiParams);

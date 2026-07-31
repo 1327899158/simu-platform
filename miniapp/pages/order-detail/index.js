@@ -136,7 +136,26 @@ Page({
       // 云开发版：服务端通过云托管开放接口代签名，返回 wx.requestPayment 五参数
       const p = await request('POST', `/orders/${this.data.id}/pay`);
 
-      if (p.timeStamp) {
+      if (p.mode === 'mock') {
+        const confirmed = await new Promise((resolve) => {
+          wx.showModal({
+            title: '模拟支付',
+            content: `模拟支付金额：¥${fenToYuan(p.amountFen || 0)}\n不会调用微信支付接口。`,
+            confirmText: '确认支付',
+            cancelText: '取消',
+            success: resolve,
+            fail: () => resolve({ confirm: false }),
+          });
+        });
+        if (!confirmed.confirm) {
+          this.setData({ paying: false });
+          return;
+        }
+        await request('POST', `/orders/${this.data.id}/pay/mock-confirm`, {});
+        wx.showToast({ title: '支付成功（模拟）', icon: 'success' });
+        this.load();
+        this.setData({ paying: false });
+      } else if (p.timeStamp) {
         // 真实微信支付（云托管代签名返回的五参数）
         wx.requestPayment({
           timeStamp: p.timeStamp,
@@ -164,30 +183,7 @@ Page({
           complete: () => this.setData({ paying: false }),
         });
       } else {
-        // 演示模式（PAY_AMOUNT_OVERRIDE_FEN=1，服务端无法代签名时的回退）
-        wx.showModal({
-          title: '演示支付',
-          content: `支付金额：¥${fenToYuan(p.amountFen || 1)}\n单号：${p.outTradeNo || ''}`,
-          confirmText: '确认支付',
-          success: async (r) => {
-            if (r.confirm) {
-              // 演示：直接调后端落账（仅 development 环境）
-              await request('POST', '/pay/notify', {
-                trade_state: 'SUCCESS',
-                out_trade_no: p.outTradeNo,
-                transaction_id: 'DEMO' + Date.now(),
-              }, { silent: true });
-              for (let i = 0; i < 5; i++) {
-                const st = await request('GET', `/orders/${this.data.id}/payment`, null, { silent: true });
-                if (st && st.orderStatus === 'IN_PROGRESS') break;
-                await new Promise((rs) => setTimeout(rs, 500));
-              }
-              wx.showToast({ title: '支付成功（演示）', icon: 'success' });
-              this.load();
-            }
-            this.setData({ paying: false });
-          },
-        });
+        throw new Error('微信支付下单返回参数不完整');
       }
     } catch (e) { this.setData({ paying: false }); }
   },
