@@ -21,6 +21,18 @@ function isCloudAvailable() {
  */
 function callCloud(method, path, data) {
   return new Promise((resolve, reject) => {
+    const upperMethod = method.toUpperCase();
+    let requestPath = '/api' + path;
+    let requestData = data || {};
+    // callContainer 对 GET data 的处理在不同基础库版本中不一致，显式拼接查询串。
+    if (upperMethod === 'GET' && data && Object.keys(data).length) {
+      const query = Object.keys(data)
+        .filter((key) => data[key] !== undefined && data[key] !== null && data[key] !== '')
+        .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(data[key]))}`)
+        .join('&');
+      if (query) requestPath += (requestPath.includes('?') ? '&' : '?') + query;
+      requestData = {};
+    }
     const header = {
       'X-WX-SERVICE': SERVICE_NAME,
       'content-type': 'application/json',
@@ -30,10 +42,10 @@ function callCloud(method, path, data) {
     if (token) header['X-Session-Token'] = token;
     wx.cloud.callContainer({
       config: { env: ENV_ID },
-      path: '/api' + path,
-      method: method.toUpperCase(),
+      path: requestPath,
+      method: upperMethod,
       header,
-      data: data || {},
+      data: requestData,
       success: (r) => resolve(r),
       fail: (e) => reject(new Error(e.errMsg || '网络错误')),
     });

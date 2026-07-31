@@ -10,25 +10,40 @@ const { ENV_ID } = require('../../utils/config');
 const { timeShort } = require('../../utils/format');
 
 const POLL_MS = 4000;
+const PULL_TIMEOUT_MS = 8000;
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('消息同步超时')), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
+}
 
 Page({
   data: {
     convId: '', myId: '', myOpenid: '', myAvatar: '',
     msgs: [], text: '', lastId: 0,
     scrollTop: 0, _tick: 0,
-    sending: false,
+    sending: false, imageSending: false,
     avatarSize: 48, bubbleMaxWidth: '70%', imageWidth: 360,
     peer: null,
   },
   _watcher: null,
   _pollTimer: null,
   _pullInFlight: false,
+  _pullQueued: false,
   _seenIds: new Set(),
   _shouldScrollBottom: false,
 
   onLoad(q) {
     const user = ensureLogin();
     if (!user) return;
+    this._pullInFlight = false;
+    this._pullQueued = false;
+    this._seenIds = new Set();
     this.setData({
       convId: q.id,
       myId: user.id,
@@ -69,6 +84,7 @@ Page({
   onUnload() {
     this._stopWatch();
     this._stopPoll();
+    this._pullQueued = false;
   },
 
   // ---- db.watch 实时推送 ----
@@ -115,9 +131,18 @@ Page({
   // ---- 消息拉取 ----
   /** 首次拉取历史消息（after=0） */
   async pullHistory() {
+    if (!this.data.convId) return;
+    if (this._pullInFlight) {
+      this._pullQueued = true;
+      return;
+    }
+    this._pullInFlight = true;
     try {
-      const data = await request('GET', `/conversations/${this.data.convId}/messages`,
-        { after: 0, limit: 100 }, { silent: true });
+      const data = await withTimeout(
+        request('GET', `/conversations/${this.data.convId}/messages`,
+          { after: 0, limit: 100 }, { silent: true }),
+        PULL_TIMEOUT_MS,
+      );
       if (!data) return;
       const peerChange = data.peer && !this.data.peer;
       if (peerChange) this.setData({ peer: data.peer });
@@ -125,19 +150,28 @@ Page({
       this._seenIds = new Set(mapped.map((m) => m.id));
       this.setData({ msgs: mapped, lastId: data.lastId });
       this._scrollBottom();
-    } catch (e) { /* 静默 */ }
-    finally { this._pullInFlight = false; }
+    } catch (e) {
+      console.warn('[chat] pullHistory failed', e.message);
+    } finally {
+      this._finishPull();
+    }
   },
 
   /** 增量拉取（after=lastId） */
   async _pullIncremental() {
-    if (!this.data.convId || this._pullInFlight) return;
+    if (!this.data.convId) return;
+    if (this._pullInFlight) {
+      this._pullQueued = true;
+      return;
+    }
     this._pullInFlight = true;
     try {
-      const data = await request('GET', `/conversations/${this.data.convId}/messages`,
-        { after: this.data.lastId, limit: 50 }, { silent: true });
+      const data = await withTimeout(
+        request('GET', `/conversations/${this.data.convId}/messages`,
+          { after: this.data.lastId, limit: 50 }, { silent: true }),
+        PULL_TIMEOUT_MS,
+      );
       if (!data || !data.items.length) {
-        this._pullInFlight = false;
         return;
       }
       const peerArrived = data.peer && !this.data.peer;
@@ -146,7 +180,6 @@ Page({
       mapped.forEach((m) => this._seenIds.add(m.id));
       if (!mapped.length) {
         this.setData({ lastId: Math.max(this.data.lastId, Number(data.lastId || 0)) });
-        this._pullInFlight = false;
         return;
       }
       // peer 到达时，把已渲染的消息也补上 senderAvatar
@@ -157,10 +190,18 @@ Page({
       this._shouldScrollBottom = false;
       this.setData({ msgs: this.data.msgs.concat(mapped), lastId: data.lastId });
       if (shouldScroll) this._scrollBottom();
-      this._pullInFlight = false;
-    } catch (e) { /* 静默 */
-      this._pullInFlight = false;
+    } catch (e) {
+      console.warn('[chat] pullIncremental failed', e.message);
+    } finally {
+      this._finishPull();
     }
+  },
+
+  _finishPull() {
+    this._pullInFlight = false;
+    if (!this._pullQueued) return;
+    this._pullQueued = false;
+    setTimeout(() => this._pullIncremental(), 0);
   },
 
   _mapMsgs(items) {
@@ -185,6 +226,15 @@ Page({
     });
   },
 
+  /** 发送接口已经返回成功时立即上屏，不依赖 db.watch 或下一次轮询。 */
+  _appendSentMessage(raw, localImgUrl = '') {
+    const mapped = this._mapMsgs([{ ...raw, imgUrl: localImgUrl || raw.imgUrl || '' }])[0];
+    if (!mapped || this._seenIds.has(mapped.id)) return;
+    this._seenIds.add(mapped.id);
+    this.setData({ msgs: this.data.msgs.concat(mapped) });
+    this._scrollBottom();
+  },
+
   // ---- 发消息 ----
   input(e) { this.setData({ text: e.detail.value }); },
 
@@ -193,7 +243,8 @@ Page({
     if (!text || this.data.sending) return;
     this.setData({ sending: true, text: '' }); // 乐观清空输入框
     try {
-      await request('POST', `/conversations/${this.data.convId}/messages`, { type: 'TEXT', content: text });
+      const sent = await request('POST', `/conversations/${this.data.convId}/messages`, { type: 'TEXT', content: text });
+      this._appendSentMessage(sent);
       this._shouldScrollBottom = true;
       await this._pullIncremental();
     } catch (e) {
@@ -205,17 +256,23 @@ Page({
   },
 
   sendImage() {
+    if (this.data.imageSending) return;
     wx.chooseMedia({
       count: 1, mediaType: ['image'],
       success: async (r) => {
+        const localPath = r.tempFiles[0].tempFilePath;
+        this.setData({ imageSending: true });
         try {
-          const up = await upload(r.tempFiles[0].tempFilePath, { kind: 'IMAGE' });
-          await request('POST', `/conversations/${this.data.convId}/messages`,
+          const up = await upload(localPath, { kind: 'IMAGE' });
+          const sent = await request('POST', `/conversations/${this.data.convId}/messages`,
             { type: 'IMAGE', fileId: up.id });
+          this._appendSentMessage(sent, localPath);
           this._shouldScrollBottom = true;
           await this._pullIncremental();
         } catch (e) {
           wx.showToast({ title: e.message || '发送失败', icon: 'none' });
+        } finally {
+          this.setData({ imageSending: false });
         }
       },
     });

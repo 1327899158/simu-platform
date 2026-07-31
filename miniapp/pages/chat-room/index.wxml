@@ -50,7 +50,9 @@
 
   <!-- 底部输入 -->
   <view class="chat-input-area">
-    <view class="img-btn" bindtap="sendImage">🖼️</view>
+    <view class="img-btn {{imageSending ? 'disabled' : ''}}" bindtap="sendImage">
+      {{imageSending ? '…' : '🖼️'}}
+    </view>
     <input class="chat-input" placeholder="输入消息..." value="{{text}}" bindinput="input"
       confirm-type="send" bindconfirm="send" adjust-position />
     <button class="send-btn {{sending ? 'dim' : ''}}" bindtap="send" disabled="{{!text}}">发送</button>
