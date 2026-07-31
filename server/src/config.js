@@ -57,6 +57,10 @@ const config = {
   payAmountOverrideFen: int(process.env.PAY_AMOUNT_OVERRIDE_FEN, 0) || null,
   payTimeoutSec: int(process.env.PAY_TIMEOUT_SEC, 30 * 60),
 
+  // 工程师资格演示开关：当前阶段允许登录用户自主核验通过，便于联调。
+  // 正式上线前设置 ALLOW_ENGINEER_SELF_VERIFY=false 关闭。
+  allowEngineerSelfVerify: process.env.ALLOW_ENGINEER_SELF_VERIFY !== 'false',
+
   // 腾讯云短信（验证码、忘记密码等）
   sms: {
     secretId: process.env.TENCENT_SMS_SECRET_ID || '',

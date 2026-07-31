@@ -16,6 +16,25 @@
     <button class="edit-btn" bindtap="goEdit">编辑</button>
   </view>
 
+  <!-- 工程师资格：演示阶段提供可见的自主核验入口 -->
+  <view class="verify-card" wx:if="{{user}}">
+    <view class="verify-head">
+      <view class="verify-copy">
+        <text class="verify-title">工程师资格</text>
+        <text class="verify-desc">当前状态：{{verifyText}}</text>
+      </view>
+      <text class="verify-status {{verifyStatus === 'APPROVED' ? 'approved' : 'pending'}}">{{verifyText}}</text>
+    </view>
+    <button
+      wx:if="{{showSelfVerify}}"
+      class="verify-btn"
+      loading="{{selfVerifyLoading}}"
+      disabled="{{selfVerifyLoading}}"
+      bindtap="selfVerifyEngineer"
+    >自主核验通过（调试）</button>
+    <text class="verify-hint">演示阶段使用；正式上线前请关闭服务端自主核验开关。</text>
+  </view>
+
   <!-- 菜单（仅保留 simu-platform 已有功能的跳转） -->
   <view class="menu" wx:if="{{user}}">
     <view class="menu-item" bindtap="goOrders">

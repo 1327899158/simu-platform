@@ -1,4 +1,4 @@
-const { ensureLogin, login, getUser, logout, saveSession, isLoggedIn } = require('../../utils/auth');
+const { ensureLogin, login, getUser, logout, promoteToEngineer } = require('../../utils/auth');
 const { request } = require('../../utils/request');
 
 // 云存储 fileID 或 https 开头的 URL 直接使用，相对路径补全为云存储临时链接
@@ -11,19 +11,29 @@ function resolveAvatar(user) {
   return { ...user, avatarUrl: url };
 }
 
+function verifyView(user) {
+  const profile = user && user.engineer;
+  const status = user && user.role === 'ENGINEER' ? (profile?.verifyStatus || user.verifyStatus || 'PENDING') : 'UNAPPLIED';
+  return {
+    verifyStatus: status,
+    verifyText: status === 'APPROVED' ? '已通过' : status === 'PENDING' ? '待核验' : '未申请',
+    showSelfVerify: status !== 'APPROVED',
+  };
+}
+
 Page({
-  data: { user: null, roleText: '' },
+  data: { user: null, roleText: '', verifyStatus: 'UNAPPLIED', verifyText: '未申请', showSelfVerify: true, selfVerifyLoading: false },
   async onShow() {
     // 先用缓存快速渲染（缓存里已是绝对路径，可直接显示）
     const cached = ensureLogin();
     if (!cached) return;
-    this.setData({ user: cached, roleText: cached.role === 'ENGINEER' ? '工程师' : '客户' });
+    this.setData({ user: cached, roleText: cached.role === 'ENGINEER' ? '工程师' : '客户', ...verifyView(cached) });
     // 后台刷新最新数据
     try {
       const fresh = await request('GET', '/me');
       const resolved = resolveAvatar(fresh);
       wx.setStorageSync('user', resolved);   // 存绝对路径，下次启动可直接用
-      this.setData({ user: resolved, roleText: resolved.role === 'ENGINEER' ? '工程师' : '客户' });
+      this.setData({ user: resolved, roleText: resolved.role === 'ENGINEER' ? '工程师' : '客户', ...verifyView(resolved) });
     } catch (e) { /* 离线时静默，沿用缓存 */ }
   },
   goEdit() {
@@ -71,6 +81,35 @@ Page({
         }
       },
     });
+  },
+  async selfVerifyEngineer() {
+    if (this.data.selfVerifyLoading) return;
+    const result = await new Promise((resolve) => {
+      wx.showModal({
+        title: '自主核验（调试）',
+        content: '该操作仅用于当前演示和联调，会立即将当前账号设为已核验工程师。正式上线前请关闭此开关。',
+        confirmText: '确认核验',
+        success: resolve,
+        fail: () => resolve({ confirm: false }),
+      });
+    });
+    if (!result.confirm) return;
+    this.setData({ selfVerifyLoading: true });
+    wx.showLoading({ title: '核验中…', mask: true });
+    try {
+      const user = await promoteToEngineer();
+      this.setData({
+        user,
+        roleText: '工程师',
+        ...verifyView(user),
+      });
+      wx.showToast({ title: '已核验通过', icon: 'success' });
+    } catch (e) {
+      wx.showToast({ title: e.message || '核验失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ selfVerifyLoading: false });
+    }
   },
   logout() {
     logout();

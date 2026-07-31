@@ -16,6 +16,7 @@ const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne } = require('../db');
 const { requireUser, getOrCreateUser, getOpenid } = require('../lib/auth-mw');
 const { parseJson } = require('../db');
+const { config } = require('../config');
 
 function userView(u, profile) {
   return {
@@ -26,6 +27,8 @@ function userView(u, profile) {
     openid: u.openid,
     username: u.username,
     phone: u.phone,
+    // 与账号/手机号登录返回结构保持一致，前端可直接读取资格状态
+    verifyStatus: profile ? profile.verifyStatus : null,
     engineer: profile
       ? {
           ...profile,
@@ -147,9 +150,9 @@ function register(router) {
     ok(res, await loadUserView(user.id));
   });
 
-  // POST /api/dev/promote-engineer —— 仅开发环境，快速将当前用户升为已审核工程师
+  // POST /api/dev/promote-engineer —— 演示阶段自主核验，正式环境可通过配置关闭
   router.post('/api/dev/promote-engineer', async (req, res) => {
-    if (process.env.NODE_ENV === 'production') throw err.notFound('接口不存在');
+    if (!config.allowEngineerSelfVerify) throw err.notFound('接口不存在');
     const user = await requireUser(req);
     const now = nowIso();
     await query(`UPDATE users SET role = 'ENGINEER', updatedAt = ? WHERE id = ?`, [now, user.id]);

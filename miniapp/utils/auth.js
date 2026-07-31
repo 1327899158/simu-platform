@@ -34,7 +34,7 @@ async function login(roleHint = 'customer') {
   return data.user;
 }
 
-/** 提升为工程师（仅开发环境） */
+/** 工程师资格自主核验（演示阶段；服务端可通过 ALLOW_ENGINEER_SELF_VERIFY 关闭） */
 async function promoteToEngineer() {
   const user = await request('POST', '/dev/promote-engineer', {});
   saveUser(user);
