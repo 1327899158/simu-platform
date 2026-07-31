@@ -186,16 +186,8 @@ function register(router) {
     ok(res, jsapiParams);
   });
 
-  // GET /api/orders/:id/payment
-  router.get('/api/orders/:id/payment', async (req, res, params) => {
-    const user = await requireUser(req);
-    const o = await queryOne(`SELECT * FROM orders WHERE id=?`, [params.id]);
-    if (!o || o.customerId !== user.id) throw err.notFound('订单不存在');
-    const p = await queryOne(
-      `SELECT outTradeNo, amountFen, status, paidAt FROM payments
-       WHERE orderId=? ORDER BY createdAt DESC LIMIT 1`, [params.id]);
-    ok(res, { orderStatus: o.status, payment: p || null });
-  });
+  // 注意：`GET /api/orders/:id/payment` 已迁移至 routes/payments.js，
+  // 由支付模块统一维护支付相关查询，避免同名路由重复注册。
 
   // POST /api/orders/:id/deliver { fileIds?, note? }
   router.post('/api/orders/:id/deliver', async (req, res, params) => {

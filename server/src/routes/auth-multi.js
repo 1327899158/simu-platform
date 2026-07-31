@@ -11,24 +11,13 @@ const { newId, nowIso, v, hashPassword, verifyPassword, genSessionToken, session
 const { query, queryOne } = require('../db');
 const { getOrCreateUser, findUserByUsername, findUserByPhone, getOrCreateUserByPhone, requireUser } = require('../lib/auth-mw');
 const { sendSmsCode, verifySmsCode } = require('../services/sms-svc');
+const { loadUserView } = require('./auth');
 
-async function userView(u) {
-  const profile = u.role === 'ENGINEER'
-    ? await queryOne(`SELECT verifyStatus FROM engineer_profiles WHERE userId = ?`, [u.id])
-    : null;
-  return {
-    id: u.id,
-    role: u.role,
-    nickname: u.nickname,
-    avatarUrl: u.avatarUrl,
-    openid: u.openid,
-    username: u.username,
-    phone: u.phone,
-    verifyStatus: profile ? profile.verifyStatus : null,
-  };
-}
-
-/** 为用户生成并存储 session token，返回 token 和 userView */
+/**
+ * 为用户生成并存储 session token。
+ * 返回 { token, user } —— user 结构与 /api/me 完全一致，
+ * 避免账号密码 / 短信登录返回缺失 engineer 详情。
+ */
 async function issueSession(user) {
   const token = genSessionToken();
   const expires = sessionExpiry();
@@ -36,7 +25,7 @@ async function issueSession(user) {
     `UPDATE users SET sessionToken = ?, sessionExpiresAt = ?, updatedAt = ? WHERE id = ?`,
     [token, expires, nowIso(), user.id]
   );
-  return { token, user: await userView(user) };
+  return { token, user: await loadUserView(user.id) };
 }
 
 function register(router) {

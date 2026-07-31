@@ -45,58 +45,71 @@ function validateCloudIdentityHeaders(req) {
 
 /**
  * 获取（或按需创建）用户 —— 微信登录用（通过 openid）。
+ *
+ * 语义（重要）：
+ *   1. openid 不存在 → 按 roleHint 创建新用户（首登建档）。
+ *   2. openid 已存在 → 直接返回现有用户，**忽略 roleHint**，不改动角色。
+ *
+ * 角色切换是明确的业务动作（客户 <-> 工程师），必须由调用方在业务
+ * handler（例如 /api/auth/wx-login）里显式调用 `switchUserRole`，
+ * 中间件 `requireUser` 不应产生角色副作用。
  */
 async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
   roleHint = String(roleHint || 'CUSTOMER').toUpperCase();
-  let user = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
-  if (!user) {
-    const { newId, nowIso } = require('../lib/util');
-    const id = newId();
-    const now = nowIso();
-    const role = roleHint === 'ENGINEER' ? 'ENGINEER' : 'CUSTOMER';
+  const existing = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
+  if (existing) return existing;
+
+  const { newId, nowIso } = require('../lib/util');
+  const id = newId();
+  const now = nowIso();
+  const role = roleHint === 'ENGINEER' ? 'ENGINEER' : 'CUSTOMER';
+  await query(
+    `INSERT INTO users(id, role, openid, nickname, createdAt, updatedAt)
+     VALUES(?, ?, ?, ?, ?, ?)`,
+    [id, role, openid, role === 'ENGINEER' ? '仿真工程师' : '仿真客户', now, now]
+  );
+  if (role === 'ENGINEER') {
     await query(
-      `INSERT INTO users(id, role, openid, nickname, createdAt, updatedAt)
-       VALUES(?, ?, ?, ?, ?, ?)`,
-      [id, role, openid, role === 'ENGINEER' ? '仿真工程师' : '仿真客户', now, now]
+      `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
+       VALUES(?, ?, ?, ?)`,
+      [id, JSON.stringify([]), JSON.stringify([]),
+       config.env === 'development' ? 'APPROVED' : 'APPROVED']
     );
-    if (role === 'ENGINEER') {
-      await query(
-        `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
-         VALUES(?, ?, ?, ?)`,
-        [id, JSON.stringify([]), JSON.stringify([]),
-         config.env === 'development' ? 'APPROVED' : 'APPROVED']
-      );
-    }
-    user = await queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
-  } else if (roleHint === 'ENGINEER' && user.role !== 'ENGINEER') {
-    // 已有用户切换为工程师
-    const { nowIso } = require('../lib/util');
-    const now = nowIso();
-    await query(`UPDATE users SET role = 'ENGINEER', updatedAt = ? WHERE id = ?`, [now, user.id]);
-    // 创建工程师档案（如果不存在）
+  }
+  return queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
+}
+
+/**
+ * 显式切换用户角色（客户 <-> 工程师）——仅供 handler 使用。
+ * 调用方需自行做好权限与业务校验（例如仅演示环境或经登录确认）。
+ */
+async function switchUserRole(user, targetRole) {
+  const role = String(targetRole || '').toUpperCase() === 'ENGINEER' ? 'ENGINEER' : 'CUSTOMER';
+  if (user.role === role) return user;
+  const { nowIso } = require('../lib/util');
+  const now = nowIso();
+  await query(`UPDATE users SET role = ?, updatedAt = ? WHERE id = ?`, [role, now, user.id]);
+  if (role === 'ENGINEER') {
     const hasProfile = await queryOne(`SELECT userId FROM engineer_profiles WHERE userId = ?`, [user.id]);
     if (!hasProfile) {
       await query(
         `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
          VALUES(?, ?, ?, ?)`,
         [user.id, JSON.stringify([]), JSON.stringify([]),
-         'APPROVED']
+         config.env === 'development' ? 'APPROVED' : 'PENDING']
       );
-    } else {
-      await query(`UPDATE engineer_profiles SET verifyStatus = ? WHERE userId = ?`,
-        [config.env === 'development' ? 'APPROVED' : 'PENDING', user.id]);
     }
-    user = await queryOne(`SELECT * FROM users WHERE id = ?`, [user.id]);
-  } else if (roleHint === 'CUSTOMER' && user.role === 'ENGINEER') {
-    // 工程师切换回客户
-    const { nowIso } = require('../lib/util');
-    await query(`UPDATE users SET role = 'CUSTOMER', updatedAt = ? WHERE id = ?`, [nowIso(), user.id]);
-    user = await queryOne(`SELECT * FROM users WHERE id = ?`, [user.id]);
+    // 已有 profile 时不再强制改 verifyStatus——保留原有审核结果。
   }
-  return user;
+  return queryOne(`SELECT * FROM users WHERE id = ?`, [user.id]);
 }
 
-/** 必须登录（session token 优先，其次 openid）——只查不改角色 */
+/**
+ * 必须登录（session token 优先，其次 openid）。
+ *
+ * 语义：只查询/首登建档，**不做角色变更**。
+ * roleHint 只在"首次通过 openid 登录时用于建档"，对已存在用户无副作用。
+ */
 async function requireUser(req, roleHint) {
   validateCloudIdentityHeaders(req);
   // 1. 有 session token 时优先使用（账号密码 / 手机号登录用户）
@@ -120,15 +133,12 @@ async function requireUser(req, roleHint) {
     // different CloudBase openid identity on the same request.
     throw err.unauth('会话无效，请重新登录');
   }
-  // 2. 尝试微信 openid
+  // 2. 尝试微信 openid：仅"首次登录"时按 roleHint 建档；已存在用户忽略 roleHint。
   const openid = getOpenid(req);
   if (openid) {
-    if (roleHint) {
-      const user = await getOrCreateUser(openid, roleHint);
-      if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
-      return user;
-    }
-    const user = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
+    const user = roleHint
+      ? await getOrCreateUser(openid, roleHint)
+      : await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
     if (!user) throw err.unauth('用户不存在，请重新登录');
     if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
     return user;
@@ -191,6 +201,6 @@ async function getOrCreateUserByPhone(phone, roleHint = 'CUSTOMER') {
 }
 
 module.exports = {
-  getOpenid, getOrCreateUser, requireUser, requireEngineer,
+  getOpenid, getOrCreateUser, switchUserRole, requireUser, requireEngineer,
   findUserByUsername, findUserByPhone, getOrCreateUserByPhone
 };

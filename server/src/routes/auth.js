@@ -14,7 +14,7 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne } = require('../db');
-const { requireUser, getOrCreateUser, getOpenid } = require('../lib/auth-mw');
+const { requireUser, getOrCreateUser, switchUserRole, getOpenid } = require('../lib/auth-mw');
 const { parseJson } = require('../db');
 const { config } = require('../config');
 
@@ -51,35 +51,22 @@ async function loadUserView(id) {
 function register(router) {
   // POST /api/auth/wx-login { roleHint?, nickname?, avatarUrl? }
   // 云开发版：openid 从 X-WX-OPENID 头取，无需 jscode2session
+  //
+  // 语义：
+  //   - 未登录 openid → 按 roleHint 首登建档
+  //   - 已存在用户  → 显式按 roleHint 切换角色（客户 <-> 工程师）
+  //   - session token（账号/手机号登录）→ 走 switchUserRole 直接改角色
   router.post('/api/auth/wx-login', async (req, res) => {
     const body = await readJson(req);
     const roleHint = body.roleHint === 'engineer' ? 'ENGINEER' : 'CUSTOMER';
+
+    // 1. 先按"只读"语义拿到当前用户（openid 首登在这里自动建档，
+    //    但对已存在用户不会改角色）
     let user = await requireUser(req, roleHint);
 
-    // 如果用户角色和 roleHint 不一致，切换角色
+    // 2. 如需切换角色，由此 handler 显式完成
     if (user.role !== roleHint) {
-      const openid = getOpenid(req);
-      if (openid) {
-        // 微信用户走 getOrCreateUser 切换
-        user = await getOrCreateUser(openid, roleHint);
-      } else {
-        // 非微信用户直接改角色
-        const now = nowIso();
-        await query(`UPDATE users SET role = ?, updatedAt = ? WHERE id = ?`, [roleHint, now, user.id]);
-        if (roleHint === 'ENGINEER') {
-          const has = await queryOne(`SELECT userId FROM engineer_profiles WHERE userId = ?`, [user.id]);
-          if (!has) {
-            await query(
-              `INSERT INTO engineer_profiles(userId, specialties, softwares, verifyStatus)
-               VALUES(?, ?, ?, 'APPROVED')`,
-              [user.id, JSON.stringify([]), JSON.stringify([])]
-            );
-          } else {
-            await query(`UPDATE engineer_profiles SET verifyStatus = 'APPROVED' WHERE userId = ?`, [user.id]);
-          }
-        }
-        user = await queryOne(`SELECT * FROM users WHERE id = ?`, [user.id]);
-      }
+      user = await switchUserRole(user, roleHint);
     }
 
     // 更新昵称 / 头像（首次登录时一并写入）
