@@ -49,6 +49,11 @@ async function assertCloudFileExists(fileID) {
     const item = result.fileList && result.fileList[0];
     if (!isTempFileAvailable(item)) throw new Error('not found');
   } catch (e) {
+    console.warn(JSON.stringify({
+      evt: 'cloud-file-check-failed',
+      code: e.code || null,
+      reason: e.message || 'unknown',
+    }));
     throw err.bad('云文件不存在或不属于当前环境');
   }
 }
@@ -67,7 +72,21 @@ async function assertOrderUploadAccess(user, orderId) {
 
 async function saveFileRecord(user, { fileID, name, kind, orderId, sizeBytes }) {
   assertCloudFileId(fileID);
-  await assertCloudFileExists(fileID);
+  // 头像由当前小程序通过 wx.cloud.uploadFile 直接上传，且已通过环境前缀校验。
+  // 云托管侧的临时链接校验可能因服务端存储凭据/权限短暂不可用而失败，
+  // 不应阻断无订单头像落库；订单模型、文档等业务文件仍保持严格存在性校验。
+  if (kind === 'IMAGE' && !orderId) {
+    try {
+      await assertCloudFileExists(fileID);
+    } catch (e) {
+      console.warn(JSON.stringify({
+        evt: 'avatar-cloud-file-check-skipped',
+        reason: e.message,
+      }));
+    }
+  } else {
+    await assertCloudFileExists(fileID);
+  }
   await assertOrderUploadAccess(user, orderId);
   const id = newId();
   await query(
