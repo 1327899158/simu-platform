@@ -84,7 +84,7 @@ function register(router) {
   router.get('/api/orders/mine', async (req, res, _p, q_) => {
     const user = await requireUser(req);
     const status = q_.get('status');
-    const limit = Math.min(parseInt(q_.get('limit') || '20', 10) || 20, 50);
+    const limit = q_.get('limit') ? v.int(q_.get('limit'), 'limit', { min: 1, max: 50 }) : 20;
     const cursor = q_.get('cursor');
     const cond = ['customerId = ?', 'deletedAt IS NULL'];
     const args = [user.id];

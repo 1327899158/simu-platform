@@ -59,8 +59,21 @@ function callHttp(method, path, data) {
   });
 }
 
+let redirectingToLogin = false;
+
 function toLogin() {
-  wx.reLaunch({ url: '/pages/login/index' });
+  // A 401 means the cached identity is no longer trusted.  Clear every
+  // auth-related cache before navigating, otherwise the login page immediately
+  // redirects back to the home page and creates an infinite loop.
+  wx.removeStorageSync('user');
+  wx.removeStorageSync('sessionToken');
+  wx.removeStorageSync('devOpenid');
+  if (redirectingToLogin) return;
+  redirectingToLogin = true;
+  wx.reLaunch({
+    url: '/pages/login/index',
+    complete: () => { setTimeout(() => { redirectingToLogin = false; }, 500); },
+  });
 }
 
 /**
@@ -82,9 +95,9 @@ async function request(method, path, data, opt = {}) {
   if (statusCode === 200 && body.code === 0) return body.data;
 
   // 未登录 / 账号不可用
-  if (statusCode === 401) {
+  if (statusCode === 401 || body.code === 40100) {
     toLogin();
-    throw new Error('未登录');
+    throw new Error(body.message || '登录已失效，请重新登录');
   }
 
   const msg = body.message || `请求失败(${statusCode})`;

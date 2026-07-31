@@ -34,10 +34,20 @@ function getSessionToken(req) {
   return req.headers['x-session-token'] || null;
 }
 
+function validateCloudIdentityHeaders(req) {
+  // CloudBase injects X-WX-APPID on callContainer requests.  In production,
+  // require it when the application has configured an expected AppID; local
+  // development keeps the explicit X-Dev-Openid fallback.
+  if (config.env !== 'production' || !config.wxAppid) return;
+  const appid = req.headers['x-wx-appid'] || '';
+  if (appid !== config.wxAppid) throw err.unauth('微信身份来源校验失败');
+}
+
 /**
  * 获取（或按需创建）用户 —— 微信登录用（通过 openid）。
  */
 async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
+  roleHint = String(roleHint || 'CUSTOMER').toUpperCase();
   let user = await queryOne(`SELECT * FROM users WHERE openid = ? AND deletedAt IS NULL`, [openid]);
   if (!user) {
     const { newId, nowIso } = require('../lib/util');
@@ -88,6 +98,7 @@ async function getOrCreateUser(openid, roleHint = 'CUSTOMER') {
 
 /** 必须登录（session token 优先，其次 openid）——只查不改角色 */
 async function requireUser(req, roleHint) {
+  validateCloudIdentityHeaders(req);
   // 1. 有 session token 时优先使用（账号密码 / 手机号登录用户）
   //    微信云托管 callContainer 每次都会注入 X-WX-OPENID，
   //    所以必须先查 session token，否则非微信登录用户永远被识别为微信用户
@@ -99,13 +110,15 @@ async function requireUser(req, roleHint) {
     );
     if (user) {
       if (user.sessionExpiresAt) {
-        const exp = new Date(user.sessionExpiresAt);
+        const exp = require('../lib/util').parseDbDate(user.sessionExpiresAt);
         if (exp < new Date()) throw err.unauth('会话已过期，请重新登录');
       }
       if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
       return user;
     }
-    // token 无效，继续尝试 openid
+    // An explicitly supplied session token must not silently fall back to a
+    // different CloudBase openid identity on the same request.
+    throw err.unauth('会话无效，请重新登录');
   }
   // 2. 尝试微信 openid
   const openid = getOpenid(req);
@@ -152,6 +165,7 @@ async function findUserByPhone(phone) {
  * 账号密码登录 / 注册后的用户获取或创建
  */
 async function getOrCreateUserByPhone(phone, roleHint = 'CUSTOMER') {
+  roleHint = String(roleHint || 'CUSTOMER').toUpperCase();
   let user = await findUserByPhone(phone);
   if (!user) {
     const { newId, nowIso } = require('../lib/util');

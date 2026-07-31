@@ -17,7 +17,13 @@ Page({
   },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
-    const data = await request('GET', '/conversations', null, { silent: true }).catch(() => []);
+    let data;
+    try {
+      data = await request('GET', '/conversations', null, { silent: true });
+    } catch (e) {
+      wx.showToast({ title: e.message || '消息列表加载失败', icon: 'none' });
+      return;
+    }
     const list = (data || []).map((c) => ({
       ...c,
       peer: { ...c.peer, avatarUrl: resolveUrl(c.peer?.avatarUrl) },

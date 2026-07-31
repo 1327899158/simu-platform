@@ -21,7 +21,9 @@ Page({
     if (!user) return;
     this.setData({ role: user.role, user });
     if (!this.data.dicts) {
-      try { this.setData({ dicts: await request('GET', '/dicts', null, { silent: true }) }); } catch (e) {}
+      try { this.setData({ dicts: await request('GET', '/dicts', null, { silent: true }) }); } catch (e) {
+        wx.showToast({ title: e.message || '字典加载失败', icon: 'none' });
+      }
     }
     user.role === 'ENGINEER' ? this.loadHall() : this.loadCustomer();
   },
@@ -32,7 +34,9 @@ Page({
 
   // ---------- 客户 ----------
   async loadCustomer() {
-    const data = await request('GET', '/orders/mine', { limit: 20 });
+    let data;
+    try { data = await request('GET', '/orders/mine', { limit: 20 }); }
+    catch (e) { wx.showToast({ title: e.message || '订单加载失败', icon: 'none' }); return; }
     const counts = { QUOTING: 0, AWAITING_PAYMENT: 0, IN_PROGRESS: 0, DELIVERED: 0 };
     data.items.forEach((o) => { if (counts[o.status] !== undefined) counts[o.status] += 1; });
     this.setData({
@@ -54,7 +58,9 @@ Page({
     const params = {};
     if (this.data.fDirection) params.direction = this.data.fDirection;
     if (this.data.fSoftware) params.software = this.data.fSoftware;
-    const data = await request('GET', '/market/orders', params);
+    let data;
+    try { data = await request('GET', '/market/orders', params); }
+    catch (e) { wx.showToast({ title: e.message || '抢单大厅加载失败', icon: 'none' }); return; }
     this.setData({
       hall: data.items.map((o) => ({
         ...o, budgetY: fenToYuan(o.budgetFen), time: timeShort(o.createdAt),

@@ -138,8 +138,13 @@ Page({
     this.setData({ loading: true });
     try {
       wx.showLoading({ title: '登录中…', mask: true });
-      await loginByUsername(this.data.username, this.data.password);
+      const loggedIn = await loginByUsername(this.data.username, this.data.password);
       wx.hideLoading();
+      if (loggedIn && loggedIn.verifyStatus === 'PENDING') {
+        wx.showModal({ title: '登录成功', content: '工程师资格正在审核，审核通过后即可报价。', showCancel: false });
+        this.setData({ loading: false });
+        return;
+      }
       wx.showToast({ title: '登录成功', icon: 'success' });
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 800);
     } catch (e) {
@@ -163,9 +168,15 @@ Page({
     this.setData({ loading: true });
     try {
       wx.showLoading({ title: '注册中…', mask: true });
-      await registerByPhone(this.data.username, this.data.phone, this.data.password, this.data.smsCode, this.data.role || 'customer');
+      const registered = await registerByPhone(this.data.username, this.data.phone, this.data.password, this.data.smsCode, this.data.role || 'customer');
       wx.hideLoading();
-      wx.showToast({ title: '注册成功', icon: 'success' });
+      if (registered && registered.verifyStatus === 'PENDING') {
+        wx.showModal({ title: '注册成功', content: '工程师资格正在审核，审核通过后即可报价。', showCancel: false });
+        this.setData({ loading: false });
+        return;
+      } else {
+        wx.showToast({ title: '注册成功', icon: 'success' });
+      }
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 800);
     } catch (e) {
       wx.hideLoading();
@@ -211,8 +222,13 @@ Page({
     this.setData({ loading: true });
     try {
       wx.showLoading({ title: '登录中…', mask: true });
-      await loginByPhone(this.data.phone, this.data.smsCode, this.data.role || 'customer');
+      const loggedIn = await loginByPhone(this.data.phone, this.data.smsCode, this.data.role || 'customer');
       wx.hideLoading();
+      if (loggedIn && loggedIn.verifyStatus === 'PENDING') {
+        wx.showModal({ title: '登录成功', content: '工程师资格正在审核，审核通过后即可报价。', showCancel: false });
+        this.setData({ loading: false });
+        return;
+      }
       wx.showToast({ title: '登录成功', icon: 'success' });
       setTimeout(() => wx.switchTab({ url: '/pages/home/index' }), 800);
     } catch (e) {

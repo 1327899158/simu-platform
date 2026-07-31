@@ -9,10 +9,13 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry } = require('../lib/util');
 const { query, queryOne } = require('../db');
-const { getOrCreateUser, findUserByUsername, findUserByPhone, getOrCreateUserByPhone } = require('../lib/auth-mw');
+const { getOrCreateUser, findUserByUsername, findUserByPhone, getOrCreateUserByPhone, requireUser } = require('../lib/auth-mw');
 const { sendSmsCode, verifySmsCode } = require('../services/sms-svc');
 
-function userView(u) {
+async function userView(u) {
+  const profile = u.role === 'ENGINEER'
+    ? await queryOne(`SELECT verifyStatus FROM engineer_profiles WHERE userId = ?`, [u.id])
+    : null;
   return {
     id: u.id,
     role: u.role,
@@ -21,6 +24,7 @@ function userView(u) {
     openid: u.openid,
     username: u.username,
     phone: u.phone,
+    verifyStatus: profile ? profile.verifyStatus : null,
   };
 }
 
@@ -32,7 +36,7 @@ async function issueSession(user) {
     `UPDATE users SET sessionToken = ?, sessionExpiresAt = ?, updatedAt = ? WHERE id = ?`,
     [token, expires, nowIso(), user.id]
   );
-  return { token, user: userView(user) };
+  return { token, user: await userView(user) };
 }
 
 function register(router) {
@@ -65,7 +69,8 @@ function register(router) {
       if (!existing) throw err.notFound('该手机号未注册');
     }
 
-    const result = await sendSmsCode(phone, type);
+    const rateKey = req.socket && req.socket.remoteAddress ? req.socket.remoteAddress : '';
+    const result = await sendSmsCode(phone, type, rateKey);
     ok(res, result);
   });
 
@@ -94,7 +99,7 @@ function register(router) {
     const id = newId();
     const now = nowIso();
     const passwordHash = await hashPassword(password);
-    const roleHint = b.roleHint || 'CUSTOMER';
+    const roleHint = String(b.roleHint || 'CUSTOMER').toUpperCase();
     const role = roleHint === 'ENGINEER' ? 'ENGINEER' : 'CUSTOMER';
 
     await query(
@@ -144,7 +149,7 @@ function register(router) {
     const b = await readJson(req);
     const phone = v.str(b.phone, '手机号', { min: 11, max: 11 });
     const smsCode = v.str(b.smsCode, '验证码', { min: 6, max: 6 });
-    const roleHint = b.roleHint || 'CUSTOMER';
+    const roleHint = String(b.roleHint || 'CUSTOMER').toUpperCase();
 
     // 验证短信码
     await verifySmsCode(phone, smsCode, 'LOGIN');
@@ -178,11 +183,22 @@ function register(router) {
     // 更新密码
     const passwordHash = await hashPassword(newPassword);
     await query(
-      `UPDATE users SET passwordHash = ?, updatedAt = ? WHERE id = ?`,
+      `UPDATE users SET passwordHash = ?, sessionToken = NULL, sessionExpiresAt = NULL, updatedAt = ? WHERE id = ?`,
       [passwordHash, nowIso(), user.id]
     );
 
     ok(res, { message: '密码重置成功' });
+  });
+
+  // POST /api/auth/logout
+  // Revoke the server-side session as well as clearing the client cache.
+  router.post('/api/auth/logout', async (req, res) => {
+    const user = await requireUser(req);
+    await query(
+      `UPDATE users SET sessionToken = NULL, sessionExpiresAt = NULL, updatedAt = ? WHERE id = ?`,
+      [nowIso(), user.id]
+    );
+    ok(res, { loggedOut: true });
   });
 }
 

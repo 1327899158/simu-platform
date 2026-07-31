@@ -90,7 +90,7 @@ Page({
       wx.showToast({ title: '保存成功', icon: 'success' });
       setTimeout(() => wx.navigateBack(), 500);
     } catch (e) {
-      wx.showToast({ title: '保存失败', icon: 'none' });
+      wx.showToast({ title: e.message || '保存失败', icon: 'none' });
     }
     this.setData({ saving: false });
   },

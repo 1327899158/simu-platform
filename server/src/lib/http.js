@@ -14,6 +14,7 @@ const err = {
   forbidden: (m = '无权访问') => new ApiError(403, 40300, m),
   notFound: (m = '资源不存在') => new ApiError(404, 40400, m),
   conflict: (m = '状态已变化，请刷新后重试') => new ApiError(409, 40900, m),
+  tooMany: (m = '请求过于频繁，请稍后再试') => new ApiError(429, 42900, m),
 };
 
 function createRouter() {

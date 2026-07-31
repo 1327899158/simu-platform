@@ -10,7 +10,10 @@ const parseJson = (str) => {
 function timeShort(iso) {
   if (!iso) return '';
   // MySQL DATETIME 格式 'YYYY-MM-DD HH:MM:SS'，替换空格为 T 使其兼容 ISO
-  const normalized = typeof iso === 'string' && iso.includes(' ') ? iso.replace(' ', 'T') : iso;
+  let normalized = typeof iso === 'string' && iso.includes(' ') ? iso.replace(' ', 'T') : iso;
+  // The API returns UTC MySQL DATETIME values without a suffix.  Tell the
+  // JS runtime explicitly so devices in UTC+8 do not display an 8-hour skew.
+  if (typeof normalized === 'string' && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(normalized)) normalized += 'Z';
   const d = new Date(normalized);
   if (isNaN(d.getTime())) return String(iso);
   const p = (n) => String(n).padStart(2, '0');

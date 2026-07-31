@@ -39,6 +39,9 @@ Page({
       await request('POST', `/orders/${d.orderId}/quotes`, body);
       wx.showToast({ title: '报价已提交', icon: 'success' });
       setTimeout(() => wx.navigateBack(), 600);
-    } catch (e) { this.setData({ submitting: false }); }
+    } catch (e) {
+      wx.showToast({ title: e.message || '报价提交失败', icon: 'none' });
+      this.setData({ submitting: false });
+    }
   },
 });

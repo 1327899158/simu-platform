@@ -12,6 +12,7 @@
  *   init() → 建表/迁移（启动时调用一次）
  */
 const mysql = require('mysql2/promise');
+const crypto = require('node:crypto');
 const { config } = require('./config');
 
 let _pool = null;
@@ -225,7 +226,10 @@ async function init() {
         console.log(`[migrate] Added column ${m.check} to users`);
       }
     } catch (e) {
-      // 忽略已存在的列错误
+      // Concurrent replicas may race on the same ALTER. Ignore only the
+      // duplicate-column condition; all other migration failures must stop
+      // startup so a partially upgraded schema is never served silently.
+      if (e.code !== 'ER_DUP_FIELDNAME' && e.code !== 'ER_DUP_KEYNAME') throw e;
     }
   }
 
@@ -237,8 +241,16 @@ async function nextOrderNo() {
   const d = new Date();
   const ymd = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
   const prefix = `SIM${ymd}`;
-  const row = await queryOne(`SELECT COUNT(*) AS c FROM orders WHERE orderNo LIKE ?`, [`${prefix}%`]);
-  return `${prefix}${String(((row?.c) || 0) + 1).padStart(4, '0')}`;
+  // COUNT+1 is racy under concurrent order creation. A random suffix keeps
+  // the human-readable date prefix while the UNIQUE index remains the final
+  // collision guard.
+  for (let i = 0; i < 5; i += 1) {
+    const suffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const candidate = `${prefix}${suffix}`;
+    const exists = await queryOne(`SELECT id FROM orders WHERE orderNo = ?`, [candidate]);
+    if (!exists) return candidate;
+  }
+  throw new Error('无法生成唯一订单号');
 }
 
 const parseJson = (s, dft = []) => {

@@ -62,8 +62,9 @@ const config = {
     secretId: process.env.TENCENT_SMS_SECRET_ID || '',
     secretKey: process.env.TENCENT_SMS_SECRET_KEY || '',
     region: process.env.TENCENT_SMS_REGION || 'ap-beijing',
-    signName: process.env.TENCENT_SMS_SIGN_NAME || '【仿真工坊】',
-    templateId: process.env.TENCENT_SMS_TEMPLATE_ID || 'SMS_XXXXXX', // 需自己申请
+    signName: process.env.TENCENT_SMS_SIGN_NAME || '仿真工坊',
+    templateId: process.env.TENCENT_SMS_TEMPLATE_ID || '',
+    sdkAppId: process.env.TENCENT_SMS_SDK_APP_ID || '',
     codeExpires: 5 * 60, // 验证码有效期：5 分钟
     sendCooldown: 60, // 同一手机号重复发送冷却：60 秒
   },

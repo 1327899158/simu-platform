@@ -1,6 +1,7 @@
 'use strict';
 /** 抢单大厅（云开发版）。 */
 const { ok, err } = require('../lib/http');
+const { v } = require('../lib/util');
 const { query, queryOne, parseJson } = require('../db');
 const { requireEngineer } = require('../lib/auth-mw');
 const { orderView, quoteCountOf } = require('./orders');
@@ -9,12 +10,12 @@ function register(router) {
   // GET /api/market/orders?direction=&software=&budgetMinFen=&budgetMaxFen=&cursor=&limit=
   router.get('/api/market/orders', async (req, res, _p, q_) => {
     const user = await requireEngineer(req);
-    const limit = Math.min(parseInt(q_.get('limit') || '20', 10) || 20, 50);
+    const limit = q_.get('limit') ? v.int(q_.get('limit'), 'limit', { min: 1, max: 50 }) : 20;
     const cursor = q_.get('cursor');
     const cond = [`status = 'QUOTING'`, `deletedAt IS NULL`];
     const args = [];
-    if (q_.get('budgetMinFen')) { cond.push('budgetFen >= ?'); args.push(parseInt(q_.get('budgetMinFen'), 10)); }
-    if (q_.get('budgetMaxFen')) { cond.push('budgetFen <= ?'); args.push(parseInt(q_.get('budgetMaxFen'), 10)); }
+    if (q_.get('budgetMinFen')) { cond.push('budgetFen >= ?'); args.push(v.int(q_.get('budgetMinFen'), 'budgetMinFen', { min: 0, max: 1000000000 })); }
+    if (q_.get('budgetMaxFen')) { cond.push('budgetFen <= ?'); args.push(v.int(q_.get('budgetMaxFen'), 'budgetMaxFen', { min: 0, max: 1000000000 })); }
     // MySQL JSON_SEARCH 模糊匹配（LIKE 降级兼容）
     if (q_.get('direction')) { cond.push(`directionTags LIKE ?`); args.push(`%${q_.get('direction')}%`); }
     if (q_.get('software')) { cond.push(`softwareTags LIKE ?`); args.push(`%${q_.get('software')}%`); }

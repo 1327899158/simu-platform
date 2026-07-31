@@ -17,7 +17,13 @@ Page({
     this.setData({ tab: key, currentLabel: t ? t.label : '全部', filterOpen: false }, () => this.load());
   },
   async load() {
-    const data = await request('GET', '/orders/mine', this.data.tab ? { status: this.data.tab } : {});
+    let data;
+    try {
+      data = await request('GET', '/orders/mine', this.data.tab ? { status: this.data.tab } : {});
+    } catch (e) {
+      wx.showToast({ title: e.message || '订单加载失败', icon: 'none' });
+      return;
+    }
     this.setData({
       items: data.items.map((o) => ({
         ...o, budgetY: fenToYuan(o.budgetFen), time: timeShort(o.createdAt),

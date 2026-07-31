@@ -65,8 +65,8 @@ function register(router) {
   router.get('/api/conversations/:id/messages', async (req, res, params, query_) => {
     const user = await requireUser(req);
     const c = await myConversation(user, params.id);
-    const after = parseInt(query_.get('after') || '0', 10) || 0;
-    const limit = Math.min(parseInt(query_.get('limit') || '50', 10) || 50, 100);
+    const after = query_.get('after') ? v.int(query_.get('after'), 'after', { min: 0, max: 2147483647 }) : 0;
+    const limit = query_.get('limit') ? v.int(query_.get('limit'), 'limit', { min: 1, max: 100 }) : 50;
     const rows = await query(
       `SELECT m.* FROM messages m
        WHERE m.convId = ? AND m.id > ? ORDER BY m.id LIMIT ${limit}`,
@@ -159,6 +159,11 @@ function register(router) {
       createdAt: new Date(),
     };
     try {
+      const participants = await Promise.all([
+        queryOne(`SELECT openid FROM users WHERE id = ?`, [c.customerId]),
+        queryOne(`SELECT openid FROM users WHERE id = ?`, [c.engineerId]),
+      ]);
+      msgDoc._openid_participants = participants.map((p) => p && p.openid).filter(Boolean);
       await getDB().collection('conv_messages').add({ data: msgDoc });
     } catch (e) {
       console.error('[chat] cloud db write failed', e.message);

@@ -37,7 +37,13 @@ Page({
     // 已交付/已完成是按订单状态筛，不传 status（quote status 里没有这两个值）
     const orderStatusFilter = tab === 'DELIVERED' || tab === 'COMPLETED' ? tab : null;
     const quoteStatusFilter = !orderStatusFilter && tab ? tab : null;
-    const raw = await request('GET', '/quotes/mine', quoteStatusFilter ? { status: quoteStatusFilter } : {});
+    let raw;
+    try {
+      raw = await request('GET', '/quotes/mine', quoteStatusFilter ? { status: quoteStatusFilter } : {});
+    } catch (e) {
+      wx.showToast({ title: e.message || '报价加载失败', icon: 'none' });
+      return;
+    }
     let items = raw;
     // 客户端二次过滤：按订单状态
     if (orderStatusFilter) {

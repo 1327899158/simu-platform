@@ -2,7 +2,7 @@
 /**
  * 云函数：pay-timeout-sweep
  * 触发方式：定时触发器，每 2 分钟执行一次
- * （在云开发控制台 → 云函数 → pay-timeout-sweep → 触发器，配置 cron: 0 */2 * * * * *）
+ * （在云开发控制台 → 云函数 → pay-timeout-sweep → 触发器，按“每 2 分钟”配置）
  *
  * 功能：扫描超时未支付（AWAITING_PAYMENT 且 selectedAt 超过 30 分钟）的订单，
  *       回退状态为 QUOTING，释放选标，报价恢复 PENDING。

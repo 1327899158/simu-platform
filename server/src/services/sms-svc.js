@@ -5,7 +5,7 @@
  */
 const { config } = require('../config');
 const { query, queryOne } = require('../db');
-const { newId, nowIso } = require('../lib/util');
+const { newId, nowIso, parseDbDate } = require('../lib/util');
 const { err } = require('../lib/http');
 
 /**
@@ -15,15 +15,32 @@ function genCode() {
   return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
 }
 
+const ipRate = new Map();
+const IP_WINDOW_MS = 10 * 60 * 1000;
+const IP_MAX_SENDS = 20;
+
+function checkIpRate(rateKey) {
+  if (!rateKey) return;
+  const now = Date.now();
+  const recent = (ipRate.get(rateKey) || []).filter((t) => now - t < IP_WINDOW_MS);
+  if (recent.length >= IP_MAX_SENDS) throw err.tooMany('请求过于频繁，请稍后再试');
+  recent.push(now);
+  ipRate.set(rateKey, recent);
+  if (ipRate.size > 10000) {
+    for (const [key, values] of ipRate) if (!values.some((t) => now - t < IP_WINDOW_MS)) ipRate.delete(key);
+  }
+}
+
 /**
  * 发送短信验证码
  * @param {string} phone - 手机号
  * @param {string} type - 验证码类型：REGISTER | LOGIN | RESET_PWD
  * @returns {Promise<{sent: boolean, nextRetry: number}>}
  */
-async function sendSmsCode(phone, type = 'LOGIN') {
+async function sendSmsCode(phone, type = 'LOGIN', rateKey = '') {
   if (!phone) throw err.bad('手机号不能为空');
   if (!/^\d{11}$/.test(phone)) throw err.bad('手机号格式不正确');
+  checkIpRate(rateKey);
 
   // 检查冷却期（60 秒内不能重复发送）
   const recent = await queryOne(
@@ -37,19 +54,40 @@ async function sendSmsCode(phone, type = 'LOGIN') {
     return { sent: false, nextRetry, message: '请稍后再试' };
   }
 
-  const code = genCode();
-  const id = newId();
-  const now = nowIso();
-  const expiresAt = new Date(Date.now() + config.sms.codeExpires * 1000);
-  const expiresAtStr = expiresAt.toISOString().slice(0, 19).replace('T', ' ');
-
   try {
-    // TODO: 如果配置了真实腾讯云密钥，可在此调用 SDK
-    // const result = await callTencentSMS(phone, code);
-    // if (result.error) throw new Error(result.error);
+    const code = genCode();
+    const id = newId();
+    const now = nowIso();
+    const expiresAt = new Date(Date.now() + config.sms.codeExpires * 1000);
+    const expiresAtStr = expiresAt.toISOString().slice(0, 19).replace('T', ' ');
 
-    // 本地测试模式：直接存库（不调用 API）
-    if (!config.sms.secretId || !config.sms.secretKey) {
+    // 检查是否配置了真实腾讯云密钥
+    if (config.sms.secretId && config.sms.secretKey && config.sms.templateId) {
+      // 真实发送：调用腾讯云 SMS API
+      const tencentcloud = require('tencentcloud-sdk-nodejs');
+      const SmsClient = tencentcloud.sms.v20210111.Client;
+      const client = new SmsClient({
+        credential: { secretId: config.sms.secretId, secretKey: config.sms.secretKey },
+        region: config.sms.region,
+        profile: { httpProfile: { endpoint: 'sms.tencentcloudapi.com' } },
+      });
+      const sendResult = await client.SendSms({
+        SmsSdkAppId: config.sms.sdkAppId || '',
+        SignName: config.sms.signName,
+        PhoneNumberSet: ['+86' + phone],
+        TemplateId: config.sms.templateId,
+        TemplateParamSet: [code, String(config.sms.codeExpires / 60)],
+      });
+      if (sendResult.SendStatusSet && sendResult.SendStatusSet[0]) {
+        const status = sendResult.SendStatusSet[0];
+        if (status.Code !== 'Ok') {
+          console.error('[SMS] Send failed:', status.Message);
+          throw err.bad('短信发送失败');
+        }
+      }
+      console.log(`[SMS] Code sent to ${phone} via Tencent Cloud`);
+    } else {
+      // 测试模式：验证码只写日志
       console.warn(`[SMS TEST] Sending code ${code} to ${phone} (type: ${type})`);
     }
 
@@ -60,7 +98,6 @@ async function sendSmsCode(phone, type = 'LOGIN') {
       [id, phone, code, type, expiresAtStr, now]
     );
 
-    console.log(`[SMS] Code sent to ${phone} (expires in ${config.sms.codeExpires}s)`);
     return { sent: true, nextRetry: config.sms.sendCooldown };
   } catch (e) {
     console.error('[SMS] Failed:', e.message);
@@ -91,16 +128,19 @@ async function verifySmsCode(phone, code, type = 'LOGIN') {
 
   // 检查过期时间
   const now = new Date();
-  const expiresAt = new Date(record.expiresAt);
+  const expiresAt = parseDbDate(record.expiresAt);
   if (now > expiresAt) {
     throw err.conflict('验证码已过期');
   }
 
-  // 标记为已用
-  await query(
-    `UPDATE sms_codes SET usedAt = ? WHERE id = ?`,
+  // Atomically consume the code. Two concurrent requests must not both pass
+  // the read-before-write window.
+  const consumed = await query(
+    `UPDATE sms_codes SET usedAt = ?
+     WHERE id = ? AND usedAt IS NULL AND expiresAt > UTC_TIMESTAMP(3)`,
     [nowIso(), record.id]
   );
+  if (!consumed[0] || !consumed[0].affectedRows) throw err.conflict('验证码已被使用或已过期');
 
   return { valid: true };
 }
@@ -117,7 +157,7 @@ async function getLastCodeForTest(phone) {
   );
   if (!record) return null;
   const now = new Date();
-  const expiresAt = new Date(record.expiresAt);
+  const expiresAt = parseDbDate(record.expiresAt);
   if (now > expiresAt) return null;
   return record.code;
 }

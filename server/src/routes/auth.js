@@ -24,6 +24,8 @@ function userView(u, profile) {
     nickname: u.nickname,
     avatarUrl: u.avatarUrl || null,
     openid: u.openid,
+    username: u.username,
+    phone: u.phone,
     engineer: profile
       ? {
           ...profile,

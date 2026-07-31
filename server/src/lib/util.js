@@ -22,6 +22,15 @@ const nowIso = () => {
   // 例：'2026-07-30 03:39:08'
 };
 
+// MySQL DATETIME values are stored as UTC by this service.  Node parses a
+// timezone-less date as local time, so always make the UTC contract explicit.
+const parseDbDate = (value) => {
+  if (value instanceof Date) return value;
+  if (typeof value !== 'string') return new Date(value);
+  const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+  return new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(normalized) ? normalized : `${normalized}Z`);
+};
+
 // ---------- 校验 ----------
 const v = {
   str(x, name, { min = 0, max = 100000, optional = false } = {}) {
@@ -40,7 +49,7 @@ const v = {
       if (optional) return undefined;
       throw err.bad(`${name} 不能为空`);
     }
-    const n = typeof x === 'number' ? x : parseInt(x, 10);
+    const n = typeof x === 'number' ? x : Number(x);
     if (!Number.isInteger(n)) throw err.bad(`${name} 必须是整数`);
     if (n < min || n > max) throw err.bad(`${name} 需在 ${min}~${max} 之间`);
     return n;
@@ -86,4 +95,4 @@ const verifyPassword = async (passwordHash, inputPassword) => {
   return bcrypt.compare(inputPassword, passwordHash);
 };
 
-module.exports = { newId, nowIso, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry };
+module.exports = { newId, nowIso, parseDbDate, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry };

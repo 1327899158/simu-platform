@@ -10,5 +10,5 @@ module.exports = {
   ENV_ID,
   SERVICE_NAME,
   // 兼容旧代码，BASE_URL 仅本地调试用
-  BASE_URL: 'http://127.0.0.1:3000/api',
+  BASE_URL: 'http://127.0.0.1:8787/api',
 };

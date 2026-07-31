@@ -27,7 +27,9 @@ async function ensureConversation(orderId, conn) {
   if (conv) return conv;
 
   const order = await getOne(`SELECT * FROM orders WHERE id = ?`, [orderId]);
+  if (!order || !order.selectedQuoteId) throw err.conflict('订单尚未选定工程师，无法创建会话');
   const quote = await getOne(`SELECT * FROM quotes WHERE id = ?`, [order.selectedQuoteId]);
+  if (!quote) throw err.conflict('订单报价不存在，无法创建会话');
   const id = newId();
   const now = nowIso();
   await exec(
@@ -38,11 +40,16 @@ async function ensureConversation(orderId, conn) {
 
   // 同步在云数据库建会话文档（供 db.watch 安全规则判断参与方）
   try {
+    const participants = await Promise.all([
+      getOne(`SELECT openid FROM users WHERE id = ?`, [order.customerId]),
+      getOne(`SELECT openid FROM users WHERE id = ?`, [quote.engineerId]),
+    ]);
     await getDB().collection('conversations').add({
       data: {
         _id: id,
         orderId,
-        _openid_participants: [order.customerId_openid || '', quote.engineerId_openid || ''],
+        _openid_participants: participants.map((p) => p && p.openid).filter(Boolean),
+        participantUserIds: [order.customerId, quote.engineerId],
         createdAt: new Date(),
         lastMsgAt: new Date(),
       },
@@ -72,6 +79,11 @@ async function systemMessage(convId, content, conn) {
 
   // 同步写云数据库供 db.watch
   try {
+    const conv = await queryOne(`SELECT customerId, engineerId FROM conversations WHERE id = ?`, [convId]);
+    const participants = conv ? await Promise.all([
+      queryOne(`SELECT openid FROM users WHERE id = ?`, [conv.customerId]),
+      queryOne(`SELECT openid FROM users WHERE id = ?`, [conv.engineerId]),
+    ]) : [];
     await getDB().collection('conv_messages').add({
       data: {
         convId,
@@ -79,6 +91,7 @@ async function systemMessage(convId, content, conn) {
         type: 'SYSTEM',
         content,
         sqlMsgId: String(msgId),
+        _openid_participants: participants.map((p) => p && p.openid).filter(Boolean),
         createdAt: new Date(),
       },
     });

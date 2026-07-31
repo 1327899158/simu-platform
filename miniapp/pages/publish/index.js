@@ -32,7 +32,11 @@ Page({
     if (!ensureLogin()) return;
     const draft = wx.getStorageSync(DRAFT_KEY);
     if (draft) this.setData(draft);
-    this.setData({ dicts: await request('GET', '/dicts') });
+    try {
+      this.setData({ dicts: await request('GET', '/dicts') });
+    } catch (e) {
+      wx.showToast({ title: e.message || '基础配置加载失败', icon: 'none' });
+    }
   },
   onUnload() {
     if (this.data.submitting) return;
@@ -101,10 +105,17 @@ Page({
       },
     });
   },
-  removeFile(e) {
+  async removeFile(e) {
     const files = this.data.files.slice();
-    files.splice(e.currentTarget.dataset.i, 1);
+    const [removed] = files.splice(e.currentTarget.dataset.i, 1);
     this.setData({ files });
+    if (removed && (removed.fileId || removed.id)) {
+      try {
+        await request('DELETE', `/files/${removed.fileId || removed.id}`, null, { silent: true });
+      } catch (err) {
+        wx.showToast({ title: err.message || '附件删除失败', icon: 'none' });
+      }
+    }
   },
 
   deliveryDays() {
@@ -142,6 +153,7 @@ Page({
         wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}&mode=customer` });
       }, 600);
     } catch (e) {
+      wx.showToast({ title: e.message || '发布失败，请重试', icon: 'none' });
       this.setData({ submitting: false });
     }
   },

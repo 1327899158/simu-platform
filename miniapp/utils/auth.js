@@ -61,7 +61,12 @@ function isLoggedIn() {
   return !!getUser();
 }
 
-function logout() {
+async function logout() {
+  try {
+    await request('POST', '/auth/logout', {}, { silent: true });
+  } catch (e) {
+    // Local cache must still be cleared when the network is unavailable.
+  }
   wx.removeStorageSync('user');
   wx.removeStorageSync('sessionToken');
   wx.reLaunch({ url: '/pages/login/index' });

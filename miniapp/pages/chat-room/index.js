@@ -22,6 +22,8 @@ Page({
   },
   _watcher: null,
   _pollTimer: null,
+  _pullInFlight: false,
+  _seenIds: new Set(),
   _shouldScrollBottom: false,
 
   onLoad(q) {
@@ -114,25 +116,40 @@ Page({
       if (!data) return;
       if (data.peer) this.setData({ peer: data.peer });
       const mapped = this._mapMsgs(data.items || []);
+      this._seenIds = new Set(mapped.map((m) => m.id));
       this.setData({ msgs: mapped, lastId: data.lastId });
       this._scrollBottom();
     } catch (e) { /* 静默 */ }
+    finally { this._pullInFlight = false; }
   },
 
   /** 增量拉取（after=lastId） */
   async _pullIncremental() {
-    if (!this.data.convId) return;
+    if (!this.data.convId || this._pullInFlight) return;
+    this._pullInFlight = true;
     try {
       const data = await request('GET', `/conversations/${this.data.convId}/messages`,
         { after: this.data.lastId, limit: 50 }, { silent: true });
-      if (!data || !data.items.length) return;
+      if (!data || !data.items.length) {
+        this._pullInFlight = false;
+        return;
+      }
       if (data.peer && !this.data.peer) this.setData({ peer: data.peer });
-      const mapped = this._mapMsgs(data.items);
+      const mapped = this._mapMsgs(data.items).filter((m) => !this._seenIds.has(m.id));
+      mapped.forEach((m) => this._seenIds.add(m.id));
+      if (!mapped.length) {
+        this.setData({ lastId: Math.max(this.data.lastId, Number(data.lastId || 0)) });
+        this._pullInFlight = false;
+        return;
+      }
       const shouldScroll = this._shouldScrollBottom;
       this._shouldScrollBottom = false;
       this.setData({ msgs: this.data.msgs.concat(mapped), lastId: data.lastId });
       if (shouldScroll) this._scrollBottom();
-    } catch (e) { /* 静默 */ }
+      this._pullInFlight = false;
+    } catch (e) { /* 静默 */
+      this._pullInFlight = false;
+    }
   },
 
   _mapMsgs(items) {
@@ -166,7 +183,7 @@ Page({
       this.setData({ text: '' });
       this._shouldScrollBottom = true;
       await this._pullIncremental();
-    } catch (e) { /* 违规词等已 toast */ }
+    } catch (e) { wx.showToast({ title: e.message || '消息发送失败', icon: 'none' }); }
     this.setData({ sending: false });
   },
 
@@ -206,6 +223,6 @@ Page({
         },
         fail: () => { wx.hideLoading(); wx.showToast({ title: '下载失败', icon: 'none' }); },
       });
-    } catch (err) {}
+    } catch (err) { wx.showToast({ title: err.message || '文件打开失败', icon: 'none' }); }
   },
 });

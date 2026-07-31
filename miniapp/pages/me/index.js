@@ -62,8 +62,12 @@ Page({
           }
         } else {
           // 微信用户
-          await login(target);
-          wx.switchTab({ url: '/pages/home/index' });
+          try {
+            await login(target);
+            wx.switchTab({ url: '/pages/home/index' });
+          } catch (e) {
+            wx.showToast({ title: e.message || '切换失败', icon: 'none' });
+          }
         }
       },
     });
