@@ -27,7 +27,12 @@ function getApp() {
 /** 访问云数据库 */
 function getDB() { return getApp().database(); }
 
-/** 访问云存储（用于获取下载临时链接） */
-function getStorage() { return getApp().storage(); }
+/**
+ * 访问云存储。
+ * @cloudbase/node-sdk 2.x 将 uploadFile/getTempFileURL/deleteFile 直接挂在
+ * CloudBase 实例上，不提供旧版的 app.storage() 子对象；统一返回 app，
+ * 让聊天图片、头像和附件下载共用同一适配入口。
+ */
+function getStorage() { return getApp(); }
 
 module.exports = { getApp, getDB, getStorage };
