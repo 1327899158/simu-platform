@@ -21,6 +21,15 @@ const path = require('node:path');
 const KINDS = ['MODEL', 'DOC', 'IMAGE', 'RESULT'];
 const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
 
+// @cloudbase/node-sdk 返回的成功项使用 code=SUCCESS；部分兼容实现使用 status=0。
+// 统一判断，避免把正常上传结果误判为“文件不存在”。
+function isTempFileAvailable(item) {
+  if (!item || !item.tempFileURL) return false;
+  if (item.code !== undefined) return item.code === 'SUCCESS';
+  if (item.status !== undefined) return item.status === 0 || item.status === 'SUCCESS';
+  return true;
+}
+
 function assertCloudFileId(fileID) {
   if (typeof fileID !== 'string' || !fileID.startsWith('cloud://')) {
     throw err.bad('fileID 格式不合法，请使用云存储上传');
@@ -38,7 +47,7 @@ async function assertCloudFileExists(fileID) {
   try {
     const result = await getStorage().getTempFileURL({ fileList: [fileID] });
     const item = result.fileList && result.fileList[0];
-    if (!item || item.status !== 0 || !item.tempFileURL) throw new Error('not found');
+    if (!isTempFileAvailable(item)) throw new Error('not found');
   } catch (e) {
     throw err.bad('云文件不存在或不属于当前环境');
   }
@@ -154,7 +163,7 @@ function register(router) {
       fileList: [file.fileID],
     });
     const item = result.fileList && result.fileList[0];
-    if (!item || item.status !== 0) throw err.bad('获取下载链接失败');
+    if (!isTempFileAvailable(item)) throw err.bad('获取下载链接失败');
 
     ok(res, {
       url: item.tempFileURL,

@@ -148,13 +148,19 @@ async function upload(filePath, { kind = 'DOC', orderId = '', name = '' } = {}) 
   let sizeBytes = 0;
   try {
     const stat = await new Promise((resolve) => {
-      wx.getFileInfo({ filePath, success: (r) => resolve(r), fail: () => resolve({}) });
+      // 新版基础库使用 FileSystemManager；保留旧 API 作为兼容降级。
+      const fs = wx.getFileSystemManager && wx.getFileSystemManager();
+      if (fs && fs.getFileInfo) {
+        fs.getFileInfo({ filePath, success: (r) => resolve(r), fail: () => resolve({}) });
+      } else {
+        wx.getFileInfo({ filePath, success: (r) => resolve(r), fail: () => resolve({}) });
+      }
     });
     sizeBytes = stat.size || 0;
   } catch (e) { /* 忽略 */ }
 
   // 通知服务端落库
-  const meta = await request('POST', '/files/commit', { fileID, name: filename, kind, orderId, sizeBytes });
+  const meta = await request('POST', '/files/commit', { fileID, name: filename, kind, orderId, sizeBytes }, { silent: true });
   return { ...meta, fileID };
 }
 

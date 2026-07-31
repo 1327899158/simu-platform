@@ -48,9 +48,9 @@ Page({
       .then((up) => {
         this.setData({ avatarUrl: up.fileID, avatarFileId: up.fileID, uploading: false });
       })
-      .catch(() => {
+      .catch((e) => {
         this.setData({ uploading: false });
-        wx.showToast({ title: '头像上传失败', icon: 'none' });
+        wx.showToast({ title: e.message || '头像上传失败', icon: 'none' });
       });
   },
 

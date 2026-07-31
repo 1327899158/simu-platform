@@ -90,7 +90,8 @@ function register(router) {
   // DELETE /api/quotes/:id
   router.del('/api/quotes/:id', async (req, res, params) => {
     const user = await requireEngineer(req);
-    const [r] = await query(
+    // query() 已经返回 mysql2 的 OkPacket；不能再按 [rows] 解构。
+    const r = await query(
       `UPDATE quotes SET status='WITHDRAWN', updatedAt=? WHERE id=? AND engineerId=? AND status='PENDING'`,
       [nowIso(), params.id, user.id]);
     if (!r.affectedRows) throw err.conflict('仅待确认的报价可撤回');

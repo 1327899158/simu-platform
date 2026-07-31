@@ -14,6 +14,7 @@
   },
   "envParams": [
     { "key": "NODE_ENV", "value": "production" },
-    { "key": "TZ", "value": "Asia/Shanghai" }
+    { "key": "TZ", "value": "Asia/Shanghai" },
+    { "key": "ALLOW_ENGINEER_SELF_VERIFY", "value": "true" }
   ]
 }

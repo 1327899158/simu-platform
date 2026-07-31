@@ -152,7 +152,9 @@ function register(router) {
 
   // POST /api/dev/promote-engineer —— 演示阶段自主核验，正式环境可通过配置关闭
   router.post('/api/dev/promote-engineer', async (req, res) => {
-    if (!config.allowEngineerSelfVerify) throw err.notFound('接口不存在');
+    if (!config.allowEngineerSelfVerify) {
+      throw err.forbidden('工程师自主核验未开启，请设置 ALLOW_ENGINEER_SELF_VERIFY=true');
+    }
     const user = await requireUser(req);
     const now = nowIso();
     await query(`UPDATE users SET role = 'ENGINEER', updatedAt = ? WHERE id = ?`, [now, user.id]);

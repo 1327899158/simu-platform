@@ -141,7 +141,8 @@ function register(router) {
     }
 
     const now = nowIso();
-    const [r] = await query(
+    // INSERT 返回 mysql2 OkPacket，query() 已完成一次解包。
+    const r = await query(
       `INSERT INTO messages(convId, senderId, type, content, fileId, createdAt) VALUES(?,?,?,?,?,?)`,
       [c.id, user.id, type, content, fileId, now]);
     await query(`UPDATE conversations SET lastMsgAt = ? WHERE id = ?`, [now, c.id]);

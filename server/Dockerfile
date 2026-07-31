@@ -9,7 +9,8 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=80 \
-    TZ=Asia/Shanghai
+    TZ=Asia/Shanghai \
+    ALLOW_ENGINEER_SELF_VERIFY=true
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
