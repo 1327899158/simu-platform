@@ -4,14 +4,54 @@
  *
  * 实时推送主链路：小程序端 db.watch 监听云数据库 conv_messages 集合。
  * 历史消息 / 兜底：GET /api/conversations/:id/messages（轮询）。
- * 发送消息：POST /api/conversations/:id/messages → MySQL + 云数据库双写。
+ * 发送消息：POST /api/conversations/:id/messages
+ *   - MySQL 主写（同步）
+ *   - 云数据库触发 db.watch（fire-and-forget，走 publishMessageDoc 带超时兜底）
  */
 const { readJson, ok, err } = require('../lib/http');
 const { nowIso, v } = require('../lib/util');
 const { query, queryOne } = require('../db');
 const { requireUser } = require('../lib/auth-mw');
-const { contentCheck, systemMessage } = require('../services/chat-svc');
-const { getDB, getStorage } = require('../tcb');
+const { contentCheck, publishMessageDoc } = require('../services/chat-svc');
+const { getStorage } = require('../tcb');
+
+/** 云存储 tempFileURL 短期缓存，避免每次会话列表都发一堆 getTempFileURL。 */
+const AVATAR_CACHE_TTL_MS = 60 * 1000;
+const _avatarCache = new Map(); // fileID -> { url, expires }
+
+/** 批量把 cloud:// avatarUrl 转成 https tempFileURL；直传的 https/URL 原样返回。 */
+async function resolveAvatarUrls(rawUrls) {
+  const out = new Map();
+  const cloudIds = [];
+  const now = Date.now();
+  for (const u of rawUrls) {
+    if (!u) continue;
+    if (!u.startsWith('cloud://')) { out.set(u, u); continue; }
+    const cached = _avatarCache.get(u);
+    if (cached && cached.expires > now) { out.set(u, cached.url); continue; }
+    cloudIds.push(u);
+  }
+  if (cloudIds.length) {
+    try {
+      const r = await getStorage().getTempFileURL({ fileList: cloudIds });
+      const list = r.fileList || [];
+      cloudIds.forEach((fid, i) => {
+        const item = list[i];
+        const url = item && item.tempFileURL ? item.tempFileURL : '';
+        if (url) {
+          out.set(fid, url);
+          _avatarCache.set(fid, { url, expires: now + AVATAR_CACHE_TTL_MS });
+        } else {
+          out.set(fid, ''); // 拿不到就置空，前端走占位图
+        }
+      });
+    } catch (e) {
+      console.warn('[chat] resolveAvatarUrls failed', e.message);
+      cloudIds.forEach((fid) => out.set(fid, ''));
+    }
+  }
+  return out;
+}
 
 async function myConversation(user, convId) {
   const c = await queryOne(`SELECT * FROM conversations WHERE id = ?`, [convId]);
@@ -28,11 +68,14 @@ function register(router) {
       `SELECT * FROM conversations WHERE customerId = ? OR engineerId = ?
        ORDER BY lastMsgAt DESC LIMIT 50`, [user.id, user.id]);
 
-    const result = await Promise.all(rows.map(async (c) => {
+    // 1) 先把每个会话的 peer 原始 avatarUrl 收集起来，最后批量解 tempFileURL
+    const peerRawUrls = [];
+    const enriched = await Promise.all(rows.map(async (c) => {
       const o = await queryOne(`SELECT projectName, orderNo, status FROM orders WHERE id = ?`, [c.orderId]);
       const peerId = c.customerId === user.id ? c.engineerId : c.customerId;
       const peerRow = await queryOne(`SELECT nickname, avatarUrl FROM users WHERE id = ?`, [peerId]);
-      const peer = peerRow ? { nickname: peerRow.nickname, avatarUrl: peerRow.avatarUrl } : null;
+      const peer = peerRow ? { nickname: peerRow.nickname, avatarUrl: peerRow.avatarUrl || '' } : null;
+      if (peer && peer.avatarUrl) peerRawUrls.push(peer.avatarUrl);
       const last = await queryOne(
         `SELECT type, content, createdAt FROM messages WHERE convId = ? ORDER BY id DESC LIMIT 1`, [c.id]);
       const unreadRow = await queryOne(
@@ -49,7 +92,15 @@ function register(router) {
         lastMsgAt: c.lastMsgAt,
       };
     }));
-    ok(res, result);
+
+    // 2) 一次批量解 tempFileURL，回填到 peer.avatarUrl
+    const avatarMap = await resolveAvatarUrls(peerRawUrls);
+    for (const item of enriched) {
+      if (item.peer && item.peer.avatarUrl) {
+        item.peer.avatarUrl = avatarMap.get(item.peer.avatarUrl) ?? item.peer.avatarUrl;
+      }
+    }
+    ok(res, enriched);
   });
 
   // GET /api/conversations/by-order/:orderId
@@ -79,9 +130,15 @@ function register(router) {
 
     const peerId = c.customerId === user.id ? c.engineerId : c.customerId;
     const peerRow = await queryOne(`SELECT id, nickname, avatarUrl FROM users WHERE id = ?`, [peerId]);
-    const peer = peerRow
-      ? { id: peerRow.id, nickname: peerRow.nickname, avatarUrl: peerRow.avatarUrl }
-      : null;
+    let peer = null;
+    if (peerRow) {
+      let avatarUrl = peerRow.avatarUrl || '';
+      if (avatarUrl) {
+        const m = await resolveAvatarUrls([avatarUrl]);
+        avatarUrl = m.get(avatarUrl) ?? '';
+      }
+      peer = { id: peerRow.id, nickname: peerRow.nickname, avatarUrl };
+    }
 
     // 批量获取图片临时链接
     const imageFileIds = rows
@@ -140,41 +197,29 @@ function register(router) {
       content = f.name;
     }
 
+    // 1) MySQL 主写（同步，快）
     const now = nowIso();
-    // INSERT 返回 mysql2 OkPacket，query() 已完成一次解包。
     const r = await query(
       `INSERT INTO messages(convId, senderId, type, content, fileId, createdAt) VALUES(?,?,?,?,?,?)`,
       [c.id, user.id, type, content, fileId, now]);
     await query(`UPDATE conversations SET lastMsgAt = ? WHERE id = ?`, [now, c.id]);
     const msgId = Number(r.insertId);
 
-    // 同步写云数据库供 db.watch
-    const msgDoc = {
-      convId: c.id,
-      senderId: user.openid || user.id,
-      senderUserId: user.id,
-      type,
-      content,
-      fileId,
-      sqlMsgId: String(msgId),
-      createdAt: new Date(),
-    };
-    try {
-      const participants = await Promise.all([
-        queryOne(`SELECT openid FROM users WHERE id = ?`, [c.customerId]),
-        queryOne(`SELECT openid FROM users WHERE id = ?`, [c.engineerId]),
-      ]);
-      msgDoc._openid_participants = participants.map((p) => p && p.openid).filter(Boolean);
-      await getDB().collection('conv_messages').add({ data: msgDoc });
-    } catch (e) {
-      console.error('[chat] cloud db write failed', e.message);
-    }
-
+    // 2) 立即返回给前端；云 DB 推送 fire-and-forget（超时/失败不阻塞用户）
     ok(res, {
       id: msgId,
       senderId: user.id,
       type, content, fileId,
       createdAt: now,
+    });
+    publishMessageDoc({
+      convId: c.id,
+      senderOpenid: user.openid || user.id,
+      senderUserId: user.id,
+      type,
+      content,
+      fileId,
+      sqlMsgId: msgId,
     });
   });
 

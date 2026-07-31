@@ -13,7 +13,7 @@ const POLL_MS = 4000;
 
 Page({
   data: {
-    convId: '', myId: '', myOpenid: '',
+    convId: '', myId: '', myOpenid: '', myAvatar: '',
     msgs: [], text: '', lastId: 0,
     scrollTop: 0, _tick: 0,
     sending: false,
@@ -29,7 +29,12 @@ Page({
   onLoad(q) {
     const user = ensureLogin();
     if (!user) return;
-    this.setData({ convId: q.id, myId: user.id, myOpenid: user.openid || '' });
+    this.setData({
+      convId: q.id,
+      myId: user.id,
+      myOpenid: user.openid || '',
+      myAvatar: user.avatarUrl || '',
+    });
     this._calcSize();
   },
 
@@ -114,7 +119,8 @@ Page({
       const data = await request('GET', `/conversations/${this.data.convId}/messages`,
         { after: 0, limit: 100 }, { silent: true });
       if (!data) return;
-      if (data.peer) this.setData({ peer: data.peer });
+      const peerChange = data.peer && !this.data.peer;
+      if (peerChange) this.setData({ peer: data.peer });
       const mapped = this._mapMsgs(data.items || []);
       this._seenIds = new Set(mapped.map((m) => m.id));
       this.setData({ msgs: mapped, lastId: data.lastId });
@@ -134,13 +140,18 @@ Page({
         this._pullInFlight = false;
         return;
       }
-      if (data.peer && !this.data.peer) this.setData({ peer: data.peer });
+      const peerArrived = data.peer && !this.data.peer;
+      if (peerArrived) this.setData({ peer: data.peer });
       const mapped = this._mapMsgs(data.items).filter((m) => !this._seenIds.has(m.id));
       mapped.forEach((m) => this._seenIds.add(m.id));
       if (!mapped.length) {
         this.setData({ lastId: Math.max(this.data.lastId, Number(data.lastId || 0)) });
         this._pullInFlight = false;
         return;
+      }
+      // peer 到达时，把已渲染的消息也补上 senderAvatar
+      if (peerArrived && this.data.msgs.length) {
+        this.setData({ msgs: this._mapMsgs(this.data.msgs) });
       }
       const shouldScroll = this._shouldScrollBottom;
       this._shouldScrollBottom = false;
@@ -154,11 +165,14 @@ Page({
 
   _mapMsgs(items) {
     const myId = this.data.myId;
+    const myAvatar = this.data.myAvatar || '';
+    const peerAvatar = this.data.peer && this.data.peer.avatarUrl ? this.data.peer.avatarUrl : '';
     return items.map((m) => ({
       ...m,
       id: Number(m.id),
       mine: m.senderId === myId,
       sys: m.senderId === 'SYSTEM',
+      senderAvatar: m.senderId === myId ? myAvatar : peerAvatar,
       time: timeShort(m.createdAt),
       anchor: 'm' + m.id,
       imgUrl: m.imgUrl || '',
@@ -177,13 +191,16 @@ Page({
   async send() {
     const text = (this.data.text || '').trim();
     if (!text || this.data.sending) return;
-    this.setData({ sending: true });
+    this.setData({ sending: true, text: '' }); // 乐观清空输入框
     try {
       await request('POST', `/conversations/${this.data.convId}/messages`, { type: 'TEXT', content: text });
-      this.setData({ text: '' });
       this._shouldScrollBottom = true;
       await this._pullIncremental();
-    } catch (e) { wx.showToast({ title: e.message || '消息发送失败', icon: 'none' }); }
+    } catch (e) {
+      // 发送失败，回填文本并聚焦
+      this.setData({ text });
+      wx.showToast({ title: e.message || '消息发送失败', icon: 'none' });
+    }
     this.setData({ sending: false });
   },
 

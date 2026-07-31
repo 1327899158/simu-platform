@@ -10,7 +10,12 @@ const { err } = require('../lib/http');
 const { newId, nowIso } = require('../lib/util');
 const { config } = require('../config');
 const { query, queryOne, tx } = require('../db');
-const { ensureConversation, systemMessage } = require('./chat-svc');
+const {
+  ensureConversation,
+  systemMessage,
+  publishConversationDoc,
+  publishSystemMessage,
+} = require('./chat-svc');
 
 /**
  * 向微信云托管代签名网关发 HTTP 请求（内部地址，无需签名）。
@@ -91,9 +96,19 @@ async function createJsapiOrder(order, openid) {
 
 /**
  * 幂等落账（回调、查单兜底共用）。
+ *
+ * 事务只做 MySQL 主流程：
+ *   1) 支付单置 SUCCESS
+ *   2) 订单 AWAITING_PAYMENT → IN_PROGRESS
+ *   3) 建会话（MySQL 部分）
+ *   4) 写系统消息（MySQL 部分）
+ *
+ * 云 DB 推送（conversations 文档 + 系统消息文档）在事务提交**之后**做，
+ * 且都是 fire-and-forget + 超时保护——避免云托管 sidecar 抖动时把 InnoDB
+ * 事务拖到锁等待超时（历史上出现过 128s、50s 的 Lock wait timeout）。
  */
 async function applyPaymentSuccess(outTradeNo, transactionId, rawEvent = null) {
-  return tx(async (conn) => {
+  const result = await tx(async (conn) => {
     const [rows] = await conn.execute(`SELECT * FROM payments WHERE outTradeNo = ?`, [outTradeNo]);
     const p = rows[0];
     if (!p) throw err.notFound('支付单不存在');
@@ -113,11 +128,32 @@ async function applyPaymentSuccess(outTradeNo, transactionId, rawEvent = null) {
         [JSON.stringify({ warn: 'ORDER_NOT_AWAITING_PAYMENT', event: rawEvent }), p.id]);
       return { applied: false, reason: 'order-not-awaiting' };
     }
-    // 建会话（conn 传入避免嵌套事务）
+    // 事务内只写 MySQL；conv._isNew 标记新建的会话，事务提交后由外层推送云 DB。
     const conv = await ensureConversation(p.orderId, conn);
-    await systemMessage(conv.id, '订单已支付，工程师可以开始工作了。请双方在此沟通项目细节。', conn);
-    return { applied: true };
+    const sysContent = '订单已支付，工程师可以开始工作了。请双方在此沟通项目细节。';
+    const sys = await systemMessage(conv.id, sysContent, conn);
+    return {
+      applied: true,
+      conv,
+      sysMsg: { convId: conv.id, content: sysContent, msgId: sys.msgId },
+    };
   });
+
+  // ---- 事务提交后：云 DB 推送（fire-and-forget，失败仅日志） ----
+  if (result.applied) {
+    if (result.conv && result.conv._isNew) {
+      publishConversationDoc({
+        id: result.conv.id,
+        orderId: result.conv.orderId,
+        customerId: result.conv.customerId,
+        engineerId: result.conv.engineerId,
+      });
+    }
+    if (result.sysMsg) {
+      publishSystemMessage(result.sysMsg.convId, result.sysMsg.content, result.sysMsg.msgId);
+    }
+  }
+  return { applied: result.applied, reason: result.reason };
 }
 
 /**
