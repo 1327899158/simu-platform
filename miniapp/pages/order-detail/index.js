@@ -5,7 +5,7 @@
  */
 const { ensureLogin, getUser } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
-const { downloadAndOpen } = require('../../utils/cloud-file');
+const { downloadAndOpen, formatDownloadError } = require('../../utils/cloud-file');
 const { fenToYuan, timeShort, STATUS_CLASS } = require('../../utils/format');
 
 Page({
@@ -79,7 +79,8 @@ Page({
   // ---------- 通用 ----------
   async download(e) {
     const fid = e.currentTarget.dataset.id;
-    if (!fid || this.data.downloadingFileId) return;
+    if (!fid || this._fileDownloadInFlight) return;
+    this._fileDownloadInFlight = true;
     this.setData({ downloadingFileId: fid });
     wx.showLoading({ title: '下载中…', mask: true });
     try {
@@ -93,9 +94,23 @@ Page({
         }));
       }
     } catch (err) {
-      wx.showToast({ title: err.message || '下载失败', icon: 'none' });
+      wx.hideLoading();
+      const diagnostic = formatDownloadError(err);
+      console.error('[order-file] download failed', {
+        fileId: fid,
+        statusCode: err.statusCode || null,
+        stage: err.stage || null,
+        detail: err.detail || err.message || 'unknown',
+        traceId: err.traceId || null,
+      });
+      wx.showModal({
+        title: '附件下载失败',
+        content: diagnostic,
+        showCancel: false,
+      });
     } finally {
       wx.hideLoading();
+      this._fileDownloadInFlight = false;
       this.setData({ downloadingFileId: '' });
     }
   },

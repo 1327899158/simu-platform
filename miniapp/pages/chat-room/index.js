@@ -7,7 +7,7 @@
 const { ensureLogin, getUser } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
 const { ENV_ID } = require('../../utils/config');
-const { downloadAndOpen } = require('../../utils/cloud-file');
+const { downloadAndOpen, formatDownloadError } = require('../../utils/cloud-file');
 const { timeShort } = require('../../utils/format');
 
 const POLL_MS = 4000;
@@ -286,6 +286,8 @@ Page({
 
   async openFile(e) {
     const fid = e.currentTarget.dataset.fid;
+    if (!fid || this._fileDownloadInFlight) return;
+    this._fileDownloadInFlight = true;
     wx.showLoading({ title: '下载中…', mask: true });
     try {
       const info = await request('GET', `/files/${fid}/url`, null, { silent: true });
@@ -297,9 +299,19 @@ Page({
         }));
       }
     } catch (err) {
-      wx.showToast({ title: err.message || '文件打开失败', icon: 'none' });
+      wx.hideLoading();
+      const diagnostic = formatDownloadError(err);
+      console.error('[chat-file] download failed', {
+        fileId: fid,
+        statusCode: err.statusCode || null,
+        stage: err.stage || null,
+        detail: err.detail || err.message || 'unknown',
+        traceId: err.traceId || null,
+      });
+      wx.showModal({ title: '附件下载失败', content: diagnostic, showCancel: false });
     } finally {
       wx.hideLoading();
+      this._fileDownloadInFlight = false;
     }
   },
 });

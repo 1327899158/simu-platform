@@ -4,6 +4,37 @@ function errorMessage(error) {
   return String((error && (error.errMsg || error.message)) || '未知错误');
 }
 
+const STAGE_LABELS = {
+  API_AUTH: '后端权限校验',
+  CLOUD_READ: '云存储读取',
+  TEMP_URL: '临时地址下载',
+  LOCAL_FILE: '本地文件生成',
+  IMAGE_PREVIEW: '图片预览',
+  UNKNOWN: '未知阶段',
+};
+
+function diagnosticId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function stageError(stage, message, detail, traceId) {
+  const error = new Error(message);
+  error.stage = stage;
+  error.detail = String(detail || message);
+  error.traceId = traceId || diagnosticId();
+  return error;
+}
+
+function formatDownloadError(error) {
+  const stage = error && error.stage
+    ? error.stage
+    : (error && error.statusCode ? 'API_AUTH' : 'UNKNOWN');
+  const label = STAGE_LABELS[stage] || stage;
+  const detail = String((error && error.detail) || errorMessage(error)).slice(0, 280);
+  const traceId = (error && error.traceId) || '无';
+  return `失败阶段：${label}\n原因：${detail}\n诊断编号：${traceId}`;
+}
+
 function cloudDownload(fileID) {
   return new Promise((resolve, reject) => {
     wx.cloud.downloadFile({
@@ -91,48 +122,84 @@ function saveTempFile(filePath) {
 }
 
 async function downloadAndOpen(info) {
+  const traceId = diagnosticId();
+  const fileName = (info && info.name) || '附件';
+  console.log('[cloud-file] start', { traceId, fileName });
+  if (!info || (!info.fileID && !info.url)) {
+    throw stageError('API_AUTH', '服务端未返回文件地址', '响应中缺少 fileID/url', traceId);
+  }
   let result;
+  let source = '';
   if (info.fileID && wx.cloud && typeof wx.cloud.downloadFile === 'function') {
     try {
       // wx.cloud 已在 app 启动时绑定 ENV_ID；官方下载参数只需 fileID。
       result = await cloudDownload(info.fileID);
+      source = 'direct';
+      console.log('[cloud-file] direct download ok', { traceId });
     } catch (directError) {
+      console.warn('[cloud-file] direct download failed', {
+        traceId, reason: errorMessage(directError),
+      });
       // 部分基础库/存储权限模式下直下失败，兼容为临时地址下载。
       try {
         result = await httpDownload(await getTempFileUrl(info.fileID));
+        source = 'temp-url';
+        console.log('[cloud-file] temp-url download ok', { traceId });
       } catch (fallbackError) {
-        console.error('[cloud-file] download failed', {
+        const detail = `直接下载：${errorMessage(directError)}；临时地址：${errorMessage(fallbackError)}`;
+        const error = stageError('CLOUD_READ', '云文件读取失败', detail, traceId);
+        console.error('[cloud-file] failed', {
+          traceId,
+          stage: error.stage,
           direct: errorMessage(directError),
           fallback: errorMessage(fallbackError),
         });
-        throw new Error('云文件读取失败，请检查云存储读取权限');
+        throw error;
       }
     }
   } else if (info.url) {
-    result = await httpDownload(info.url);
+    try {
+      result = await httpDownload(info.url);
+      source = 'http-url';
+    } catch (httpError) {
+      throw stageError('TEMP_URL', '临时地址下载失败', errorMessage(httpError), traceId);
+    }
   } else {
-    throw new Error('当前环境不支持下载该云文件');
+    throw stageError(
+      'CLOUD_READ', '当前微信版本不支持云文件下载', 'wx.cloud.downloadFile 不可用', traceId);
   }
 
   const filePath = result.tempFilePath;
-  if (!filePath) throw new Error('下载完成但未取得本地文件');
+  if (!filePath) {
+    throw stageError(
+      'LOCAL_FILE', '下载完成但未取得本地文件', `下载来源：${source || '未知'}`, traceId);
+  }
   const isImage = String(info.mime || '').startsWith('image/')
     || /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(info.name || '');
   if (isImage) {
-    await previewImage(filePath);
-    return { mode: 'previewed' };
+    try {
+      await previewImage(filePath);
+      return { mode: 'previewed', traceId };
+    } catch (previewError) {
+      const error = stageError(
+        'IMAGE_PREVIEW', '图片已下载但预览失败', errorMessage(previewError), traceId);
+      console.error('[cloud-file] failed', {
+        traceId, stage: error.stage, reason: error.detail,
+      });
+      throw error;
+    }
   }
 
   try {
     await openDocument(filePath, info.name);
-    return { mode: 'opened' };
+    return { mode: 'opened', traceId };
   } catch (openError) {
     // STP/ZIP/RAR 等格式微信不能直接预览。先持久化到小程序文件区，
     // 再尝试调起微信文件转发；转发不可用也不应把“已下载”误报为失败。
     const savedFilePath = await saveTempFile(filePath);
     try {
       await shareUnsupportedFile(savedFilePath, info.name);
-      return { mode: 'shared' };
+      return { mode: 'shared', traceId };
     } catch (shareError) {
       console.warn('[cloud-file] downloaded but cannot preview', {
         open: errorMessage(openError),
@@ -140,6 +207,7 @@ async function downloadAndOpen(info) {
       });
       return {
         mode: 'saved',
+        traceId,
         notice: `“${info.name || '附件'}”已下载，但微信暂不支持直接预览此格式。`,
       };
     }
@@ -157,4 +225,4 @@ function deleteCloudFile(fileID) {
   });
 }
 
-module.exports = { downloadAndOpen, deleteCloudFile };
+module.exports = { downloadAndOpen, deleteCloudFile, formatDownloadError };
