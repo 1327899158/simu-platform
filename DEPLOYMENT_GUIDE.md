@@ -27,6 +27,7 @@
 | `NODE_ENV` | `production` | 生产环境 |
 | `CLOUDBASE_ENV_ID` | `cloud1-d8gh7xyw56d7c185f` | 你的环境 ID |
 | `WX_APPID` | `wx14085d227567dd7d` | 小程序 AppID |
+| `MAX_UPLOAD_MB` | `30` | 单个附件上限（MB，允许 1-100）；修改后前端自动同步 |
 | `MYSQL_ADDRESS` | `xxx.gz.cdb.tencentcdb.com:3306` | ← 从第一步复制 |
 | `MYSQL_USERNAME` | `root` | ← 从第一步复制 |
 | `MYSQL_PASSWORD` | `**your-password**` | ← 从第一步复制 |
@@ -35,7 +36,24 @@
 | `PAY_TIMEOUT_SEC` | `1800` | 支付超时（秒） |
 | `PAY_AMOUNT_OVERRIDE_FEN` | ~~`1`~~ | **生产环境一定要删除或留空**！否则所有订单只能实付 0.01 元 |
 
-### 2.2 绑定代码仓库（CI/CD）
+### 2.2 配置订单附件读取权限
+
+工程师需要读取客户上传的云文件，因此云存储不能使用“仅创建者可读”。进入：
+
+云开发控制台 → **云存储** → **权限设置** → **自定义安全规则**，填写
+[`docs/cloud-storage.rules.json`](docs/cloud-storage.rules.json) 中的规则：
+
+```json
+{
+  "read": "auth != null",
+  "write": "auth != null && resource.openid == auth.openid"
+}
+```
+
+业务文件 ID 仍然只会在后端订单权限校验通过后返回；不要把读取规则设置成无条件 `true`。
+规则修改后通常需要等待 1-3 分钟，再用客户和工程师两个账号分别测试。
+
+### 2.3 绑定代码仓库（CI/CD）
 
 云托管 → `simu-api` → **版本管理** → **新建版本** → 选择 **代码库**
 
@@ -46,7 +64,7 @@
 
 保存后，推送 `server/` 的代码变更会自动触发构建。
 
-### 2.3 灰度发布（可选但推荐）
+### 2.4 灰度发布（可选但推荐）
 
 新建版本后，先点 **灰度发布**，配置：
 - 灰度比例：10%（先放 10% 流量）

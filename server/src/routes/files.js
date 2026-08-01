@@ -20,7 +20,7 @@ const { getBoundary, parseMultipart } = require('../lib/multipart');
 const path = require('node:path');
 
 const KINDS = ['MODEL', 'DOC', 'IMAGE', 'RESULT'];
-const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = config.uploadMaxBytes;
 
 function assertCloudFileId(fileID) {
   if (typeof fileID !== 'string' || !fileID.startsWith('cloud://')) {
@@ -141,7 +141,7 @@ function register(router) {
     const mime = v.str(b.mime, 'MIME类型', { max: 128, optional: true }) || '';
     const sizeBytes = b.sizeBytes ? Number(b.sizeBytes) : 0;
     if (!Number.isInteger(sizeBytes) || sizeBytes < 0 || sizeBytes > MAX_UPLOAD_BYTES) {
-      throw err.bad('文件大小参数不合法');
+      throw err.bad(`单个文件不能超过 ${config.uploadMaxMb}MB`);
     }
 
     ok(res, await saveFileRecord(user, { fileID, name, kind, orderId, sizeBytes, mime }));

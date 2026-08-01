@@ -6,7 +6,7 @@ const { yuanToFen } = require('../../utils/format');
 
 const DRAFT_KEY = 'publishDraft';
 const MAX_ATTACHMENTS = 20;
-const MAX_FILE_BYTES = 30 * 1024 * 1024;
+const DEFAULT_MAX_FILE_MB = 30;
 
 function attachmentKind(name, mime) {
   const filename = String(name || '').toLowerCase();
@@ -43,6 +43,8 @@ Page({
     uploading: false,
     uploadProgress: '',
     maxAttachments: MAX_ATTACHMENTS,
+    maxFileMb: DEFAULT_MAX_FILE_MB,
+    maxFileBytes: DEFAULT_MAX_FILE_MB * 1024 * 1024,
     // 步骤5
     agreed: false,
     submitting: false,
@@ -52,7 +54,16 @@ Page({
     const draft = wx.getStorageSync(DRAFT_KEY);
     if (draft) this.setData(draft);
     try {
-      this.setData({ dicts: await request('GET', '/dicts') });
+      const dicts = await request('GET', '/dicts');
+      const limits = dicts.limits || {};
+      const maxFileMb = Number(limits.maxUploadMb) || DEFAULT_MAX_FILE_MB;
+      const maxAttachments = Number(limits.maxOrderAttachments) || MAX_ATTACHMENTS;
+      this.setData({
+        dicts,
+        maxFileMb,
+        maxFileBytes: Number(limits.maxUploadBytes) || maxFileMb * 1024 * 1024,
+        maxAttachments,
+      });
     } catch (e) {
       wx.showToast({ title: e.message || '基础配置加载失败', icon: 'none' });
     }
@@ -100,23 +111,35 @@ Page({
 
   async chooseFile() {
     if (this.data.uploading) return;
-    const remaining = MAX_ATTACHMENTS - this.data.files.length;
-    if (remaining <= 0) return wx.showToast({ title: `最多上传${MAX_ATTACHMENTS}个附件`, icon: 'none' });
+    const remaining = this.data.maxAttachments - this.data.files.length;
+    if (remaining <= 0) {
+      return wx.showToast({ title: `最多上传${this.data.maxAttachments}个附件`, icon: 'none' });
+    }
     wx.chooseMessageFile({
       count: Math.min(3, remaining),
       type: 'all',
       success: async (r) => {
         const selected = (r.tempFiles || []).slice(0, remaining);
         if (!selected.length) return;
+        const oversized = selected.filter((f) => Number(f.size || 0) > this.data.maxFileBytes);
+        if (oversized.length) {
+          await new Promise((resolve) => wx.showModal({
+            title: '文件超过大小限制',
+            content: oversized.map((f) => `${f.name || '文件'}（${sizeText(f.size)}）`)
+              .concat(`单个文件最大允许 ${this.data.maxFileMb}MB，请压缩或拆分后重新上传。`)
+              .join('\n')
+              .slice(0, 500),
+            showCancel: false,
+            complete: resolve,
+          }));
+        }
+        const uploadable = selected.filter((f) => Number(f.size || 0) <= this.data.maxFileBytes);
+        if (!uploadable.length) return;
         const failures = [];
-        this.setData({ uploading: true, uploadProgress: `准备上传 1/${selected.length}` });
-        for (let i = 0; i < selected.length; i += 1) {
-          const f = selected[i];
-          this.setData({ uploadProgress: `正在上传 ${i + 1}/${selected.length}` });
-          if (Number(f.size || 0) > MAX_FILE_BYTES) {
-            failures.push(`${f.name || '文件'}：超过30MB`);
-            continue;
-          }
+        this.setData({ uploading: true, uploadProgress: `准备上传 1/${uploadable.length}` });
+        for (let i = 0; i < uploadable.length; i += 1) {
+          const f = uploadable[i];
+          this.setData({ uploadProgress: `正在上传 ${i + 1}/${uploadable.length}` });
           try {
             const kind = attachmentKind(f.name, f.type);
             const mime = String(f.type || '').includes('/') ? f.type : '';

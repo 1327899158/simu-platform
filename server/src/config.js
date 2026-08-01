@@ -29,6 +29,7 @@ const int = (v, d) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n
 // 本地开发时在 .env 里手动填
 const mysqlAddr = process.env.MYSQL_ADDRESS || '127.0.0.1:3306';
 const [mysqlHost, mysqlPortStr] = mysqlAddr.split(':');
+const uploadMaxMb = Math.max(1, Math.min(100, int(process.env.MAX_UPLOAD_MB, 30)));
 
 const config = {
   env: process.env.NODE_ENV || 'development',
@@ -39,6 +40,10 @@ const config = {
 
   // 微信小程序 AppID（用于校验 X-WX-APPID 头）
   wxAppid: process.env.WX_APPID || '',
+
+  // 单个附件大小上限。修改云托管 MAX_UPLOAD_MB 后，前端会通过 /api/dicts 自动同步。
+  uploadMaxMb,
+  uploadMaxBytes: uploadMaxMb * 1024 * 1024,
 
   // 云托管 MySQL（容器内由平台注入，本地开发写 .env）
   mysql: {

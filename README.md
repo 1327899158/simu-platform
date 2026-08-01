@@ -142,7 +142,7 @@ tcb fn deploy auto-complete-orders --env your-env-id --root cloudfunctions
 
 ### 文件上传
 
-`wx.cloud.uploadFile` 直传云存储，返回 fileID（`cloud://env.bucket/path`）→ 调 `POST /api/files/commit` 写 MySQL → 下载时服务端 `getTempFileURL` 返回 2h HTTPS 链接。
+`wx.cloud.uploadFile` 直传云存储，返回 fileID（`cloud://env.bucket/path`）→ 调 `POST /api/files/commit` 写 MySQL → 服务端完成订单权限校验后，小程序通过 `wx.cloud.downloadFile` 下载（失败时兼容临时地址）。
 
 ### 实时消息
 

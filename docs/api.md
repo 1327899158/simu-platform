@@ -110,6 +110,8 @@
 ```
 返回 `{ id, fileID, fileId, name, kind, sizeBytes }`。前端把 `id`（即数据库里的 uploaded_files.id）作为 `fileIds` 传给发单 / 交付接口。
 
+单文件上限由云托管环境变量 `MAX_UPLOAD_MB` 控制，默认 `30`，允许范围为 `1-100`。`GET /api/dicts` 会把 `limits.maxUploadMb` 和 `limits.maxUploadBytes` 下发给小程序，前后端无需分别修改常量。
+
 订单附件关系表 `order_attachments`：
 
 | 字段 | 说明 |

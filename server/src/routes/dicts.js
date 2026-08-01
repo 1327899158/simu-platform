@@ -1,6 +1,7 @@
 'use strict';
 /** 字典：仿真软件 / 仿真方向 / 工期选项 / 状态文案映射（取自原方案 3.1.2）。 */
 const { ok } = require('../lib/http');
+const { config } = require('../config');
 
 const DICTS = {
   softwares: [
@@ -32,6 +33,11 @@ const DICTS = {
     SELECTED: '已选中',
     REJECTED: '未选中',
     WITHDRAWN: '已撤回',
+  },
+  limits: {
+    maxUploadMb: config.uploadMaxMb,
+    maxUploadBytes: config.uploadMaxBytes,
+    maxOrderAttachments: 20,
   },
 };
 

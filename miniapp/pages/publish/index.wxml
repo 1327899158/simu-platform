@@ -156,7 +156,7 @@ module.exports = {
         <text class="rule-item">• 💻 电脑端：可直接从本地文件夹选择</text>
         <text class="rule-item">• 模型文件支持 .stp, .iges, .step, .rar, .zip 等格式</text>
         <text class="rule-item">• 图片支持 JPG/PNG/GIF</text>
-        <text class="rule-item">• 单个文件不超过 30MB，最多上传 {{maxAttachments}} 个</text>
+        <text class="rule-item">• 单个文件不超过 {{maxFileMb}}MB，最多上传 {{maxAttachments}} 个</text>
       </view>
     </view>
 

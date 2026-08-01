@@ -69,6 +69,7 @@ async function bootstrap() {
       paymentMode: config.paymentMode,
       chatImageMode: 'direct-cloud-file-id',
       attachmentSchema: 'order-attachments-v1',
+      maxUploadMb: config.uploadMaxMb,
     }));
     startSweeper(); // 支付超时清扫备用定时器（推荐用云函数触发器替代）
 

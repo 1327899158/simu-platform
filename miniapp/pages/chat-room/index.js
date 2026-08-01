@@ -289,7 +289,13 @@ Page({
     wx.showLoading({ title: '下载中…', mask: true });
     try {
       const info = await request('GET', `/files/${fid}/url`, null, { silent: true });
-      await downloadAndOpen(info);
+      const result = await downloadAndOpen(info);
+      if (result && result.notice) {
+        wx.hideLoading();
+        await new Promise((resolve) => wx.showModal({
+          title: '文件已下载', content: result.notice, showCancel: false, complete: resolve,
+        }));
+      }
     } catch (err) {
       wx.showToast({ title: err.message || '文件打开失败', icon: 'none' });
     } finally {
