@@ -130,18 +130,24 @@ async function request(method, path, data, opt = {}) {
  *     kind     MODEL | DOC | IMAGE | RESULT
  *     orderId  关联订单 ID（可选）
  *     name     文件名（可选，默认从路径提取）
+ *     mime     MIME 类型（可选）
  */
-async function upload(filePath, { kind = 'DOC', orderId = '', name = '' } = {}) {
+async function upload(filePath, { kind = 'DOC', orderId = '', name = '', mime = '' } = {}) {
   if (!isCloudAvailable()) {
     // 本地调试降级：wx.uploadFile
-    return uploadHttp(filePath, { kind, orderId, name });
+    return uploadHttp(filePath, { kind, orderId, name, mime });
   }
 
-  const ext = filePath.split('.').pop() || '';
+  const extMatch = /\.([a-zA-Z0-9]{1,12})$/.exec(String(name || filePath));
+  const ext = extMatch ? extMatch[1] : '';
   const ts = Date.now();
   const rand = Math.random().toString(36).slice(2, 8);
-  const filename = name || `${kind}_${ts}_${rand}.${ext}`;
-  const cloudPath = `orders/${orderId || 'tmp'}/${ts}_${rand}.${ext}`;
+  const filename = name || `${kind}_${ts}_${rand}${ext ? '.' + ext : ''}`;
+  const user = wx.getStorageSync('user') || {};
+  const userSegment = String(user.id || 'anonymous').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const orderSegment = String(orderId || 'pending').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const safeExt = String(ext).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+  const cloudPath = `uploads/${userSegment}/${orderSegment}/${ts}_${rand}${safeExt ? '.' + safeExt : ''}`;
 
   const uploadResult = await new Promise((resolve, reject) => {
     wx.cloud.uploadFile({
@@ -171,13 +177,18 @@ async function upload(filePath, { kind = 'DOC', orderId = '', name = '' } = {}) 
     sizeBytes = stat.size || 0;
   } catch (e) { /* 忽略 */ }
 
-  // 通知服务端落库
-  const meta = await request('POST', '/files/commit', { fileID, name: filename, kind, orderId, sizeBytes }, { silent: true });
+  // 通知服务端落库；业务接口保存 uploaded_files 元数据。这里不在请求失败时
+  // 自动删除云对象：响应可能是在服务端已落库后丢失，贸然删除会制造悬空记录。
+  const meta = await request(
+    'POST', '/files/commit',
+    { fileID, name: filename, kind, orderId, sizeBytes, mime },
+    { silent: true }
+  );
   return { ...meta, fileID };
 }
 
 /** 本地调试降级上传（wx.uploadFile 走 multipart） */
-function uploadHttp(filePath, { kind = 'DOC', orderId = '', name = '' }) {
+function uploadHttp(filePath, { kind = 'DOC', orderId = '', name = '', mime = '' }) {
   return new Promise((resolve, reject) => {
     const ext = filePath.split('.').pop() || '';
     const ts = Date.now();
@@ -186,7 +197,7 @@ function uploadHttp(filePath, { kind = 'DOC', orderId = '', name = '' }) {
       url: require('./config').BASE_URL + '/files/upload',
       filePath,
       name: 'file',
-      formData: { kind, orderId, filename },
+      formData: { kind, orderId, filename, mime },
       header: { 'X-Dev-Openid': wx.getStorageSync('devOpenid') || 'test_openid_customer' },
       success(res) {
         try {

@@ -7,6 +7,7 @@
 const { ensureLogin, getUser } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
 const { ENV_ID } = require('../../utils/config');
+const { downloadAndOpen } = require('../../utils/cloud-file');
 const { timeShort } = require('../../utils/format');
 
 const POLL_MS = 4000;
@@ -285,18 +286,14 @@ Page({
 
   async openFile(e) {
     const fid = e.currentTarget.dataset.fid;
+    wx.showLoading({ title: '下载中…', mask: true });
     try {
-      const info = await request('GET', `/files/${fid}/url`);
-      wx.showLoading({ title: '下载中…' });
-      wx.downloadFile({
-        url: info.url,
-        success: (res) => {
-          wx.hideLoading();
-          wx.openDocument({ filePath: res.tempFilePath, showMenu: true,
-            fail: () => wx.showToast({ title: '已下载', icon: 'none' }) });
-        },
-        fail: () => { wx.hideLoading(); wx.showToast({ title: '下载失败', icon: 'none' }); },
-      });
-    } catch (err) { wx.showToast({ title: err.message || '文件打开失败', icon: 'none' }); }
+      const info = await request('GET', `/files/${fid}/url`, null, { silent: true });
+      await downloadAndOpen(info);
+    } catch (err) {
+      wx.showToast({ title: err.message || '文件打开失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
   },
 });

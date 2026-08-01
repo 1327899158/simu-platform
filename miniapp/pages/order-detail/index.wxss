@@ -102,6 +102,7 @@
   padding: 18rpx 20rpx;
   background: #F8F9FA;
   border-radius: var(--r-sm);
+  min-height: 88rpx;
 }
 .attachment-item:active { opacity: 0.7; }
 .attachment-kind {

@@ -55,9 +55,29 @@ function register(router) {
     const deliveryDays = v.int(b.deliveryDays, '工期(天)', { min: 1, max: 90 });
     const budgetFen = v.int(b.budgetFen, '预算', { min: 100, max: 1000000000, optional: true });
     const specialNote = v.str(b.specialNote, '特殊要求', { max: 2000, optional: true });
-    const fileIds = v.arr(b.fileIds, '文件', { maxLen: 20, optional: true }) || [];
+    const rawFileIds = v.arr(b.fileIds, '文件', { maxLen: 20, optional: true }) || [];
+    const fileIds = rawFileIds.map((fid) => v.str(fid, '文件ID', { min: 1, max: 32 }));
+    if (new Set(fileIds).size !== fileIds.length) throw err.bad('附件列表包含重复文件');
 
     const order = await tx(async (conn) => {
+      let attachmentFiles = [];
+      if (fileIds.length) {
+        const [rows] = await conn.execute(
+          `SELECT id, uploaderId, orderId, kind
+             FROM uploaded_files
+            WHERE id IN (${fileIds.map(() => '?').join(',')})
+            FOR UPDATE`,
+          fileIds
+        );
+        if (rows.length !== fileIds.length) throw err.bad('部分附件不存在，请删除后重新上传');
+        for (const file of rows) {
+          if (file.uploaderId !== user.id) throw err.forbidden('不能使用其他用户上传的附件');
+          if (file.orderId) throw err.conflict('附件已关联其他订单，请重新上传');
+          if (file.kind === 'RESULT') throw err.bad('成果文件不能作为需求附件');
+        }
+        attachmentFiles = rows;
+      }
+
       const id = newId();
       const orderNo = await nextOrderNo();
       const now = nowIso();
@@ -70,10 +90,16 @@ function register(router) {
           budgetFen ?? null, v.bool(b.budgetFlexible, true) ? 1 : 0,
           deliveryDays, specialNote ?? null, now, now]
       );
-      for (const fid of fileIds) {
-        await conn.execute(
+      for (const file of attachmentFiles) {
+        const [linked] = await conn.execute(
           `UPDATE uploaded_files SET orderId = ? WHERE id = ? AND uploaderId = ? AND orderId IS NULL`,
-          [id, String(fid), user.id]);
+          [id, file.id, user.id]);
+        if (linked.affectedRows !== 1) throw err.conflict('附件状态已变化，请重新上传');
+        await conn.execute(
+          `INSERT INTO order_attachments(orderId, fileId, uploaderId, purpose, createdAt)
+           VALUES(?, ?, ?, 'REQUIREMENT', ?)`,
+          [id, file.id, user.id, now]
+        );
       }
       const [rows] = await conn.execute(`SELECT * FROM orders WHERE id = ?`, [id]);
       return rows[0];

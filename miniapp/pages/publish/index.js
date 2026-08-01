@@ -1,9 +1,26 @@
 /** 发布需求：五步表单（方案 3.1.2），本地草稿，文件直传后携 fileIds 提交。 */
 const { ensureLogin } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
+const { deleteCloudFile } = require('../../utils/cloud-file');
 const { yuanToFen } = require('../../utils/format');
 
 const DRAFT_KEY = 'publishDraft';
+const MAX_ATTACHMENTS = 20;
+const MAX_FILE_BYTES = 30 * 1024 * 1024;
+
+function attachmentKind(name, mime) {
+  const filename = String(name || '').toLowerCase();
+  if (String(mime || '').startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|bmp)$/.test(filename)) return 'IMAGE';
+  if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|md|csv)$/.test(filename)) return 'DOC';
+  return 'MODEL';
+}
+
+function sizeText(bytes) {
+  const size = Number(bytes || 0);
+  if (!size) return '大小未知';
+  if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))}KB`;
+  return `${(size / 1024 / 1024).toFixed(2)}MB`;
+}
 
 Page({
   data: {
@@ -24,6 +41,8 @@ Page({
     // 步骤4
     files: [], // {fileId, name, sizeText, kind}
     uploading: false,
+    uploadProgress: '',
+    maxAttachments: MAX_ATTACHMENTS,
     // 步骤5
     agreed: false,
     submitting: false,
@@ -52,6 +71,7 @@ Page({
   prev() { if (this.data.step > 1) this.setData({ step: this.data.step - 1 }); },
   next() {
     const d = this.data, s = d.step;
+    if (s === 4 && d.uploading) return wx.showToast({ title: '请等待附件上传完成', icon: 'none' });
     // 逐步轻量校验，不通过则停在当前步
     if (s === 1) {
       if ((d.projectName || '').trim().length < 4) return wx.showToast({ title: '项目名称至少4个字', icon: 'none' });
@@ -80,41 +100,79 @@ Page({
 
   async chooseFile() {
     if (this.data.uploading) return;
+    const remaining = MAX_ATTACHMENTS - this.data.files.length;
+    if (remaining <= 0) return wx.showToast({ title: `最多上传${MAX_ATTACHMENTS}个附件`, icon: 'none' });
     wx.chooseMessageFile({
-      count: 3,
+      count: Math.min(3, remaining),
       type: 'all',
       success: async (r) => {
-        this.setData({ uploading: true });
-        try {
-          for (const f of r.tempFiles) {
-            const isImage = /\.(png|jpg|jpeg|gif)$/i.test(f.name || '');
-            const up = await upload(f.path, { kind: isImage ? 'IMAGE' : 'MODEL' });
+        const selected = (r.tempFiles || []).slice(0, remaining);
+        if (!selected.length) return;
+        const failures = [];
+        this.setData({ uploading: true, uploadProgress: `准备上传 1/${selected.length}` });
+        for (let i = 0; i < selected.length; i += 1) {
+          const f = selected[i];
+          this.setData({ uploadProgress: `正在上传 ${i + 1}/${selected.length}` });
+          if (Number(f.size || 0) > MAX_FILE_BYTES) {
+            failures.push(`${f.name || '文件'}：超过30MB`);
+            continue;
+          }
+          try {
+            const kind = attachmentKind(f.name, f.type);
+            const mime = String(f.type || '').includes('/') ? f.type : '';
+            const up = await upload(f.path, {
+              kind,
+              name: f.name || '',
+              mime,
+            });
             this.setData({
               files: this.data.files.concat({
                 fileId: up.id || up.fileId,
                 name: up.name || f.name,
-                sizeText: ((up.sizeBytes || 0) / 1024 / 1024).toFixed(2) + 'MB',
+                sizeText: sizeText(up.sizeBytes || f.size),
+                kind,
               }),
             });
+          } catch (err) {
+            failures.push(`${f.name || '文件'}：${err.message || '上传失败'}`);
           }
-          wx.showToast({ title: '上传成功', icon: 'success' });
-        } catch (err) {
-          wx.showToast({ title: err.message || '上传失败', icon: 'none' });
         }
-        this.setData({ uploading: false });
+        this.setData({ uploading: false, uploadProgress: '' });
+        if (!failures.length) {
+          wx.showToast({ title: '上传成功', icon: 'success' });
+        } else {
+          wx.showModal({
+            title: this.data.files.length ? '部分附件未上传' : '附件上传失败',
+            content: failures.join('\n').slice(0, 500),
+            showCancel: false,
+          });
+        }
       },
     });
   },
   async removeFile(e) {
+    if (this.data.uploading) return wx.showToast({ title: '请等待上传完成', icon: 'none' });
     const files = this.data.files.slice();
-    const [removed] = files.splice(e.currentTarget.dataset.i, 1);
-    this.setData({ files });
+    const index = Number(e.currentTarget.dataset.i);
+    const removed = files[index];
+    if (!removed) return;
     if (removed && (removed.fileId || removed.id)) {
       try {
-        await request('DELETE', `/files/${removed.fileId || removed.id}`, null, { silent: true });
+        const deleted = await request(
+          'DELETE', `/files/${removed.fileId || removed.id}`, null, { silent: true });
+        files.splice(index, 1);
+        this.setData({ files });
+        try {
+          await deleteCloudFile(deleted.fileID);
+        } catch (cleanupError) {
+          wx.showToast({ title: cleanupError.message || '云文件清理失败', icon: 'none' });
+        }
       } catch (err) {
         wx.showToast({ title: err.message || '附件删除失败', icon: 'none' });
       }
+    } else {
+      files.splice(index, 1);
+      this.setData({ files });
     }
   },
 
@@ -126,6 +184,7 @@ Page({
   async submit() {
     const d = this.data;
     if (d.submitting) return;
+    if (d.uploading) return wx.showToast({ title: '请等待附件上传完成', icon: 'none' });
     if (!d.agreed) return wx.showToast({ title: '请先同意平台服务协议', icon: 'none' });
     if ((d.projectName || '').trim().length < 4) return wx.showToast({ title: '项目名称至少4个字', icon: 'none' });
     if ((d.description || '').trim().length < 20) return wx.showToast({ title: '项目描述至少20个字', icon: 'none' });

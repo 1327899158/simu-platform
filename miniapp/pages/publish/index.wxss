@@ -308,6 +308,10 @@
   border-color: var(--neon-violet);
   background: #EBF5FB;
 }
+.upload-area.disabled {
+  opacity: 0.6;
+  border-style: solid;
+}
 .upload-icon {
   font-size: 56rpx;
   margin-bottom: 12rpx;
@@ -358,8 +362,12 @@
 .file-delete {
   font-size: 28rpx;
   color: var(--c-text-4);
-  padding: 4rpx 12rpx;
+  width: 88rpx;
+  height: 88rpx;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .file-delete:active {
   color: var(--neon-red);

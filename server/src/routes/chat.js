@@ -10,7 +10,7 @@
  */
 const { readJson, ok, err } = require('../lib/http');
 const { nowIso, v } = require('../lib/util');
-const { query, queryOne } = require('../db');
+const { query, queryOne, tx } = require('../db');
 const { requireUser } = require('../lib/auth-mw');
 const { contentCheck, publishMessageDoc } = require('../services/chat-svc');
 
@@ -122,6 +122,7 @@ function register(router) {
     const type = v.oneOf(b.type || 'TEXT', '消息类型', ['TEXT', 'IMAGE', 'FILE']);
     let content = null;
     let fileId = null;
+    let attachedFile = null;
 
     if (type === 'TEXT') {
       content = v.str(b.content, '消息内容', { min: 1, max: 2000 });
@@ -130,18 +131,41 @@ function register(router) {
       fileId = v.str(b.fileId, 'fileId', { min: 1 });
       const f = await queryOne(`SELECT * FROM uploaded_files WHERE id = ? AND uploaderId = ?`, [fileId, user.id]);
       if (!f) throw err.bad('文件不存在或不属于你');
-      // 未挂订单的文件自动关联当前会话的订单
-      if (!f.orderId) await query(`UPDATE uploaded_files SET orderId = ? WHERE id = ?`, [c.orderId, fileId]);
+      if (f.orderId && f.orderId !== c.orderId) throw err.forbidden('不能发送其他订单的文件');
+      attachedFile = f;
       content = f.name;
     }
 
     // 1) MySQL 主写（同步，快）
     const now = nowIso();
-    const r = await query(
-      `INSERT INTO messages(convId, senderId, type, content, fileId, createdAt) VALUES(?,?,?,?,?,?)`,
-      [c.id, user.id, type, content, fileId, now]);
-    await query(`UPDATE conversations SET lastMsgAt = ? WHERE id = ?`, [now, c.id]);
-    const msgId = Number(r.insertId);
+    const msgId = await tx(async (conn) => {
+      if (attachedFile && !attachedFile.orderId) {
+        const [linked] = await conn.execute(
+          `UPDATE uploaded_files SET orderId = ? WHERE id = ? AND uploaderId = ? AND orderId IS NULL`,
+          [c.orderId, fileId, user.id]
+        );
+        if (linked.affectedRows !== 1) throw err.conflict('文件状态已变化，请重新发送');
+        await conn.execute(
+          `INSERT INTO order_attachments(orderId, fileId, uploaderId, purpose, createdAt)
+           VALUES(?, ?, ?, 'CHAT', ?)`,
+          [c.orderId, fileId, user.id, now]
+        );
+      } else if (attachedFile) {
+        // 升级前已经挂到同一订单、但尚未建立关系记录的聊天文件在此补齐。
+        // 若它本来就是需求/成果附件，唯一键会保留原有 purpose。
+        await conn.execute(
+          `INSERT IGNORE INTO order_attachments(orderId, fileId, uploaderId, purpose, createdAt)
+           VALUES(?, ?, ?, 'CHAT', ?)`,
+          [c.orderId, fileId, user.id, now]
+        );
+      }
+      const [inserted] = await conn.execute(
+        `INSERT INTO messages(convId, senderId, type, content, fileId, createdAt) VALUES(?,?,?,?,?,?)`,
+        [c.id, user.id, type, content, fileId, now]
+      );
+      await conn.execute(`UPDATE conversations SET lastMsgAt = ? WHERE id = ?`, [now, c.id]);
+      return Number(inserted.insertId);
+    });
 
     // 2) 立即返回给前端；云 DB 推送 fire-and-forget（超时/失败不阻塞用户）
     ok(res, {

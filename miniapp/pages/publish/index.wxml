@@ -156,15 +156,16 @@ module.exports = {
         <text class="rule-item">• 💻 电脑端：可直接从本地文件夹选择</text>
         <text class="rule-item">• 模型文件支持 .stp, .iges, .step, .rar, .zip 等格式</text>
         <text class="rule-item">• 图片支持 JPG/PNG/GIF</text>
-        <text class="rule-item">• 单个文件建议不超过 25MB</text>
+        <text class="rule-item">• 单个文件不超过 30MB，最多上传 {{maxAttachments}} 个</text>
       </view>
     </view>
 
     <view class="form-group">
-      <text class="form-label">📦 需求附件 <text class="form-hint">（每次最多选3个）</text></text>
-      <view class="upload-area" bindtap="chooseFile">
+      <text class="form-label">📦 需求附件 <text class="form-hint">（每次最多选3个，已上传 {{files.length}}/{{maxAttachments}}）</text></text>
+      <view class="upload-area {{uploading ? 'disabled' : ''}}" bindtap="chooseFile"
+        aria-role="button" aria-label="选择并上传需求附件">
         <text class="upload-icon">📦</text>
-        <text class="upload-text">{{uploading ? '上传中…' : '上传文件'}}</text>
+        <text class="upload-text">{{uploading ? uploadProgress : '选择附件'}}</text>
         <text class="upload-hint">支持模型、文档、图片等格式</text>
       </view>
       <view class="file-list" wx:if="{{files.length > 0}}">
@@ -172,7 +173,8 @@ module.exports = {
           <text class="file-icon">📄</text>
           <text class="file-name">{{item.name}}</text>
           <text class="file-size">{{item.sizeText}}</text>
-          <text class="file-delete" data-i="{{index}}" catchtap="removeFile">✕</text>
+          <view class="file-delete" data-i="{{index}}" catchtap="removeFile"
+            aria-role="button" aria-label="删除附件 {{item.name}}">✕</view>
         </view>
       </view>
     </view>

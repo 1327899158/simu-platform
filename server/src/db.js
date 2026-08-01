@@ -154,6 +154,20 @@ async function init() {
       INDEX idx_files_order(orderId)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+    `CREATE TABLE IF NOT EXISTS order_attachments (
+      orderId      VARCHAR(32) NOT NULL,
+      fileId       VARCHAR(32) NOT NULL,
+      uploaderId   VARCHAR(32) NOT NULL,
+      purpose      VARCHAR(16) NOT NULL DEFAULT 'REQUIREMENT',
+      createdAt    DATETIME(3) NOT NULL,
+      PRIMARY KEY(orderId, fileId),
+      UNIQUE KEY uq_order_attachment_file(fileId),
+      INDEX idx_order_attachments_order_purpose(orderId, purpose, createdAt),
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      FOREIGN KEY(fileId) REFERENCES uploaded_files(id),
+      FOREIGN KEY(uploaderId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
     `CREATE TABLE IF NOT EXISTS conversations (
       id          VARCHAR(32) PRIMARY KEY,
       orderId     VARCHAR(32) NOT NULL UNIQUE,
@@ -232,6 +246,21 @@ async function init() {
       if (e.code !== 'ER_DUP_FIELDNAME' && e.code !== 'ER_DUP_KEYNAME') throw e;
     }
   }
+
+  // 为升级前已经通过 uploaded_files.orderId 关联的文件补齐关系表。
+  // INSERT IGNORE 使多实例并发启动和重复启动都保持幂等。
+  await query(
+    `INSERT IGNORE INTO order_attachments(orderId, fileId, uploaderId, purpose, createdAt)
+     SELECT orderId, id, uploaderId,
+            CASE
+              WHEN EXISTS(SELECT 1 FROM messages m WHERE m.fileId = uploaded_files.id) THEN 'CHAT'
+              WHEN kind = 'RESULT' THEN 'RESULT'
+              ELSE 'REQUIREMENT'
+            END,
+            createdAt
+       FROM uploaded_files
+      WHERE orderId IS NOT NULL`
+  );
 
   console.log(JSON.stringify({ t: new Date().toISOString(), evt: 'db-init-ok' }));
 }

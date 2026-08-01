@@ -84,6 +84,7 @@ model User {
   engineer EngineerProfile?
   orders   Order[]          @relation("CustomerOrders")
   quotes   Quote[]
+  uploadedAttachments OrderAttachment[]
 }
 
 model EngineerProfile {
@@ -122,6 +123,7 @@ model Order {
   customer User           @relation("CustomerOrders", fields: [customerId], references: [id])
   quotes   Quote[]
   files    UploadedFile[]
+  attachments OrderAttachment[]
 
   @@index([status, createdAt])
   @@index([customerId, status])
@@ -157,8 +159,25 @@ model UploadedFile {
   createdAt  DateTime @default(now())
 
   order Order? @relation(fields: [orderId], references: [id])
+  attachment OrderAttachment?
 
   @@index([orderId])
+}
+
+model OrderAttachment {
+  orderId    String
+  fileId     String   @unique
+  uploaderId String
+  purpose    String   @default("REQUIREMENT")
+  createdAt  DateTime @default(now())
+
+  order    Order        @relation(fields: [orderId], references: [id])
+  file     UploadedFile @relation(fields: [fileId], references: [id])
+  uploader User         @relation(fields: [uploaderId], references: [id])
+
+  @@id([orderId, fileId])
+  @@index([orderId, purpose, createdAt])
+  @@map("order_attachments")
 }
 
 model Conversation {

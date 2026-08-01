@@ -88,15 +88,15 @@
 
 ## 三、文件 Files
 
-**上传流程（云开发版）**：小程序端 `wx.cloud.uploadFile` 直传云存储 → 拿到 `fileID`（`cloud://env.bucket/path`）→ 调 `POST /api/files/commit` 落库。
+**上传流程（云开发版）**：小程序端 `wx.cloud.uploadFile` 直传云存储 → 拿到 `fileID`（`cloud://env.bucket/path`）→ 调 `POST /api/files/commit` 写入 `uploaded_files`。发布订单时在同一事务内校验文件归属，并写入 `order_attachments`。
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |---|---|---|---|
 | POST | `/api/files/upload` | 登录 | multipart 上传（本地降级用；生产不走此接口） |
 | POST | `/api/files/commit` | 登录 | wx.cloud.uploadFile 成功后落库 |
-| GET  | `/api/files/:id/url` | 权限矩阵 | 云存储 2h 临时链接 |
+| GET  | `/api/files/:id/url` | 权限矩阵 | 鉴权后返回云存储 `fileID`，由小程序直接下载 |
 | GET  | `/api/orders/:id/files` | 登录 | 订单文件列表（按可读权限过滤） |
-| DELETE | `/api/files/:id` | 上传者 | 软删除，同步调 `deleteFile` |
+| DELETE | `/api/files/:id` | 上传者 | 删除尚未绑定订单的元数据；生产环境由小程序随后清理云对象 |
 
 `POST /api/files/commit`
 ```json
@@ -109,6 +109,18 @@
 }
 ```
 返回 `{ id, fileID, fileId, name, kind, sizeBytes }`。前端把 `id`（即数据库里的 uploaded_files.id）作为 `fileIds` 传给发单 / 交付接口。
+
+订单附件关系表 `order_attachments`：
+
+| 字段 | 说明 |
+|---|---|
+| `orderId` | 订单 ID |
+| `fileId` | `uploaded_files.id`，全局唯一绑定一个订单 |
+| `uploaderId` | 上传用户 ID |
+| `purpose` | `REQUIREMENT`（客户需求附件）、`RESULT`（工程师成果）或内部 `CHAT` 文件关联 |
+| `createdAt` | 绑定时间 |
+
+`GET /api/files/:id/url` 成功返回 `{ fileID, name, mime, sizeBytes }`。服务端只负责鉴权，不再生成临时 HTTPS 地址；小程序使用 `wx.cloud.downloadFile` 下载，避免云托管凭据链超时。
 
 文件下载权限矩阵（`server/src/routes/files.js#canReadFile`，切换 COS 时保留）：
 - 上传者本人 → 可读
@@ -289,6 +301,6 @@
 - 新增 / 变更：
   - `X-WX-OPENID` 由微信网关注入，代替 JWT。
   - 账号密码 / 手机号登录使用 `X-Session-Token`（72h 有效，`server/src/lib/util.js#genSessionToken`）。
-  - 文件下载改为云存储临时链接，`GET /api/files/:id/url` 返回 HTTPS `tempFileURL`。
+  - 文件下载改为小程序直连云存储，`GET /api/files/:id/url` 鉴权后返回 `fileID`。
   - 支付通过云托管「开放接口服务」代签名，回调走内部投递，无需公网 HTTPS。
   - `requireUser` 只做鉴权与首登建档，不再顺手改角色；显式角色切换通过 `switchUserRole`，仅在 `/api/auth/wx-login` 内调用。

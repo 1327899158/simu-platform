@@ -68,6 +68,7 @@ async function bootstrap() {
       engineerSelfVerify: config.allowEngineerSelfVerify,
       paymentMode: config.paymentMode,
       chatImageMode: 'direct-cloud-file-id',
+      attachmentSchema: 'order-attachments-v1',
     }));
     startSweeper(); // 支付超时清扫备用定时器（推荐用云函数触发器替代）
 

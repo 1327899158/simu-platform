@@ -5,13 +5,14 @@
  */
 const { ensureLogin, getUser } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
+const { downloadAndOpen } = require('../../utils/cloud-file');
 const { fenToYuan, timeShort, STATUS_CLASS } = require('../../utils/format');
 
 Page({
   data: {
     id: '', mode: 'customer', role: '',
     order: null, quotes: [], files: [],
-    paying: false, delivering: false,
+    paying: false, delivering: false, downloadingFileId: '',
   },
   onLoad(q) { this.setData({ id: q.id, mode: q.mode || 'customer' }); },
   onShow() {
@@ -43,7 +44,9 @@ Page({
         files: files.map((f) => ({
           ...f,
           fileId: f.fileId || f.id,
-          sizeText: (f.sizeBytes / 1024 / 1024).toFixed(2) + 'MB',
+          sizeText: f.sizeBytes
+            ? (f.sizeBytes / 1024 / 1024).toFixed(2) + 'MB'
+            : '大小未知',
         })),
       });
     } catch (e) {
@@ -76,24 +79,19 @@ Page({
   // ---------- 通用 ----------
   async download(e) {
     const fid = e.currentTarget.dataset.id;
+    if (!fid || this.data.downloadingFileId) return;
+    this.setData({ downloadingFileId: fid });
+    wx.showLoading({ title: '下载中…', mask: true });
     try {
-      // 云开发版：url 是云存储临时链接（HTTPS，直接下载）
-      const info = await request('GET', `/files/${fid}/url`);
-      wx.showLoading({ title: '下载中…' });
-      wx.downloadFile({
-        url: info.url,
-        success(res) {
-          wx.hideLoading();
-          if (res.statusCode !== 200) return wx.showToast({ title: '下载失败', icon: 'none' });
-          wx.openDocument({
-            filePath: res.tempFilePath,
-            showMenu: true,
-            fail: () => wx.showToast({ title: '文件打开失败，请重试', icon: 'none' }),
-          });
-        },
-        fail() { wx.hideLoading(); wx.showToast({ title: '下载失败', icon: 'none' }); },
-      });
-    } catch (err) { wx.showToast({ title: err.message || '下载失败', icon: 'none' }); }
+      // 服务端只负责权限校验；云文件由小程序直接下载，避免后端临时链接超时。
+      const info = await request('GET', `/files/${fid}/url`, null, { silent: true });
+      await downloadAndOpen(info);
+    } catch (err) {
+      wx.showToast({ title: err.message || '下载失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ downloadingFileId: '' });
+    }
   },
   async goChat() {
     try {

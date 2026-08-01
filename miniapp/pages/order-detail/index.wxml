@@ -79,10 +79,10 @@ module.exports = {
     <text class="card-title">📎 附件（{{files.length}}）</text>
     <view class="attachment-list">
       <view class="attachment-item" wx:for="{{files}}" wx:key="fileId" data-id="{{item.fileId}}" bindtap="download">
-        <text class="attachment-kind {{item.kind === 'RESULT' ? 'result' : ''}}">{{item.kind === 'RESULT' ? '成果' : '需求'}}</text>
+        <text class="attachment-kind {{item.purpose === 'RESULT' || item.kind === 'RESULT' ? 'result' : ''}}">{{item.purpose === 'RESULT' || item.kind === 'RESULT' ? '成果' : '需求'}}</text>
         <text class="attachment-name">{{item.name}}</text>
         <text class="attachment-size">{{item.sizeText}}</text>
-        <text class="attachment-dl">下载</text>
+        <text class="attachment-dl">{{downloadingFileId === item.fileId ? '下载中…' : '下载'}}</text>
       </view>
     </view>
   </view>
