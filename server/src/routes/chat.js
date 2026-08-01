@@ -13,45 +13,6 @@ const { nowIso, v } = require('../lib/util');
 const { query, queryOne } = require('../db');
 const { requireUser } = require('../lib/auth-mw');
 const { contentCheck, publishMessageDoc } = require('../services/chat-svc');
-const { getStorage } = require('../tcb');
-
-/** 云存储 tempFileURL 短期缓存，避免每次会话列表都发一堆 getTempFileURL。 */
-const AVATAR_CACHE_TTL_MS = 60 * 1000;
-const _avatarCache = new Map(); // fileID -> { url, expires }
-
-/** 批量把 cloud:// avatarUrl 转成 https tempFileURL；直传的 https/URL 原样返回。 */
-async function resolveAvatarUrls(rawUrls) {
-  const out = new Map();
-  const cloudIds = [];
-  const now = Date.now();
-  for (const u of rawUrls) {
-    if (!u) continue;
-    if (!u.startsWith('cloud://')) { out.set(u, u); continue; }
-    const cached = _avatarCache.get(u);
-    if (cached && cached.expires > now) { out.set(u, cached.url); continue; }
-    cloudIds.push(u);
-  }
-  if (cloudIds.length) {
-    try {
-      const r = await getStorage().getTempFileURL({ fileList: cloudIds });
-      const list = r.fileList || [];
-      cloudIds.forEach((fid, i) => {
-        const item = list[i];
-        const url = item && item.tempFileURL ? item.tempFileURL : '';
-        if (url) {
-          out.set(fid, url);
-          _avatarCache.set(fid, { url, expires: now + AVATAR_CACHE_TTL_MS });
-        } else {
-          out.set(fid, ''); // 拿不到就置空，前端走占位图
-        }
-      });
-    } catch (e) {
-      console.warn('[chat] resolveAvatarUrls failed', e.message);
-      cloudIds.forEach((fid) => out.set(fid, ''));
-    }
-  }
-  return out;
-}
 
 async function myConversation(user, convId) {
   const c = await queryOne(`SELECT * FROM conversations WHERE id = ?`, [convId]);
@@ -68,14 +29,11 @@ function register(router) {
       `SELECT * FROM conversations WHERE customerId = ? OR engineerId = ?
        ORDER BY lastMsgAt DESC LIMIT 50`, [user.id, user.id]);
 
-    // 1) 先把每个会话的 peer 原始 avatarUrl 收集起来，最后批量解 tempFileURL
-    const peerRawUrls = [];
     const enriched = await Promise.all(rows.map(async (c) => {
       const o = await queryOne(`SELECT projectName, orderNo, status FROM orders WHERE id = ?`, [c.orderId]);
       const peerId = c.customerId === user.id ? c.engineerId : c.customerId;
       const peerRow = await queryOne(`SELECT nickname, avatarUrl FROM users WHERE id = ?`, [peerId]);
       const peer = peerRow ? { nickname: peerRow.nickname, avatarUrl: peerRow.avatarUrl || '' } : null;
-      if (peer && peer.avatarUrl) peerRawUrls.push(peer.avatarUrl);
       const last = await queryOne(
         `SELECT type, content, createdAt FROM messages WHERE convId = ? ORDER BY id DESC LIMIT 1`, [c.id]);
       const unreadRow = await queryOne(
@@ -93,13 +51,6 @@ function register(router) {
       };
     }));
 
-    // 2) 一次批量解 tempFileURL，回填到 peer.avatarUrl
-    const avatarMap = await resolveAvatarUrls(peerRawUrls);
-    for (const item of enriched) {
-      if (item.peer && item.peer.avatarUrl) {
-        item.peer.avatarUrl = avatarMap.get(item.peer.avatarUrl) ?? item.peer.avatarUrl;
-      }
-    }
     ok(res, enriched);
   });
 
@@ -130,35 +81,22 @@ function register(router) {
 
     const peerId = c.customerId === user.id ? c.engineerId : c.customerId;
     const peerRow = await queryOne(`SELECT id, nickname, avatarUrl FROM users WHERE id = ?`, [peerId]);
-    let peer = null;
-    if (peerRow) {
-      let avatarUrl = peerRow.avatarUrl || '';
-      if (avatarUrl) {
-        const m = await resolveAvatarUrls([avatarUrl]);
-        avatarUrl = m.get(avatarUrl) ?? '';
-      }
-      peer = { id: peerRow.id, nickname: peerRow.nickname, avatarUrl };
-    }
+    const peer = peerRow
+      ? { id: peerRow.id, nickname: peerRow.nickname, avatarUrl: peerRow.avatarUrl || '' }
+      : null;
 
-    // 批量获取图片临时链接
+    // 小程序端可直接显示同环境的 cloud:// fileID，避免云托管后端获取
+    // tempFileURL 时依赖内部凭据服务并阻塞聊天接口。
     const imageFileIds = rows
       .filter((m) => m.type === 'IMAGE' && m.fileId)
       .map((m) => m.fileId);
-    const tempUrlMap = {};
+    const imageUrlMap = {};
     if (imageFileIds.length) {
-      try {
-        // fileId 字段存的是 uploaded_files.id，需要先查 fileID（云存储路径）
-        const files = await query(
-          `SELECT id, fileID FROM uploaded_files WHERE id IN (${imageFileIds.map(() => '?').join(',')})`,
-          imageFileIds
-        );
-        const cloudIDs = files.map((f) => f.fileID);
-        const result = await getStorage().getTempFileURL({ fileList: cloudIDs });
-        const urlList = result.fileList || [];
-        files.forEach((f, i) => {
-          if (urlList[i]) tempUrlMap[f.id] = urlList[i].tempFileURL;
-        });
-      } catch (e) { console.error('[chat] getTempFileURL failed', e.message); }
+      const files = await query(
+        `SELECT id, fileID FROM uploaded_files WHERE id IN (${imageFileIds.map(() => '?').join(',')})`,
+        imageFileIds
+      );
+      files.forEach((f) => { imageUrlMap[f.id] = f.fileID || ''; });
     }
 
     ok(res, {
@@ -169,7 +107,7 @@ function register(router) {
         type: m.type,
         content: m.content,
         fileId: m.fileId,
-        imgUrl: m.type === 'IMAGE' && m.fileId ? (tempUrlMap[m.fileId] || '') : '',
+        imgUrl: m.type === 'IMAGE' && m.fileId ? (imageUrlMap[m.fileId] || '') : '',
         createdAt: m.createdAt,
       })),
       lastId: rows.length ? Number(rows[rows.length - 1].id) : after,

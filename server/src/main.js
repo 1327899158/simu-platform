@@ -67,6 +67,7 @@ async function bootstrap() {
       env: config.env, cloudbaseEnv: config.cloudbaseEnv,
       engineerSelfVerify: config.allowEngineerSelfVerify,
       paymentMode: config.paymentMode,
+      chatImageMode: 'direct-cloud-file-id',
     }));
     startSweeper(); // 支付超时清扫备用定时器（推荐用云函数触发器替代）
 

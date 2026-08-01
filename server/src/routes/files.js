@@ -72,19 +72,10 @@ async function assertOrderUploadAccess(user, orderId) {
 
 async function saveFileRecord(user, { fileID, name, kind, orderId, sizeBytes }) {
   assertCloudFileId(fileID);
-  // 头像由当前小程序通过 wx.cloud.uploadFile 直接上传，且已通过环境前缀校验。
-  // 云托管侧的临时链接校验可能因服务端存储凭据/权限短暂不可用而失败，
-  // 不应阻断无订单头像落库；订单模型、文档等业务文件仍保持严格存在性校验。
-  if (kind === 'IMAGE' && !orderId) {
-    try {
-      await assertCloudFileExists(fileID);
-    } catch (e) {
-      console.warn(JSON.stringify({
-        evt: 'avatar-cloud-file-check-skipped',
-        reason: e.message,
-      }));
-    }
-  } else {
+  // 无订单图片（聊天图片、头像）由当前小程序直接上传，并已校验环境前缀。
+  // 云托管后端访问临时链接可能因内部凭据服务不可用而长时间阻塞，
+  // 因此此类图片直接落库；订单模型、文档等仍保持严格存在性校验。
+  if (!(kind === 'IMAGE' && !orderId)) {
     await assertCloudFileExists(fileID);
   }
   await assertOrderUploadAccess(user, orderId);
