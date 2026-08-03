@@ -216,11 +216,27 @@ async function init() {
       INDEX idx_sms_phone_type(phone, type, usedAt),
       INDEX idx_sms_expires(expiresAt)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS auth_rate_limits (
+      action          VARCHAR(40) NOT NULL,
+      subjectHash     CHAR(64) NOT NULL,
+      windowStartedAt DATETIME(3) NOT NULL,
+      attemptCount    INT UNSIGNED NOT NULL DEFAULT 0,
+      updatedAt       DATETIME(3) NOT NULL,
+      PRIMARY KEY(action, subjectHash),
+      INDEX idx_auth_rate_updated(updatedAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   ];
 
   for (const sql of sqls) {
     await query(sql);
   }
+
+  // 限流键是哈希值且无需永久保留，定期清理过期窗口，避免表无限增长。
+  await query(
+    `DELETE FROM auth_rate_limits
+      WHERE updatedAt < DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 30 DAY)`
+  );
 
   // 增量迁移：为旧表补充新字段（CREATE TABLE IF NOT EXISTS 不会改已存在的表）
   const migrations = [

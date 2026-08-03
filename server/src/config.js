@@ -82,6 +82,21 @@ const config = {
     sendCooldown: 60, // 同一手机号重复发送冷却：60 秒
   },
 
+  // 认证与密码重置限流。全部按数据库固定时间窗口计数，多实例共享。
+  authRate: {
+    loginWindowSec: Math.max(1, int(process.env.LOGIN_RATE_WINDOW_SEC, 15 * 60)),
+    loginAccountLimit: Math.max(1, int(process.env.LOGIN_ACCOUNT_FAIL_LIMIT, 5)),
+    loginIpLimit: Math.max(1, int(process.env.LOGIN_IP_FAIL_LIMIT, 30)),
+    resetSmsWindowSec: Math.max(1, int(process.env.RESET_SMS_WINDOW_SEC, 60 * 60)),
+    resetSmsAccountLimit: Math.max(1, int(process.env.RESET_SMS_ACCOUNT_LIMIT, 5)),
+    resetSmsIpLimit: Math.max(1, int(process.env.RESET_SMS_IP_LIMIT, 20)),
+    resetVerifyWindowSec: Math.max(1, int(process.env.RESET_VERIFY_WINDOW_SEC, 15 * 60)),
+    resetVerifyAccountLimit: Math.max(1, int(process.env.RESET_VERIFY_ACCOUNT_LIMIT, 5)),
+    resetVerifyIpLimit: Math.max(1, int(process.env.RESET_VERIFY_IP_LIMIT, 20)),
+    resetSuccessWindowSec: Math.max(1, int(process.env.RESET_SUCCESS_WINDOW_SEC, 24 * 60 * 60)),
+    resetSuccessAccountLimit: Math.max(1, int(process.env.RESET_SUCCESS_ACCOUNT_LIMIT, 3)),
+  },
+
   // 内容安全 Mock 词表
   bannedWords: (process.env.BANNED_WORDS || '违禁词,代刷,加微信私聊')
     .split(',').map((s) => s.trim()).filter(Boolean),

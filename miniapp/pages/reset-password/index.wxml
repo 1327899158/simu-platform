@@ -8,9 +8,8 @@
     <view class="form-group">
       <label>用户名</label>
       <view class="account-input">
-        <input type="number" maxlength="12" disabled="{{targetReady}}" placeholder="请输入6-12位数字用户名" value="{{username}}" bindinput="onUsername" />
+        <input type="number" maxlength="12" placeholder="请输入6-12位数字用户名" value="{{username}}" bindinput="onUsername" />
         <button wx:if="{{!targetReady}}" class="btn-account" bindtap="confirmAccount" loading="{{targetLoading}}" disabled="{{targetLoading}}">确认账号</button>
-        <button wx:else class="btn-account" bindtap="changeAccount">更换账号</button>
       </view>
       <view class="phone-hint" wx:if="{{targetReady}}">
         验证码将发送至绑定手机：<text>{{phoneMasked}}</text>

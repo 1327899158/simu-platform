@@ -145,14 +145,14 @@ async function requestSmsCode(phone, type = 'LOGIN') {
  * 查询密码重置目标，只返回脱敏后的绑定手机号。
  */
 async function getPasswordResetTarget(username) {
-  return request('POST', '/auth/reset-password-target', { username });
+  return request('POST', '/auth/reset-password-target', { username }, { silent: true });
 }
 
 /**
  * 密码重置验证码由后端按用户名发送到绑定号码，客户端不传手机号。
  */
 async function requestPasswordResetSms(username) {
-  return request('POST', '/auth/request-sms', { username, type: 'RESET_PWD' });
+  return request('POST', '/auth/request-sms', { username, type: 'RESET_PWD' }, { silent: true });
 }
 
 /**
@@ -161,7 +161,7 @@ async function requestPasswordResetSms(username) {
 async function resetPassword(username, newPassword, smsCode) {
   const data = await request('POST', '/auth/reset-password', {
     username, newPassword, smsCode,
-  });
+  }, { silent: true });
   return data;
 }
 

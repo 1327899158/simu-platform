@@ -49,21 +49,11 @@ Page({
       return true;
     } catch (e) {
       this.setData({ phoneMasked: '', targetReady: false });
+      wx.showToast({ title: e.message || '账号确认失败', icon: 'none' });
       return false;
     } finally {
       this.setData({ targetLoading: false });
     }
-  },
-
-  changeAccount() {
-    if (this.countdownTimer) clearInterval(this.countdownTimer);
-    this.setData({
-      targetReady: false,
-      phoneMasked: '',
-      smsCode: '',
-      smsCountdown: 0,
-      step: 1,
-    });
   },
 
   async requestSms() {
@@ -126,11 +116,17 @@ Page({
   },
 
   onUsername(e) {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
     this.setData({
       username: e.detail.value,
       phoneMasked: '',
       targetReady: false,
       smsCode: '',
+      smsCountdown: 0,
+      step: 1,
     });
   },
   onSmsCode(e) { this.setData({ smsCode: e.detail.value }); },

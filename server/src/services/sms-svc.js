@@ -112,7 +112,7 @@ async function sendSmsCode(phone, type = 'LOGIN', rateKey = '') {
  * @param {string} type - 验证码类型
  * @returns {Promise<{valid: true}>}
  */
-async function verifySmsCode(phone, code, type = 'LOGIN') {
+async function verifySmsCode(phone, code, type = 'LOGIN', options = {}) {
   if (!phone || !code) throw err.bad('手机号和验证码不能为空');
   if (!/^\d{6}$/.test(code)) throw err.bad('验证码格式不正确');
 
@@ -132,6 +132,10 @@ async function verifySmsCode(phone, code, type = 'LOGIN') {
   if (now > expiresAt) {
     throw err.conflict('验证码已过期');
   }
+
+  // 密码重置需要先确认验证码有效，再检查“新旧密码相同”。此阶段不核销，
+  // 最终提交仍会再次调用本函数并以原子 UPDATE 完成一次性核销。
+  if (options.consume === false) return { valid: true };
 
   // Atomically consume the code. Two concurrent requests must not both pass
   // the read-before-write window.

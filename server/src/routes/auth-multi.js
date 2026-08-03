@@ -11,7 +11,21 @@ const { newId, nowIso, maskPhone, v, hashPassword, verifyPassword, genSessionTok
 const { query, queryOne } = require('../db');
 const { getOrCreateUser, findUserByUsername, findUserByPhone, getOrCreateUserByPhone, requireUser } = require('../lib/auth-mw');
 const { sendSmsCode, verifySmsCode } = require('../services/sms-svc');
+const {
+  getClientIp,
+  assertWindowAvailable,
+  consumeWindow,
+  clearWindow,
+  retryMessage,
+} = require('../services/auth-rate-svc');
+const { config } = require('../config');
 const { loadUserView } = require('./auth');
+
+const DUMMY_PASSWORD_HASH = '$2b$10$04.uge5pyHgq/APdnsGieuNmAFJVLeNxGIFif6.FEkTyWUiDPw/Tu';
+
+function ensureAllowed(state, message) {
+  if (!state.allowed) throw err.tooMany(retryMessage(message, state.retryAfter));
+}
 
 /**
  * 为用户生成并存储 session token。
@@ -40,6 +54,11 @@ function register(router) {
     const username = v.str(b.username, '用户名', { min: 6, max: 12 });
     if (!/^\d+$/.test(username)) throw err.bad('用户名只能是数字');
 
+    ensureAllowed(
+      await consumeWindow('RESET_LOOKUP_IP', getClientIp(req), 30, 15 * 60),
+      '查询次数过多'
+    );
+
     const user = await findUserByUsername(username);
     if (!user || !user.phone) throw err.notFound('账号不存在或未绑定手机号');
     ok(res, { username, phoneMasked: maskPhone(user.phone) });
@@ -58,6 +77,19 @@ function register(router) {
       if (!/^\d+$/.test(username)) throw err.bad('用户名只能是数字');
       const user = await findUserByUsername(username);
       if (!user || !user.phone) throw err.notFound('账号不存在或未绑定手机号');
+
+      const accountRate = await consumeWindow(
+        'RESET_SMS_ACCOUNT', username,
+        config.authRate.resetSmsAccountLimit,
+        config.authRate.resetSmsWindowSec
+      );
+      ensureAllowed(accountRate, '该账号验证码发送次数过多');
+      const ipRate = await consumeWindow(
+        'RESET_SMS_IP', getClientIp(req),
+        config.authRate.resetSmsIpLimit,
+        config.authRate.resetSmsWindowSec
+      );
+      ensureAllowed(ipRate, '当前网络验证码发送次数过多');
       phone = user.phone;
     } else {
       phone = v.str(b.phone, '手机号', { min: 11, max: 11 });
@@ -135,13 +167,52 @@ function register(router) {
     const username = v.str(b.username, '用户名', { min: 1 });
     const password = v.str(b.password, '密码', { min: 1 });
 
-    const user = await findUserByUsername(username);
-    if (!user) throw err.unauth('用户名或密码错误');
+    const clientIp = getClientIp(req);
+    ensureAllowed(
+      await assertWindowAvailable(
+        'LOGIN_ACCOUNT', username,
+        config.authRate.loginAccountLimit,
+        config.authRate.loginWindowSec
+      ),
+      '登录失败次数过多'
+    );
+    ensureAllowed(
+      await assertWindowAvailable(
+        'LOGIN_IP', clientIp,
+        config.authRate.loginIpLimit,
+        config.authRate.loginWindowSec
+      ),
+      '当前网络登录失败次数过多'
+    );
 
-    const valid = await verifyPassword(user.passwordHash, password);
-    if (!valid) throw err.unauth('用户名或密码错误');
+    const user = await findUserByUsername(username);
+    // 不存在的账号也执行一次 bcrypt，缩小通过响应时间枚举账号的空间。
+    const valid = await verifyPassword(user?.passwordHash || DUMMY_PASSWORD_HASH, password);
+    if (!user || !valid) {
+      const accountRate = await consumeWindow(
+        'LOGIN_ACCOUNT', username,
+        config.authRate.loginAccountLimit,
+        config.authRate.loginWindowSec
+      );
+      const ipRate = await consumeWindow(
+        'LOGIN_IP', clientIp,
+        config.authRate.loginIpLimit,
+        config.authRate.loginWindowSec
+      );
+      if (accountRate.count >= config.authRate.loginAccountLimit) {
+        throw err.tooMany(retryMessage('登录失败次数过多', accountRate.retryAfter));
+      }
+      if (ipRate.count >= config.authRate.loginIpLimit) {
+        throw err.tooMany(retryMessage('当前网络登录失败次数过多', ipRate.retryAfter));
+      }
+      throw err.unauth('用户名或密码错误');
+    }
 
     if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
+
+    // 成功登录后清除该账号的失败记录；IP 记录保留到窗口自然结束，防止撞库者
+    // 用偶然成功的账号清空整个来源地址的限制。
+    await clearWindow('LOGIN_ACCOUNT', username);
 
     const session = await issueSession(user);
     ok(res, session);
@@ -185,15 +256,87 @@ function register(router) {
     const user = await findUserByUsername(username);
     if (!user || !user.phone) throw err.notFound('账号不存在或未绑定手机号');
 
-    // 验证短信码
-    await verifySmsCode(user.phone, smsCode, 'RESET_PWD');
+    const clientIp = getClientIp(req);
+    ensureAllowed(
+      await assertWindowAvailable(
+        'RESET_VERIFY_ACCOUNT', username,
+        config.authRate.resetVerifyAccountLimit,
+        config.authRate.resetVerifyWindowSec
+      ),
+      '验证码校验失败次数过多'
+    );
+    ensureAllowed(
+      await assertWindowAvailable(
+        'RESET_VERIFY_IP', clientIp,
+        config.authRate.resetVerifyIpLimit,
+        config.authRate.resetVerifyWindowSec
+      ),
+      '当前网络验证码校验失败次数过多'
+    );
+    ensureAllowed(
+      await assertWindowAvailable(
+        'RESET_SUCCESS_ACCOUNT', username,
+        config.authRate.resetSuccessAccountLimit,
+        config.authRate.resetSuccessWindowSec
+      ),
+      '该账号密码重置次数过多'
+    );
+
+    // 先验证但暂不核销：若新密码与旧密码相同，用户仍可在验证码有效期内
+    // 修改新密码后再次提交。最终写入前会再次验证并原子核销。
+    try {
+      await verifySmsCode(user.phone, smsCode, 'RESET_PWD', { consume: false });
+    } catch (e) {
+      const accountRate = await consumeWindow(
+        'RESET_VERIFY_ACCOUNT', username,
+        config.authRate.resetVerifyAccountLimit,
+        config.authRate.resetVerifyWindowSec
+      );
+      const ipRate = await consumeWindow(
+        'RESET_VERIFY_IP', clientIp,
+        config.authRate.resetVerifyIpLimit,
+        config.authRate.resetVerifyWindowSec
+      );
+      if (accountRate.count >= config.authRate.resetVerifyAccountLimit) {
+        throw err.tooMany(retryMessage('验证码校验失败次数过多', accountRate.retryAfter));
+      }
+      if (ipRate.count >= config.authRate.resetVerifyIpLimit) {
+        throw err.tooMany(retryMessage('当前网络验证码校验失败次数过多', ipRate.retryAfter));
+      }
+      throw e;
+    }
+
+    // 必须在验证码通过后才能比较旧密码，否则接口会成为“猜测当前密码是否正确”的
+    // 密码判定器。bcrypt 只在服务端比较，密码和哈希均不会出现在响应或日志中。
+    if (user.passwordHash && await verifyPassword(user.passwordHash, newPassword)) {
+      throw err.conflict('新密码不能与当前密码相同，请重新设置');
+    }
+
+    ensureAllowed(
+      await consumeWindow(
+        'RESET_SUCCESS_ACCOUNT', username,
+        config.authRate.resetSuccessAccountLimit,
+        config.authRate.resetSuccessWindowSec
+      ),
+      '该账号密码重置次数过多'
+    );
 
     // 更新密码
     const passwordHash = await hashPassword(newPassword);
+    // 最终安全门：验证码必须仍未使用且未过期，并在这里原子核销。
+    await verifySmsCode(user.phone, smsCode, 'RESET_PWD');
     await query(
       `UPDATE users SET passwordHash = ?, sessionToken = NULL, sessionExpiresAt = NULL, updatedAt = ? WHERE id = ?`,
       [passwordHash, nowIso(), user.id]
     );
+
+    try {
+      await clearWindow('LOGIN_ACCOUNT', username);
+      await clearWindow('RESET_VERIFY_ACCOUNT', username);
+    } catch (e) {
+      // 密码已经更新，限流清理失败不应把成功响应变成“重置失败”。
+      console.warn('[auth-rate] reset cleanup failed:', e.message);
+    }
 
     ok(res, { message: '密码重置成功' });
   });
