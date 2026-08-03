@@ -155,6 +155,13 @@ async function requireEngineer(req) {
   return user;
 }
 
+/** 必须是客户。角色不仅用于界面分流，也必须在服务端强制校验。 */
+async function requireCustomer(req) {
+  const user = await requireUser(req);
+  if (user.role !== 'CUSTOMER') throw err.forbidden('仅客户可操作');
+  return user;
+}
+
 // -------- 账号密码 & 短信登录方式 --------
 
 /**
@@ -201,6 +208,6 @@ async function getOrCreateUserByPhone(phone, roleHint = 'CUSTOMER') {
 }
 
 module.exports = {
-  getOpenid, getOrCreateUser, switchUserRole, requireUser, requireEngineer,
+  getOpenid, getOrCreateUser, switchUserRole, requireUser, requireCustomer, requireEngineer,
   findUserByUsername, findUserByPhone, getOrCreateUserByPhone
 };

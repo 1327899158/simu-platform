@@ -11,7 +11,16 @@ const TABS = [
 ];
 Page({
   data: { tabs: TABS, tab: '', currentLabel: '全部', currentDotCls: 'dot-purple', currentCount: 0, filterOpen: false, items: [] },
-  onShow() { if (ensureLogin()) this.load(); },
+  onShow() {
+    const user = ensureLogin();
+    if (!user) return;
+    if (user.role !== 'CUSTOMER') {
+      wx.showToast({ title: '仅客户可以查看我的订单', icon: 'none' });
+      setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
+      return;
+    }
+    this.load();
+  },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   toggleFilter() { this.setData({ filterOpen: !this.data.filterOpen }); },
   pickTab(e) {

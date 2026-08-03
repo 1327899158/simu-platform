@@ -37,7 +37,7 @@
 
   <!-- 菜单（仅保留 simu-platform 已有功能的跳转） -->
   <view class="menu" wx:if="{{user}}">
-    <view class="menu-item" bindtap="goOrders">
+    <view class="menu-item" wx:if="{{user.role === 'CUSTOMER'}}" bindtap="goOrders">
       <text class="icon">📋</text>
       <text class="title">我的订单</text>
       <text class="arrow">›</text>

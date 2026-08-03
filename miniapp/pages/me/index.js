@@ -40,6 +40,9 @@ Page({
     wx.navigateTo({ url: '/pages/profile-edit/index' });
   },
   goOrders() {
+    if (!this.data.user || this.data.user.role !== 'CUSTOMER') {
+      return wx.showToast({ title: '工程师账号没有客户订单入口', icon: 'none' });
+    }
     wx.navigateTo({ url: '/pages/orders/index' });
   },
   goMyQuotes() {

@@ -85,6 +85,7 @@ model User {
   orders   Order[]          @relation("CustomerOrders")
   quotes   Quote[]
   uploadedAttachments OrderAttachment[]
+  orderViews OrderView[]
 }
 
 model EngineerProfile {
@@ -116,6 +117,7 @@ model Order {
   paidAt          DateTime?
   deliveredAt     DateTime?
   completedAt     DateTime?
+  viewCount       Int         @default(0)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   deletedAt       DateTime?
@@ -124,9 +126,23 @@ model Order {
   quotes   Quote[]
   files    UploadedFile[]
   attachments OrderAttachment[]
+  views       OrderView[]
 
   @@index([status, createdAt])
   @@index([customerId, status])
+}
+
+model OrderView {
+  orderId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@id([orderId, userId])
+  @@index([userId, createdAt])
+  @@map("order_views")
 }
 
 model Quote {

@@ -116,6 +116,7 @@ async function init() {
       paidAt          DATETIME(3),
       deliveredAt     DATETIME(3),
       completedAt     DATETIME(3),
+      viewCount       INT UNSIGNED NOT NULL DEFAULT 0,
       createdAt       DATETIME(3) NOT NULL,
       updatedAt       DATETIME(3) NOT NULL,
       deletedAt       DATETIME(3),
@@ -138,6 +139,16 @@ async function init() {
       FOREIGN KEY(engineerId) REFERENCES users(id),
       UNIQUE KEY uq_order_engineer(orderId, engineerId),
       INDEX idx_quotes_engineer(engineerId, status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS order_views (
+      orderId       VARCHAR(32) NOT NULL,
+      userId        VARCHAR(32) NOT NULL,
+      createdAt     DATETIME(3) NOT NULL,
+      PRIMARY KEY(orderId, userId),
+      INDEX idx_order_views_user(userId, createdAt),
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      FOREIGN KEY(userId) REFERENCES users(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS uploaded_files (
@@ -241,19 +252,20 @@ async function init() {
   // 增量迁移：为旧表补充新字段（CREATE TABLE IF NOT EXISTS 不会改已存在的表）
   const migrations = [
     // users 表补充字段
-    { sql: `ALTER TABLE users ADD COLUMN username VARCHAR(20) UNIQUE`, check: "username" },
-    { sql: `ALTER TABLE users ADD COLUMN passwordHash VARCHAR(255)`, check: "passwordHash" },
-    { sql: `ALTER TABLE users ADD COLUMN sessionToken VARCHAR(64)`, check: "sessionToken" },
-    { sql: `ALTER TABLE users ADD COLUMN sessionExpiresAt DATETIME(3)`, check: "sessionExpiresAt" },
+    { table: 'users', sql: `ALTER TABLE users ADD COLUMN username VARCHAR(20) UNIQUE`, check: "username" },
+    { table: 'users', sql: `ALTER TABLE users ADD COLUMN passwordHash VARCHAR(255)`, check: "passwordHash" },
+    { table: 'users', sql: `ALTER TABLE users ADD COLUMN sessionToken VARCHAR(64)`, check: "sessionToken" },
+    { table: 'users', sql: `ALTER TABLE users ADD COLUMN sessionExpiresAt DATETIME(3)`, check: "sessionExpiresAt" },
+    { table: 'orders', sql: `ALTER TABLE orders ADD COLUMN viewCount INT UNSIGNED NOT NULL DEFAULT 0`, check: "viewCount" },
   ];
 
   for (const m of migrations) {
     try {
       // 检查列是否已存在
-      const cols = await query(`SHOW COLUMNS FROM users LIKE '${m.check}'`);
+      const cols = await query(`SHOW COLUMNS FROM ${m.table} LIKE '${m.check}'`);
       if (!cols || cols.length === 0) {
         await query(m.sql);
-        console.log(`[migrate] Added column ${m.check} to users`);
+        console.log(`[migrate] Added column ${m.check} to ${m.table}`);
       }
     } catch (e) {
       // Concurrent replicas may race on the same ALTER. Ignore only the

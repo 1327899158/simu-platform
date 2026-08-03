@@ -112,17 +112,8 @@
     <view class="section">
       <view class="section-header">
         <text class="section-title">📌 可接单需求</text>
+        <button class="hall-link" wx:if="{{canTakeOrders}}" bindtap="goMarketHall">去接单大厅 ›</button>
       </view>
-
-      <!-- 筛选 -->
-      <scroll-view scroll-x class="filter-row" enhanced show-scrollbar="{{false}}">
-        <text wx:for="{{dicts.directions}}" wx:key="*this" class="chip {{fDirection===item?'on':''}}"
-          bindtap="pickDirection" data-v="{{item}}">{{item}}</text>
-      </scroll-view>
-      <scroll-view scroll-x class="filter-row" enhanced show-scrollbar="{{false}}">
-        <text wx:for="{{dicts.softwares}}" wx:key="*this" class="chip {{fSoftware===item?'on':''}}"
-          bindtap="pickSoftware" data-v="{{item}}">{{item}}</text>
-      </scroll-view>
 
       <view wx:for="{{hall}}" wx:key="id" class="demand-item" data-id="{{item.id}}"
         bindtap="openMarket" hover-class="demand-item-hover" hover-stay-time="80">
@@ -135,6 +126,7 @@
             <text class="meta-item">💰 ¥{{item.budgetY}}</text>
             <text class="meta-item">📅 工期{{item.deliveryDays}}天</text>
             <text class="meta-item">💬 {{item.quoteCount}}人报价</text>
+            <text class="meta-item">👁 {{item.viewCount}}次浏览</text>
           </view>
         </view>
         <button wx:if="{{!item.myQuote}}" class="btn-quote"

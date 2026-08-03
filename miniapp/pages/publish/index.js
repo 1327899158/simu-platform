@@ -75,7 +75,13 @@ Page({
     submitting: false,
   },
   async onLoad() {
-    if (!ensureLogin()) return;
+    const user = ensureLogin();
+    if (!user) return;
+    if (user.role !== 'CUSTOMER') {
+      wx.showToast({ title: '仅客户可以发布需求', icon: 'none' });
+      setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
+      return;
+    }
     const draft = wx.getStorageSync(DRAFT_KEY);
     if (draft) {
       this.setData({

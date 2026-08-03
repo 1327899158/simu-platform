@@ -59,6 +59,10 @@
           <text class="info-label">报价</text>
           <text class="info-value">💬 {{item.quoteCount}} 个工程师报价</text>
         </view>
+        <view class="order-info-row">
+          <text class="info-label">浏览</text>
+          <text class="info-value">👁 {{item.viewCount || 0}} 位工程师查看</text>
+        </view>
       </view>
 
       <view class="order-footer">

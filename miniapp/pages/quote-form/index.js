@@ -5,7 +5,14 @@ const { digits, money, validMoney } = require('../../utils/input');
 Page({
   data: { orderId: '', amountYuan: '', days: '', solution: '', flexible: true, submitting: false },
   onLoad(q) {
-    ensureLogin();
+    const user = ensureLogin();
+    if (!user) return;
+    const verifyStatus = user.engineer?.verifyStatus || user.verifyStatus || '';
+    if (user.role !== 'ENGINEER' || verifyStatus !== 'APPROVED') {
+      wx.showToast({ title: user.role === 'ENGINEER' ? '工程师资格通过后才能报价' : '仅工程师可以报价', icon: 'none' });
+      setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
+      return;
+    }
     const flexible = q.flexible !== '0';          // 0=固定预算，其余=弹性
     const fixedFen = q.fixedFen ? parseInt(q.fixedFen, 10) : 0;
     // 优先用已有报价金额，否则固定预算时自动填入预算值

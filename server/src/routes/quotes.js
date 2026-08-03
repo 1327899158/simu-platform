@@ -3,7 +3,7 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne, tx, parseJson } = require('../db');
-const { requireUser, requireEngineer } = require('../lib/auth-mw');
+const { requireCustomer, requireEngineer } = require('../lib/auth-mw');
 const { DICTS } = require('./dicts');
 
 const quoteView = (qt, extra = {}) => ({
@@ -134,7 +134,7 @@ function register(router) {
 
   // GET /api/orders/:id/quotes
   router.get('/api/orders/:id/quotes', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     const o = await queryOne(`SELECT * FROM orders WHERE id=? AND deletedAt IS NULL`, [params.id]);
     if (!o) throw err.notFound('订单不存在');
     if (o.customerId !== user.id) throw err.forbidden('仅订单发布者可查看全部报价');

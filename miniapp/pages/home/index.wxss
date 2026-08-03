@@ -70,8 +70,7 @@
 
 /* ===== 快捷操作 ===== */
 .quick-actions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 16rpx;
   background: #FFFFFF;
   border-radius: var(--r-lg);
@@ -80,9 +79,10 @@
   margin-bottom: 20rpx;
 }
 .quick-actions.three {
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
 }
 .action-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -128,13 +128,27 @@
   padding: 6rpx 0;
 }
 .section-more:active { opacity: 0.6; }
+.hall-link {
+  min-height: 88rpx;
+  margin: 0;
+  padding: 0 12rpx;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: var(--neon-violet);
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.hall-link::after { border: none; }
+.hall-link:active { opacity: .65; }
 
 /* ===== 订单状态统计 ===== */
 .order-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
 }
 .stat-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;

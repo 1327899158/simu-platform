@@ -60,6 +60,10 @@ module.exports = {
       <text class="info-label">创建时间</text>
       <text class="info-value">{{order.time}}</text>
     </view>
+    <view class="info-row">
+      <text class="info-label">浏览量</text>
+      <text class="info-value">{{order.viewCount || 0}} 次（按工程师账号去重）</text>
+    </view>
   </view>
 
   <!-- 项目描述 -->

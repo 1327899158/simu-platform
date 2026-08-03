@@ -1,0 +1,76 @@
+<view class="market-page">
+  <view class="market-summary">
+    <view class="summary-block">
+      <text class="summary-number">{{stats.allCount}}</text>
+      <text class="summary-label">全部需求</text>
+    </view>
+    <view class="summary-divider"></view>
+    <view class="summary-block today-block">
+      <text class="today-number">{{stats.todayCount}}</text>
+      <text class="today-label">今日新增</text>
+    </view>
+  </view>
+
+  <view class="control-card">
+    <view class="control-head">
+      <text class="control-title">分类筛选</text>
+      <text class="control-value">{{category || '全部分类'}}</text>
+    </view>
+    <scroll-view scroll-x class="category-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="category-row">
+        <button class="filter-chip {{category === '' ? 'active' : ''}}"
+          data-value="" bindtap="pickCategory">全部</button>
+        <button wx:for="{{directions}}" wx:key="*this"
+          class="filter-chip {{category === item ? 'active' : ''}}"
+          data-value="{{item}}" bindtap="pickCategory">{{item}}</button>
+      </view>
+    </scroll-view>
+
+    <view class="sort-row">
+      <text class="control-title">排序方式</text>
+      <view class="sort-switch">
+        <button class="sort-option {{sort === 'latest' ? 'active' : ''}}"
+          data-value="latest" bindtap="pickSort">最新发布</button>
+        <button class="sort-option {{sort === 'hot' ? 'active' : ''}}"
+          data-value="hot" bindtap="pickSort">最热门</button>
+      </view>
+    </view>
+    <text class="sort-hint" wx:if="{{sort === 'hot'}}">热度按有效报价数与去重浏览量之和排序</text>
+  </view>
+
+  <view class="list-head">
+    <text class="list-title">可接单需求</text>
+    <text class="list-count">当前显示 {{items.length}} 条</text>
+  </view>
+
+  <view class="demand-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}"
+    bindtap="open" hover-class="card-press" hover-stay-time="80">
+    <view class="demand-head">
+      <text class="demand-title">{{item.projectName}}</text>
+      <text class="time-text">{{item.time}}</text>
+    </view>
+    <view class="tag-row">
+      <text class="tag" wx:for="{{item.directionTags}}" wx:for-item="tagItem" wx:key="*this">{{tagItem}}</text>
+    </view>
+    <view class="demand-data">
+      <text class="price">¥{{item.budgetY}}</text>
+      <text>工期 {{item.deliveryDays}} 天</text>
+      <text>💬 {{item.quoteCount}} 人报价</text>
+      <text>👁 {{item.viewCount}} 次浏览</text>
+    </view>
+    <view class="demand-foot">
+      <text class="hot-text" wx:if="{{sort === 'hot'}}">热度 {{item.hotValue}}</text>
+      <text class="quoted-text" wx:if="{{item.myQuote}}">已提交报价</text>
+      <button wx:else class="quote-btn" data-id="{{item.id}}"
+        data-flexible="{{item.budgetFlexible ? 1 : 0}}" data-fen="{{item.budgetFen}}"
+        catchtap="quickQuote">立即报价</button>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{!loading && !items.length}}">
+    <text class="empty-icon">📭</text>
+    <text class="empty-title">暂无可接单需求</text>
+    <text class="empty-desc">可以切换分类，或稍后下拉刷新</text>
+  </view>
+  <view class="loading-text" wx:if="{{loading}}">正在加载需求…</view>
+</view>

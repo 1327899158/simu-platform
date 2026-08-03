@@ -5,8 +5,7 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne, tx, nextOrderNo, parseJson } = require('../db');
-const { requireUser } = require('../lib/auth-mw');
-const { getOpenid } = require('../lib/auth-mw');
+const { requireCustomer, requireEngineer } = require('../lib/auth-mw');
 const { DICTS } = require('./dicts');
 const { createPayment, createJsapiOrder } = require('../services/pay-svc');
 const { config } = require('../config');
@@ -32,6 +31,7 @@ function orderView(o, extra = {}) {
     paidAt: o.paidAt,
     deliveredAt: o.deliveredAt,
     completedAt: o.completedAt,
+    viewCount: Number(o.viewCount || 0),
     ...extra,
   };
 }
@@ -45,8 +45,7 @@ async function quoteCountOf(orderId) {
 function register(router) {
   // POST /api/orders
   router.post('/api/orders', async (req, res) => {
-    const user = await requireUser(req);
-    if (user.role !== 'CUSTOMER') throw err.forbidden('仅客户可发布需求');
+    const user = await requireCustomer(req);
     const b = await readJson(req);
     const projectName = v.str(b.projectName, '项目名称', { min: 4, max: 60 });
     const description = v.str(b.description, '项目描述', { min: 20, max: 5000 });
@@ -113,7 +112,7 @@ function register(router) {
 
   // GET /api/orders/mine?status=&cursor=&limit=
   router.get('/api/orders/mine', async (req, res, _p, q_) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     const status = q_.get('status');
     const limit = q_.get('limit') ? v.int(q_.get('limit'), 'limit', { min: 1, max: 50 }) : 20;
     const cursor = q_.get('cursor');
@@ -142,7 +141,7 @@ function register(router) {
 
   // GET /api/orders/:id
   router.get('/api/orders/:id', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     const o = await queryOne(`SELECT * FROM orders WHERE id = ? AND deletedAt IS NULL`, [params.id]);
     if (!o) throw err.notFound('订单不存在');
     if (o.customerId !== user.id) throw err.forbidden();
@@ -158,7 +157,7 @@ function register(router) {
 
   // DELETE /api/orders/:id
   router.del('/api/orders/:id', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     await tx(async (conn) => {
       const [r] = await conn.execute(
         `UPDATE orders SET status='CLOSED', deletedAt=?, updatedAt=?
@@ -174,7 +173,7 @@ function register(router) {
 
   // POST /api/orders/:id/select-quote { quoteId }
   router.post('/api/orders/:id/select-quote', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     const b = await readJson(req);
     const quoteId = v.str(b.quoteId, 'quoteId', { min: 1 });
     const result = await tx(async (conn) => {
@@ -200,7 +199,7 @@ function register(router) {
 
   // POST /api/orders/:id/pay
   router.post('/api/orders/:id/pay', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     const o = await queryOne(
       `SELECT * FROM orders WHERE id=? AND customerId=? AND deletedAt IS NULL`,
       [params.id, user.id]);
@@ -230,7 +229,7 @@ function register(router) {
 
   // POST /api/orders/:id/deliver { fileIds?, note? }
   router.post('/api/orders/:id/deliver', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireEngineer(req);
     const b = await readJson(req);
     const note = v.str(b.note, '交付说明', { max: 1000, optional: true });
     const fileIds = v.arr(b.fileIds, '成果文件', { maxLen: 20, optional: true }) || [];
@@ -255,7 +254,7 @@ function register(router) {
 
   // POST /api/orders/:id/confirm
   router.post('/api/orders/:id/confirm', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     await tx(async (conn) => {
       const [r] = await conn.execute(
         `UPDATE orders SET status='COMPLETED', completedAt=?, updatedAt=?
@@ -269,7 +268,7 @@ function register(router) {
 
   // POST /api/orders/:id/reject-delivery { reason }
   router.post('/api/orders/:id/reject-delivery', async (req, res, params) => {
-    const user = await requireUser(req);
+    const user = await requireCustomer(req);
     const b = await readJson(req);
     const reason = v.str(b.reason, '驳回原因', { min: 2, max: 500 });
     await tx(async (conn) => {
