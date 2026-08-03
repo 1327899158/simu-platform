@@ -9,7 +9,7 @@
     <view class="form-group" wx:if="{{flexible}}">
       <text class="form-label">报价金额（元）<text class="required">*</text></text>
       <input class="form-input" type="digit" placeholder="请输入报价金额" value="{{amountYuan}}"
-        bindinput="input" data-f="amountYuan" />
+        bindinput="input" data-f="amountYuan" maxlength="11" />
     </view>
     <view class="form-group" wx:else>
       <text class="form-label">报价金额（元）</text>
@@ -19,7 +19,7 @@
     <view class="form-group">
       <text class="form-label">预计工期（天）<text class="required">*</text></text>
       <input class="form-input" type="number" placeholder="请输入预计完成天数（1-90）" value="{{days}}"
-        bindinput="input" data-f="days" />
+        bindinput="input" data-f="days" maxlength="2" />
     </view>
 
     <view class="form-group">

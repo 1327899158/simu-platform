@@ -50,8 +50,12 @@ function register(router) {
     const b = await readJson(req);
     const projectName = v.str(b.projectName, '项目名称', { min: 4, max: 60 });
     const description = v.str(b.description, '项目描述', { min: 20, max: 5000 });
-    const softwareTags = v.arr(b.softwareTags, '仿真软件', { minLen: 1, maxLen: 10 });
-    const directionTags = v.arr(b.directionTags, '仿真方向', { minLen: 1, maxLen: 10 });
+    const softwareTags = v.arr(b.softwareTags, '仿真软件', { minLen: 1, maxLen: 10 })
+      .map((item) => v.str(item, '仿真软件', { min: 1, max: 60 }));
+    const directionTags = v.arr(b.directionTags, '仿真方向', { minLen: 1, maxLen: 10 })
+      .map((item) => v.str(item, '仿真方向', { min: 1, max: 60 }));
+    if (new Set(softwareTags).size !== softwareTags.length) throw err.bad('仿真软件不能重复');
+    if (new Set(directionTags).size !== directionTags.length) throw err.bad('仿真方向不能重复');
     const deliveryDays = v.int(b.deliveryDays, '工期(天)', { min: 1, max: 90 });
     const budgetFen = v.int(b.budgetFen, '预算', { min: 100, max: 1000000000, optional: true });
     const specialNote = v.str(b.specialNote, '特殊要求', { max: 2000, optional: true });
@@ -121,8 +125,17 @@ function register(router) {
       `SELECT * FROM orders WHERE ${cond.join(' AND ')} ORDER BY createdAt DESC LIMIT ${limit}`,
       args);
     const items = await Promise.all(rows.map(async (o) => orderView(o, { quoteCount: await quoteCountOf(o.id) })));
+    const countRows = await query(
+      `SELECT status, COUNT(*) AS c FROM orders
+       WHERE customerId = ? AND deletedAt IS NULL GROUP BY status`, [user.id]);
+    const counts = { ALL: 0 };
+    for (const row of countRows) {
+      counts[row.status] = Number(row.c);
+      counts.ALL += Number(row.c);
+    }
     ok(res, {
       items,
+      counts,
       nextCursor: rows.length === limit ? rows[rows.length - 1].createdAt : null,
     });
   });

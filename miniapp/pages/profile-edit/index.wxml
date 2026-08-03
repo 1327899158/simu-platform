@@ -12,7 +12,7 @@
     <view class="section-title">基本信息</view>
     <view class="form-group">
       <label>昵称 *</label>
-      <input type="nickname" value="{{nickname}}" bindinput="inputNickname" placeholder="点击输入昵称" />
+      <input type="nickname" maxlength="60" value="{{nickname}}" bindinput="inputNickname" placeholder="点击输入昵称" />
     </view>
   </view>
 
@@ -20,20 +20,20 @@
     <view class="section-title">专业信息</view>
     <view class="form-group">
       <label>姓名</label>
-      <input type="text" value="{{realName}}" bindinput="inputRealName" placeholder="请输入真实姓名" />
+      <input type="text" maxlength="30" value="{{realName}}" bindinput="inputRealName" placeholder="请输入真实姓名" />
     </view>
     <view class="form-group">
       <label>个人简介</label>
-      <textarea value="{{intro}}" bindinput="inputIntro" placeholder="请输入个人简介（500字以内）" />
+      <textarea maxlength="500" value="{{intro}}" bindinput="inputIntro" placeholder="请输入个人简介（500字以内）" />
     </view>
     <view class="form-group">
       <label>专业方向</label>
-      <input type="text" value="{{specialtiesStr}}" bindinput="inputSpecialties"
+      <input type="text" maxlength="500" value="{{specialtiesStr}}" bindinput="inputSpecialties"
         placeholder="多个方向用逗号分隔，如：结构分析，热分析" />
     </view>
     <view class="form-group">
       <label>擅长软件</label>
-      <input type="text" value="{{softwaresStr}}" bindinput="inputSoftwares"
+      <input type="text" maxlength="500" value="{{softwaresStr}}" bindinput="inputSoftwares"
         placeholder="多个软件用逗号分隔，如：ANSYS，COMSOL" />
     </view>
   </view>

@@ -1,6 +1,7 @@
 const { ensureLogin } = require('../../utils/auth');
 const { request } = require('../../utils/request');
 const { yuanToFen, fenToYuan } = require('../../utils/format');
+const { digits, money, validMoney } = require('../../utils/input');
 Page({
   data: { orderId: '', amountYuan: '', days: '', solution: '', flexible: true, submitting: false },
   onLoad(q) {
@@ -20,17 +21,27 @@ Page({
       solution: q.solution ? decodeURIComponent(q.solution) : '',
     });
   },
-  input(e) { this.setData({ [e.currentTarget.dataset.f]: e.detail.value }); },
+  input(e) {
+    const field = e.currentTarget.dataset.f;
+    let value = e.detail.value;
+    if (field === 'amountYuan') value = money(value);
+    if (field === 'days') value = digits(value, 2);
+    this.setData({ [field]: value });
+    return value;
+  },
   async submit() {
     const d = this.data;
     if (d.submitting) return;
-    const days = parseInt(d.days, 10);
-    if (!days || days < 1 || days > 90) return wx.showToast({ title: '工期 1-90 天', icon: 'none' });
+    if (!/^\d{1,2}$/.test(d.days)) return wx.showToast({ title: '工期请输入 1-90 的整数', icon: 'none' });
+    const days = Number(d.days);
+    if (days < 1 || days > 90) return wx.showToast({ title: '工期请输入 1-90 的整数', icon: 'none' });
     if ((d.solution || '').trim().length < 10) return wx.showToast({ title: '技术方案至少10个字', icon: 'none' });
     const body = { days, solution: d.solution.trim() };
     if (d.flexible) {
+      if (!validMoney(d.amountYuan)) {
+        return wx.showToast({ title: '报价请输入1至1000万元，最多两位小数', icon: 'none' });
+      }
       const amountFen = yuanToFen(d.amountYuan);
-      if (!amountFen || amountFen < 100) return wx.showToast({ title: '报价至少 1 元', icon: 'none' });
       body.amountFen = amountFen;
     }
     // 固定预算时不传 amountFen，后端会强制使用订单预算

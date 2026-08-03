@@ -6,6 +6,7 @@ const {
   requestPasswordResetSms,
   resetPassword,
 } = require('../../utils/auth');
+const { digits } = require('../../utils/input');
 
 Page({
   data: {
@@ -121,7 +122,7 @@ Page({
       this.countdownTimer = null;
     }
     this.setData({
-      username: e.detail.value,
+      username: digits(e.detail.value, 12),
       phoneMasked: '',
       targetReady: false,
       smsCode: '',
@@ -129,7 +130,11 @@ Page({
       step: 1,
     });
   },
-  onSmsCode(e) { this.setData({ smsCode: e.detail.value }); },
+  onSmsCode(e) {
+    const value = digits(e.detail.value, 6);
+    this.setData({ smsCode: value });
+    return value;
+  },
   onNewPassword(e) { this.setData({ newPassword: e.detail.value }); },
   onConfirmPassword(e) { this.setData({ confirmPassword: e.detail.value }); },
 });

@@ -8,13 +8,13 @@ const QUOTE_STATUS_TEXT = { PENDING: '待确认', SELECTED: '已选中', REJECTE
 const ORDER_STATUS_BADGE = { IN_PROGRESS: '执行中', DELIVERED: '已交付', COMPLETED: '已完成', CLOSED: '已关闭' };
 
 const TABS = [
-  { key: '', label: '全部' },
-  { key: 'PENDING', label: '待确认' },
-  { key: 'SELECTED', label: '已选中' },
-  { key: 'DELIVERED', label: '已交付' },   // 按订单状态筛选
-  { key: 'COMPLETED', label: '已完成' },   // 按订单状态筛选
-  { key: 'REJECTED', label: '未选中' },
-  { key: 'WITHDRAWN', label: '已撤回' },
+  { key: '', countKey: 'ALL', label: '全部', dotCls: 'dot-purple' },
+  { key: 'PENDING', countKey: 'PENDING', label: '待确认', dotCls: 'dot-blue' },
+  { key: 'SELECTED', countKey: 'SELECTED', label: '已选中', dotCls: 'dot-cyan' },
+  { key: 'DELIVERED', countKey: 'DELIVERED', label: '已交付', dotCls: 'dot-pink' },
+  { key: 'COMPLETED', countKey: 'COMPLETED', label: '已完成', dotCls: 'dot-green' },
+  { key: 'REJECTED', countKey: 'REJECTED', label: '未选中', dotCls: 'dot-red' },
+  { key: 'WITHDRAWN', countKey: 'WITHDRAWN', label: '已撤回', dotCls: 'dot-gray' },
 ];
 
 // 订单状态 badge 对应的 CSS class
@@ -24,13 +24,19 @@ const BADGE_CLASS = {
 };
 
 Page({
-  data: { tabs: TABS, tab: '', currentLabel: '全部', filterOpen: false, items: [] },
+  data: { tabs: TABS, tab: '', currentLabel: '全部', currentDotCls: 'dot-purple', currentCount: 0, filterOpen: false, items: [] },
   onShow() { if (ensureLogin()) this.load(); },
   toggleFilter() { this.setData({ filterOpen: !this.data.filterOpen }); },
   pickTab(e) {
     const key = e.currentTarget.dataset.key;
-    const t = TABS.find((x) => x.key === key);
-    this.setData({ tab: key, currentLabel: t ? t.label : '全部', filterOpen: false }, () => this.load());
+    const t = this.data.tabs.find((x) => x.key === key);
+    this.setData({
+      tab: key,
+      currentLabel: t ? t.label : '全部',
+      currentDotCls: t ? t.dotCls : 'dot-purple',
+      currentCount: t ? Number(t.count || 0) : 0,
+      filterOpen: false,
+    }, () => this.load());
   },
   async load() {
     const tab = this.data.tab;
@@ -39,26 +45,36 @@ Page({
     const quoteStatusFilter = !orderStatusFilter && tab ? tab : null;
     let raw;
     try {
-      raw = await request('GET', '/quotes/mine', quoteStatusFilter ? { status: quoteStatusFilter } : {});
+      raw = await request('GET', '/quotes/mine', quoteStatusFilter
+        ? { status: quoteStatusFilter, includeCounts: '1' }
+        : { includeCounts: '1' });
     } catch (e) {
       wx.showToast({ title: e.message || '报价加载失败', icon: 'none' });
       return;
     }
-    let items = raw;
+    const payload = Array.isArray(raw) ? { items: raw, counts: {} } : raw;
+    const counts = payload.counts || {};
+    const tabs = TABS.map((item) => ({ ...item, count: Number(counts[item.countKey] || 0) }));
+    const current = tabs.find((item) => item.key === tab) || tabs[0];
+    let items = payload.items || [];
     // 客户端二次过滤：按订单状态
     if (orderStatusFilter) {
-      items = items.filter((x) => x.order && x.order.status === orderStatusFilter);
+      items = items.filter((x) => x.status === 'SELECTED' && x.order && x.order.status === orderStatusFilter);
     }
     this.setData({
+      tabs,
+      currentDotCls: current.dotCls,
+      currentCount: current.count,
       items: items.map((x) => {
         const orderStatus = x.order && x.order.status;
         // 优先用订单状态（已交付/已完成/执行中）作为徽标，否则用报价状态
-        const badgeKey = ORDER_STATUS_BADGE[orderStatus] ? orderStatus : x.status;
+        const meaningfulOrderStatus = x.status === 'SELECTED' && ORDER_STATUS_BADGE[orderStatus];
+        const badgeKey = meaningfulOrderStatus ? orderStatus : x.status;
         return {
           ...x,
           amountY: fenToYuan(x.amountFen),
           time: timeShort(x.updatedAt),
-          badgeText: ORDER_STATUS_BADGE[orderStatus] || QUOTE_STATUS_TEXT[x.status] || x.status,
+          badgeText: meaningfulOrderStatus || QUOTE_STATUS_TEXT[x.status] || x.status,
           badgeCls: BADGE_CLASS[badgeKey] || 'st-gray',
         };
       }),

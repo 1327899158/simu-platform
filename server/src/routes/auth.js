@@ -129,8 +129,10 @@ function register(router) {
         [
           v.str(e.realName, '姓名', { max: 30, optional: true }) ?? null,
           v.str(e.intro, '简介', { max: 500, optional: true }) ?? null,
-          e.specialties ? JSON.stringify(v.arr(e.specialties, '专业方向')) : null,
-          e.softwares ? JSON.stringify(v.arr(e.softwares, '擅长软件')) : null,
+          e.specialties ? JSON.stringify(v.arr(e.specialties, '专业方向', { maxLen: 20 })
+            .map((item) => v.str(item, '专业方向', { min: 1, max: 60 }))) : null,
+          e.softwares ? JSON.stringify(v.arr(e.softwares, '擅长软件', { maxLen: 20 })
+            .map((item) => v.str(item, '擅长软件', { min: 1, max: 60 }))) : null,
           user.id,
         ]
       );

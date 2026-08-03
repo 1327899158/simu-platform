@@ -214,6 +214,11 @@
   color: var(--c-text-3);
   margin-top: 10rpx;
 }
+.other-input {
+  margin-top: 16rpx;
+  border-color: #C4B5FD;
+  background: #FAF7FF;
+}
 
 /* ===== 工期选择 ===== */
 .deadline-options {

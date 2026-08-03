@@ -1,5 +1,9 @@
 const fenToYuan = (fen) => (fen == null ? '-' : (fen / 100).toFixed(fen % 100 === 0 ? 0 : 2));
-const yuanToFen = (yuan) => Math.round(parseFloat(yuan) * 100);
+const yuanToFen = (yuan) => {
+  const text = String(yuan == null ? '' : yuan).trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(text)) return NaN;
+  return Math.round(Number(text) * 100);
+};
 const parseJson = (str) => {
   try {
     if (str == null) return [];

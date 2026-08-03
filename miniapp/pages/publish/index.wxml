@@ -6,6 +6,11 @@ var DAYS_TEXT = { fast: '1-3天', standard: '4-7天', relaxed: '8-15天', custom
 module.exports = {
   has: function (arr, v) { return arr && arr.indexOf(v) > -1; },
   joinText: function (arr) { return arr && arr.length ? arr.join('、') : '未选择'; },
+  joinWithOther: function (arr, other) {
+    var list = arr && arr.length ? arr.slice() : [];
+    if (other) list.push(other);
+    return list.length ? list.join('、') : '未选择';
+  },
   iconOf: function (key) { return ICONS[key] || '📅'; },
   shortLabel: function (item) { return SHORT_LABELS[item.key] || item.label; },
   daysText: function (item) { return DAYS_TEXT[item.key] || ''; },
@@ -65,12 +70,12 @@ module.exports = {
     <view class="form-group">
       <text class="form-label">预算（元，可不填）</text>
       <input class="form-input" type="digit" placeholder="如 5000" value="{{budgetYuan}}"
-        bindinput="input" data-f="budgetYuan" />
+        bindinput="input" data-f="budgetYuan" maxlength="11" />
     </view>
     <view class="form-group">
       <text class="form-label">预算弹性</text>
       <view class="flexible-row" bindtap="toggleFlexible">
-        <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" color="#2C3E50" />
+        <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" color="#7C3AED" />
         <text class="form-hint">预算有弹性，可与工程师协商</text>
       </view>
     </view>
@@ -84,26 +89,30 @@ module.exports = {
     <view class="form-group">
       <text class="form-label">仿真软件 <text class="required">*</text></text>
       <view class="multi-select-grid three-col">
-        <view wx:for="{{dicts.softwares}}" wx:key="*this"
+        <view wx:for="{{softwareOptions}}" wx:key="*this"
           class="select-item {{u.has(softwareTags, item) ? 'selected' : ''}}"
           bindtap="toggleTag" data-f="softwareTags" data-v="{{item}}">
           <text class="select-label">{{item}}</text>
           <text class="select-checkbox" wx:if="{{u.has(softwareTags, item)}}">✓</text>
         </view>
       </view>
-      <text class="selected-count">已选 {{softwareTags.length}} 个</text>
+      <input class="form-input other-input" placeholder="其他软件（请填写具体名称）" value="{{otherSoftware}}"
+        bindinput="input" data-f="otherSoftware" maxlength="60" />
+      <text class="selected-count">已选 {{softwareTags.length + (otherSoftware ? 1 : 0)}} 个</text>
     </view>
     <view class="form-group">
       <text class="form-label">仿真方向 <text class="required">*</text></text>
       <view class="multi-select-grid three-col">
-        <view wx:for="{{dicts.directions}}" wx:key="*this"
+        <view wx:for="{{directionOptions}}" wx:key="*this"
           class="select-item {{u.has(directionTags, item) ? 'selected' : ''}}"
           bindtap="toggleTag" data-f="directionTags" data-v="{{item}}">
           <text class="select-label">{{item}}</text>
           <text class="select-checkbox" wx:if="{{u.has(directionTags, item)}}">✓</text>
         </view>
       </view>
-      <text class="selected-count">已选 {{directionTags.length}} 个</text>
+      <input class="form-input other-input" placeholder="其他仿真方向（请填写具体方向）" value="{{otherDirection}}"
+        bindinput="input" data-f="otherDirection" maxlength="60" />
+      <text class="selected-count">已选 {{directionTags.length + (otherDirection ? 1 : 0)}} 个</text>
     </view>
     <view class="form-actions-row">
       <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
@@ -127,7 +136,7 @@ module.exports = {
       </view>
       <view class="custom-days" wx:if="{{deliveryKey === 'custom'}}">
         <input class="form-input" type="number" placeholder="请输入天数（1-90）" value="{{customDays}}"
-          bindinput="input" data-f="customDays" />
+          bindinput="input" data-f="customDays" maxlength="2" />
         <text class="form-hint">请输入期望完成的天数</text>
       </view>
     </view>
@@ -152,8 +161,9 @@ module.exports = {
       <text class="rule-icon">⚠️</text>
       <view class="rule-content">
         <text class="rule-title">上传须知</text>
-        <text class="rule-item">• 📱 手机端：请先将文件发送到「文件传输助手」再选择</text>
-        <text class="rule-item">• 💻 电脑端：可直接从本地文件夹选择</text>
+        <text class="rule-item">• 文档/压缩包：从微信聊天或「文件传输助手」选择</text>
+        <text class="rule-item">• 手机图片/视频：可直接从相册选择或调用相机</text>
+        <text class="rule-item">• 微信小程序暂不支持直接浏览手机任意文件目录</text>
         <text class="rule-item">• 模型文件支持 .stp, .iges, .step, .rar, .zip 等格式</text>
         <text class="rule-item">• 图片支持 JPG/PNG/GIF</text>
         <text class="rule-item">• 单个文件不超过 {{maxFileMb}}MB，最多上传 {{maxAttachments}} 个</text>
@@ -166,7 +176,7 @@ module.exports = {
         aria-role="button" aria-label="选择并上传需求附件">
         <text class="upload-icon">📦</text>
         <text class="upload-text">{{uploading ? uploadProgress : '选择附件'}}</text>
-        <text class="upload-hint">支持模型、文档、图片等格式</text>
+        <text class="upload-hint">可选择微信聊天文件，或手机相册/相机</text>
       </view>
       <view class="file-list" wx:if="{{files.length > 0}}">
         <view wx:for="{{files}}" wx:key="fileId" class="file-item">
@@ -194,8 +204,8 @@ module.exports = {
       <view class="summary-item"><text class="summary-label">项目描述</text><text class="summary-value">{{description || '未填写'}}</text></view>
       <view class="summary-item"><text class="summary-label">预算</text><text class="summary-value price">{{budgetYuan ? '¥' + budgetYuan : '未填写'}}</text></view>
       <view class="summary-item"><text class="summary-label">预算弹性</text><text class="summary-value">{{budgetFlexible ? '可协商' : '固定'}}</text></view>
-      <view class="summary-item"><text class="summary-label">仿真软件</text><text class="summary-value">{{u.joinText(softwareTags)}}</text></view>
-      <view class="summary-item"><text class="summary-label">仿真方向</text><text class="summary-value">{{u.joinText(directionTags)}}</text></view>
+      <view class="summary-item"><text class="summary-label">仿真软件</text><text class="summary-value">{{u.joinWithOther(softwareTags, otherSoftware)}}</text></view>
+      <view class="summary-item"><text class="summary-label">仿真方向</text><text class="summary-value">{{u.joinWithOther(directionTags, otherDirection)}}</text></view>
       <view class="summary-item"><text class="summary-label">工期</text><text class="summary-value">{{u.deliverySummary(dicts.deliveryOptions, deliveryKey, customDays)}}</text></view>
       <view class="summary-item" wx:if="{{specialNote}}"><text class="summary-label">特殊要求</text><text class="summary-value">{{specialNote}}</text></view>
       <view class="summary-item"><text class="summary-label">附件</text><text class="summary-value">{{files.length}} 个文件</text></view>

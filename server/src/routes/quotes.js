@@ -111,7 +111,25 @@ function register(router) {
       const o = await queryOne(`SELECT projectName, status, orderNo FROM orders WHERE id=?`, [qt.orderId]);
       return quoteView(qt, { order: o ? { projectName: o.projectName, status: o.status, orderNo: o.orderNo } : null });
     }));
-    ok(res, result);
+    if (q_.get('includeCounts') !== '1') {
+      ok(res, result);
+      return;
+    }
+    const countRows = await query(
+      `SELECT qt.status AS quoteStatus, o.status AS orderStatus, COUNT(*) AS c
+         FROM quotes qt LEFT JOIN orders o ON o.id = qt.orderId
+        WHERE qt.engineerId = ?
+        GROUP BY qt.status, o.status`, [user.id]);
+    const counts = { ALL: 0, PENDING: 0, SELECTED: 0, DELIVERED: 0, COMPLETED: 0, REJECTED: 0, WITHDRAWN: 0 };
+    for (const row of countRows) {
+      const count = Number(row.c);
+      counts.ALL += count;
+      if (Object.prototype.hasOwnProperty.call(counts, row.quoteStatus)) counts[row.quoteStatus] += count;
+      if (row.quoteStatus === 'SELECTED' && (row.orderStatus === 'DELIVERED' || row.orderStatus === 'COMPLETED')) {
+        counts[row.orderStatus] += count;
+      }
+    }
+    ok(res, { items: result, counts });
   });
 
   // GET /api/orders/:id/quotes

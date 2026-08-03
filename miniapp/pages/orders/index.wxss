@@ -26,31 +26,84 @@
   border-radius: 20rpx;
 }
 
-/* ===== 状态筛选栏 ===== */
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
+/* ===== 可折叠状态筛选 ===== */
+.filter-wrap {
   background: #FFFFFF;
   padding: 16rpx 24rpx;
   border-bottom: 1rpx solid var(--c-divider);
+}
+.filter-trigger {
+  width: 100%;
+  min-height: 88rpx;
+  margin: 0;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F7F4FF;
+  border: 1rpx solid #E7D9FF;
+  border-radius: var(--r-md);
+  color: var(--c-text);
+  font-size: 28rpx;
+  line-height: 1.4;
+}
+.filter-trigger::after, .filter-item::after { border: none; }
+.filter-current { display: flex; align-items: center; gap: 16rpx; font-weight: 600; }
+.filter-arrow { color: var(--neon-violet); transition: transform .2s ease; }
+.filter-arrow.open { transform: rotate(180deg); }
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
   gap: 12rpx;
+  padding-top: 16rpx;
 }
 .filter-item {
-  display: inline-flex;
+  min-height: 88rpx;
+  margin: 0;
+  display: flex;
   align-items: center;
-  padding: 10rpx 24rpx;
-  border-radius: var(--r-pill);
+  justify-content: flex-start;
+  flex: 1 0 42%;
+  padding: 0 22rpx;
+  border-radius: var(--r-md);
   font-size: 24rpx;
   color: var(--c-text-2);
-  background: #F0F0F0;
+  background: #FAFAFA;
+  border: 1rpx solid var(--c-border);
+  line-height: 1.4;
   transition: all 0.2s ease;
 }
 .filter-item:active { transform: scale(0.95); }
 .filter-item.active {
-  background: var(--neon-violet);
-  color: #FFFFFF;
+  background: #F1E8FF;
+  border-color: #C4A7F7;
+  color: #5B21B6;
   font-weight: 600;
 }
+.filter-label { margin-left: 12rpx; }
+.filter-count {
+  min-width: 34rpx;
+  height: 34rpx;
+  margin-left: 12rpx;
+  padding: 0 8rpx;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: rgba(124, 58, 237, .10);
+  color: #6D28D9;
+  font-size: 20rpx;
+}
+.status-dot { width: 14rpx; height: 14rpx; border-radius: 50%; flex-shrink: 0; }
+.dot-purple { background: #7C3AED; }
+.dot-blue { background: #3B82F6; }
+.dot-orange { background: #F59E0B; }
+.dot-cyan { background: #06B6D4; }
+.dot-pink { background: #D946EF; }
+.dot-green { background: #22C55E; }
+.dot-red { background: #EF4444; }
+.dot-gray { background: #94A3B8; }
 
 /* ===== 订单列表 ===== */
 .order-list {

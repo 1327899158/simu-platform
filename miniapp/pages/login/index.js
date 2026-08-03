@@ -7,6 +7,7 @@ const {
   requestSmsCode, isLoggedIn, logout, saveUser
 } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
+const { digits } = require('../../utils/input');
 
 Page({
   data: {
@@ -240,9 +241,21 @@ Page({
   },
 
   // ========== 输入事件 ==========
-  onUsername(e) { this.setData({ username: e.detail.value }); },
+  onUsername(e) {
+    const value = digits(e.detail.value, 12);
+    this.setData({ username: value });
+    return value;
+  },
   onPassword(e) { this.setData({ password: e.detail.value }); },
   onPasswordConfirm(e) { this.setData({ passwordConfirm: e.detail.value }); },
-  onPhone(e) { this.setData({ phone: e.detail.value }); },
-  onSmsCode(e) { this.setData({ smsCode: e.detail.value }); },
+  onPhone(e) {
+    const value = digits(e.detail.value, 11);
+    this.setData({ phone: value });
+    return value;
+  },
+  onSmsCode(e) {
+    const value = digits(e.detail.value, 6);
+    this.setData({ smsCode: value });
+    return value;
+  },
 });

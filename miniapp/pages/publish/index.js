@@ -3,6 +3,7 @@ const { ensureLogin } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
 const { deleteCloudFile } = require('../../utils/cloud-file');
 const { yuanToFen } = require('../../utils/format');
+const { digits, money, validMoney } = require('../../utils/input');
 
 const DRAFT_KEY = 'publishDraft';
 const MAX_ATTACHMENTS = 20;
@@ -22,6 +23,26 @@ function sizeText(bytes) {
   return `${(size / 1024 / 1024).toFixed(2)}MB`;
 }
 
+function customTags(tags, other) {
+  const result = (tags || []).filter((item) => item && item !== '其他');
+  const value = String(other || '').trim();
+  if (value && !result.includes(value)) result.push(value);
+  return result;
+}
+
+function mediaFile(file, index) {
+  const path = file.tempFilePath || file.path || '';
+  const fileType = file.fileType || file.type || 'image';
+  const pathExt = /\.([a-zA-Z0-9]{1,12})(?:$|\?)/.exec(path);
+  const ext = pathExt ? pathExt[1].toLowerCase() : (fileType === 'video' ? 'mp4' : 'jpg');
+  return {
+    path,
+    size: Number(file.size || 0),
+    name: file.name || `手机${fileType === 'video' ? '视频' : '图片'}_${Date.now()}_${index + 1}.${ext}`,
+    type: fileType === 'video' ? 'video/mp4' : `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+  };
+}
+
 Page({
   data: {
     step: 1,
@@ -34,6 +55,10 @@ Page({
     // 步骤2
     softwareTags: [],
     directionTags: [],
+    softwareOptions: [],
+    directionOptions: [],
+    otherSoftware: '',
+    otherDirection: '',
     // 步骤3
     deliveryKey: 'standard',
     customDays: '',
@@ -52,7 +77,13 @@ Page({
   async onLoad() {
     if (!ensureLogin()) return;
     const draft = wx.getStorageSync(DRAFT_KEY);
-    if (draft) this.setData(draft);
+    if (draft) {
+      this.setData({
+        ...draft,
+        softwareTags: (draft.softwareTags || []).filter((item) => item !== '其他'),
+        directionTags: (draft.directionTags || []).filter((item) => item !== '其他'),
+      });
+    }
     try {
       const dicts = await request('GET', '/dicts');
       const limits = dicts.limits || {};
@@ -60,6 +91,8 @@ Page({
       const maxAttachments = Number(limits.maxOrderAttachments) || MAX_ATTACHMENTS;
       this.setData({
         dicts,
+        softwareOptions: (dicts.softwares || []).filter((item) => item !== '其他'),
+        directionOptions: (dicts.directions || []).filter((item) => item !== '其他'),
         maxFileMb,
         maxFileBytes: Number(limits.maxUploadBytes) || maxFileMb * 1024 * 1024,
         maxAttachments,
@@ -71,10 +104,10 @@ Page({
   onUnload() {
     if (this.data.submitting) return;
     const { projectName, description, budgetYuan, budgetFlexible, softwareTags,
-      directionTags, deliveryKey, customDays, specialNote, files } = this.data;
+      directionTags, otherSoftware, otherDirection, deliveryKey, customDays, specialNote, files } = this.data;
     wx.setStorageSync(DRAFT_KEY, {
       projectName, description, budgetYuan, budgetFlexible, softwareTags,
-      directionTags, deliveryKey, customDays, specialNote, files,
+      directionTags, otherSoftware, otherDirection, deliveryKey, customDays, specialNote, files,
     });
   },
 
@@ -88,7 +121,9 @@ Page({
       if ((d.projectName || '').trim().length < 4) return wx.showToast({ title: '项目名称至少4个字', icon: 'none' });
       if ((d.description || '').trim().length < 20) return wx.showToast({ title: '项目描述至少20个字', icon: 'none' });
     } else if (s === 2) {
-      if (!d.softwareTags.length || !d.directionTags.length) return wx.showToast({ title: '请选择仿真软件与方向', icon: 'none' });
+      if (!customTags(d.softwareTags, d.otherSoftware).length || !customTags(d.directionTags, d.otherDirection).length) {
+        return wx.showToast({ title: '请选择或填写仿真软件与方向', icon: 'none' });
+      }
     } else if (s === 3) {
       const days = this.deliveryDays();
       if (!days || days < 1 || days > 90) return wx.showToast({ title: '请填写 1-90 天的工期', icon: 'none' });
@@ -97,7 +132,14 @@ Page({
     else this.submit();
   },
 
-  input(e) { this.setData({ [e.currentTarget.dataset.f]: e.detail.value }); },
+  input(e) {
+    const field = e.currentTarget.dataset.f;
+    let value = e.detail.value;
+    if (field === 'budgetYuan') value = money(value);
+    if (field === 'customDays') value = digits(value, 2);
+    this.setData({ [field]: value });
+    return value;
+  },
   toggleFlexible() { this.setData({ budgetFlexible: !this.data.budgetFlexible }); },
   toggleAgree() { this.setData({ agreed: !this.data.agreed }); },
   pickDelivery(e) { this.setData({ deliveryKey: e.currentTarget.dataset.k }); },
@@ -115,62 +157,84 @@ Page({
     if (remaining <= 0) {
       return wx.showToast({ title: `最多上传${this.data.maxAttachments}个附件`, icon: 'none' });
     }
+    let selectedIndex;
+    try {
+      const result = await new Promise((resolve, reject) => wx.showActionSheet({
+        itemList: ['微信聊天文件（文档/压缩包等）', '手机相册/相机（图片/视频）'],
+        success: resolve,
+        fail: reject,
+      }));
+      selectedIndex = result.tapIndex;
+    } catch (e) {
+      return;
+    }
+    if (selectedIndex === 0) this.chooseChatFiles(remaining);
+    if (selectedIndex === 1) this.chooseLocalMedia(remaining);
+  },
+
+  chooseChatFiles(remaining) {
     wx.chooseMessageFile({
       count: Math.min(3, remaining),
       type: 'all',
-      success: async (r) => {
-        const selected = (r.tempFiles || []).slice(0, remaining);
-        if (!selected.length) return;
-        const oversized = selected.filter((f) => Number(f.size || 0) > this.data.maxFileBytes);
-        if (oversized.length) {
-          await new Promise((resolve) => wx.showModal({
-            title: '文件超过大小限制',
-            content: oversized.map((f) => `${f.name || '文件'}（${sizeText(f.size)}）`)
-              .concat(`单个文件最大允许 ${this.data.maxFileMb}MB，请压缩或拆分后重新上传。`)
-              .join('\n')
-              .slice(0, 500),
-            showCancel: false,
-            complete: resolve,
-          }));
-        }
-        const uploadable = selected.filter((f) => Number(f.size || 0) <= this.data.maxFileBytes);
-        if (!uploadable.length) return;
-        const failures = [];
-        this.setData({ uploading: true, uploadProgress: `准备上传 1/${uploadable.length}` });
-        for (let i = 0; i < uploadable.length; i += 1) {
-          const f = uploadable[i];
-          this.setData({ uploadProgress: `正在上传 ${i + 1}/${uploadable.length}` });
-          try {
-            const kind = attachmentKind(f.name, f.type);
-            const mime = String(f.type || '').includes('/') ? f.type : '';
-            const up = await upload(f.path, {
-              kind,
-              name: f.name || '',
-              mime,
-            });
-            this.setData({
-              files: this.data.files.concat({
-                fileId: up.id || up.fileId,
-                name: up.name || f.name,
-                sizeText: sizeText(up.sizeBytes || f.size),
-                kind,
-              }),
-            });
-          } catch (err) {
-            failures.push(`${f.name || '文件'}：${err.message || '上传失败'}`);
-          }
-        }
-        this.setData({ uploading: false, uploadProgress: '' });
-        if (!failures.length) {
-          wx.showToast({ title: '上传成功', icon: 'success' });
-        } else {
-          wx.showModal({
-            title: this.data.files.length ? '部分附件未上传' : '附件上传失败',
-            content: failures.join('\n').slice(0, 500),
-            showCancel: false,
-          });
-        }
-      },
+      success: (r) => this.uploadFiles((r.tempFiles || []).slice(0, remaining)),
+    });
+  },
+
+  chooseLocalMedia(remaining) {
+    if (typeof wx.chooseMedia !== 'function') {
+      return wx.showToast({ title: '当前微信版本不支持相册选择，请升级微信', icon: 'none' });
+    }
+    wx.chooseMedia({
+      count: Math.min(3, remaining),
+      mediaType: ['image', 'video'],
+      sourceType: ['album', 'camera'],
+      sizeType: ['original'],
+      success: (r) => this.uploadFiles((r.tempFiles || []).slice(0, remaining).map(mediaFile)),
+    });
+  },
+
+  async uploadFiles(selected) {
+    if (!selected.length) return;
+    const oversized = selected.filter((f) => Number(f.size || 0) > this.data.maxFileBytes);
+    if (oversized.length) {
+      await new Promise((resolve) => wx.showModal({
+        title: '文件超过大小限制',
+        content: oversized.map((f) => `${f.name || '文件'}（${sizeText(f.size)}）`)
+          .concat(`单个文件最大允许 ${this.data.maxFileMb}MB，请压缩或拆分后重新上传。`)
+          .join('\n').slice(0, 500),
+        showCancel: false,
+        complete: resolve,
+      }));
+    }
+    const uploadable = selected.filter((f) => Number(f.size || 0) <= this.data.maxFileBytes && f.path);
+    if (!uploadable.length) return;
+    const failures = [];
+    this.setData({ uploading: true, uploadProgress: `准备上传 1/${uploadable.length}` });
+    for (let i = 0; i < uploadable.length; i += 1) {
+      const f = uploadable[i];
+      this.setData({ uploadProgress: `正在上传 ${i + 1}/${uploadable.length}` });
+      try {
+        const kind = attachmentKind(f.name, f.type);
+        const mime = String(f.type || '').includes('/') ? f.type : '';
+        const up = await upload(f.path, { kind, name: f.name || '', mime });
+        this.setData({
+          files: this.data.files.concat({
+            fileId: up.id || up.fileId,
+            name: up.name || f.name,
+            sizeText: sizeText(up.sizeBytes || f.size),
+            kind,
+          }),
+        });
+      } catch (err) {
+        failures.push(`${f.name || '文件'}：${err.message || '上传失败'}`);
+      }
+    }
+    this.setData({ uploading: false, uploadProgress: '' });
+    if (!failures.length) wx.showToast({ title: '上传成功', icon: 'success' });
+    else wx.showModal({
+      title: this.data.files.length ? '部分附件未上传' : '附件上传失败',
+      content: failures.join('\n').slice(0, 500),
+      showCancel: false,
     });
   },
   async removeFile(e) {
@@ -211,17 +275,23 @@ Page({
     if (!d.agreed) return wx.showToast({ title: '请先同意平台服务协议', icon: 'none' });
     if ((d.projectName || '').trim().length < 4) return wx.showToast({ title: '项目名称至少4个字', icon: 'none' });
     if ((d.description || '').trim().length < 20) return wx.showToast({ title: '项目描述至少20个字', icon: 'none' });
-    if (!d.softwareTags.length || !d.directionTags.length) return wx.showToast({ title: '请选择仿真软件与方向', icon: 'none' });
+    const softwareTags = customTags(d.softwareTags, d.otherSoftware);
+    const directionTags = customTags(d.directionTags, d.otherDirection);
+    if (!softwareTags.length || !directionTags.length) return wx.showToast({ title: '请选择或填写仿真软件与方向', icon: 'none' });
     const days = this.deliveryDays();
     if (!days || days < 1 || days > 90) return wx.showToast({ title: '请填写 1-90 天的工期', icon: 'none' });
+
+    if (d.budgetYuan && !validMoney(d.budgetYuan)) {
+      return wx.showToast({ title: '预算请输入1至1000万元，最多两位小数', icon: 'none' });
+    }
 
     this.setData({ submitting: true });
     try {
       const body = {
         projectName: d.projectName.trim(),
         description: d.description.trim(),
-        softwareTags: d.softwareTags,
-        directionTags: d.directionTags,
+        softwareTags,
+        directionTags,
         deliveryDays: days,
         budgetFlexible: d.budgetFlexible,
         specialNote: (d.specialNote || '').trim() || undefined,

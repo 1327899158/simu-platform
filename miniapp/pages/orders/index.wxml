@@ -3,15 +3,27 @@
   <!-- 顶部导航 -->
   <view class="page-header">
     <text class="page-title">📋 我的订单</text>
-    <text class="order-count">共 {{items.length}} 个</text>
+    <text class="order-count">共 {{currentCount}} 个</text>
   </view>
 
-  <!-- 状态筛选栏 -->
-  <view class="filter-bar">
-    <view wx:for="{{tabs}}" wx:key="key"
-      class="filter-item {{tab === item.key ? 'active' : ''}}"
-      data-key="{{item.key}}" bindtap="pickTab">
-      <text class="filter-label">{{item.label}}</text>
+  <!-- 可折叠状态筛选 -->
+  <view class="filter-wrap">
+    <button class="filter-trigger" bindtap="toggleFilter" aria-label="展开或收起订单状态筛选">
+      <view class="filter-current">
+        <text class="status-dot {{currentDotCls}}"></text>
+        <text>{{currentLabel}}</text>
+        <text class="filter-count">{{currentCount}}</text>
+      </view>
+      <text class="filter-arrow {{filterOpen ? 'open' : ''}}">⌄</text>
+    </button>
+    <view class="filter-panel" wx:if="{{filterOpen}}">
+      <button wx:for="{{tabs}}" wx:key="key"
+        class="filter-item {{tab === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="pickTab">
+        <text class="status-dot {{item.dotCls}}"></text>
+        <text class="filter-label">{{item.label}}</text>
+        <text class="filter-count">{{item.count}}</text>
+      </button>
     </view>
   </view>
 

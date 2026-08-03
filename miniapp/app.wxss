@@ -1,7 +1,7 @@
 /* ================================================================
    仿真服务平台 · 浅色商务风 Design Token 体系
    （L1 换肤：变量名与深色版保持一致，仅替换值——页面级 WXSS 无需大改）
-   浅灰底 + 白卡片 + 深蓝灰主色 + 浅阴影
+   浅灰底 + 白卡片 + 紫色渐变主色 + 浅阴影
    ================================================================ */
 
 /* ---------- Design Tokens ---------- */
@@ -13,10 +13,10 @@ page {
   --bg-card: #FFFFFF;
 
   /* ===== 主色与语义色（沿用 neon-* 变量名，值换商务色） ===== */
-  --neon-violet: #2C3E50;
-  --neon-violet-2: #34495E;
-  --neon-pink: #E74C3C;
-  --neon-pink-2: #EC7063;
+  --neon-violet: #7C3AED;
+  --neon-violet-2: #A855F7;
+  --neon-pink: #D946EF;
+  --neon-pink-2: #E879F9;
   --neon-cyan: #3498DB;
   --neon-cyan-2: #5DADE2;
   --neon-blue: #3498DB;
@@ -25,8 +25,8 @@ page {
   --neon-red: #E74C3C;
 
   /* ===== 渐变（商务化：低饱和同色系） ===== */
-  --grad-neon: linear-gradient(135deg, #2C3E50 0%, #3498DB 100%);
-  --grad-violet-pink: linear-gradient(135deg, #34495E, #2C3E50);
+  --grad-neon: linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #9333EA 100%);
+  --grad-violet-pink: linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #9333EA 100%);
   --grad-cyan-blue: linear-gradient(135deg, #5DADE2, #3498DB);
   --grad-pink-cyan: linear-gradient(90deg, #EC7063, #5DADE2);
   --grad-gold: linear-gradient(135deg, #F39C12, #E67E22);
@@ -40,7 +40,7 @@ page {
 
   /* ===== 线条 ===== */
   --c-border: #E8E8E8;
-  --c-border-strong: #2C3E50;
+  --c-border-strong: #7C3AED;
   --c-divider: #F0F0F0;
 
   /* ===== 间距 — 8px 基准 → rpx (×2) ===== */
@@ -65,9 +65,9 @@ page {
   --shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.10);
   --shadow-card: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   --glow-cyan: 0 4rpx 12rpx rgba(52, 152, 219, 0.18);
-  --glow-violet: 0 4rpx 12rpx rgba(44, 62, 80, 0.15);
+  --glow-violet: 0 4rpx 12rpx rgba(124, 58, 237, 0.20);
   --glow-pink: 0 4rpx 12rpx rgba(231, 76, 60, 0.18);
-  --glow-primary: 0 4rpx 14rpx rgba(44, 62, 80, 0.22);
+  --glow-primary: 0 4rpx 14rpx rgba(124, 58, 237, 0.28);
 
   /* ===== 字体 ===== */
   --font-family: -apple-system, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -122,7 +122,7 @@ page {
 }
 .btn-primary:active {
   transform: scale(0.97);
-  background: #1A252F;
+  background: #5B21B6;
 }
 .btn-primary.disabled {
   background: #B0B7BD;

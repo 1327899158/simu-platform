@@ -14,7 +14,7 @@
     "pages/reset-password/index"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#2C3E50",
+    "navigationBarBackgroundColor": "#7C3AED",
     "navigationBarTextStyle": "white",
     "navigationBarTitleText": "仿真服务平台",
     "backgroundColor": "#F5F5F5",
@@ -22,7 +22,7 @@
   },
   "tabBar": {
     "color": "#999999",
-    "selectedColor": "#2C3E50",
+    "selectedColor": "#7C3AED",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [

@@ -53,7 +53,7 @@
     <view class="img-btn {{imageSending ? 'disabled' : ''}}" bindtap="sendImage">
       {{imageSending ? '…' : '🖼️'}}
     </view>
-    <input class="chat-input" placeholder="输入消息..." value="{{text}}" bindinput="input"
+    <input class="chat-input" placeholder="输入消息..." value="{{text}}" bindinput="input" maxlength="2000"
       confirm-type="send" bindconfirm="send" adjust-position />
     <button class="send-btn {{sending ? 'dim' : ''}}" bindtap="send" disabled="{{!text}}">发送</button>
   </view>
