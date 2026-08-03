@@ -142,11 +142,25 @@ async function requestSmsCode(phone, type = 'LOGIN') {
 }
 
 /**
+ * 查询密码重置目标，只返回脱敏后的绑定手机号。
+ */
+async function getPasswordResetTarget(username) {
+  return request('POST', '/auth/reset-password-target', { username });
+}
+
+/**
+ * 密码重置验证码由后端按用户名发送到绑定号码，客户端不传手机号。
+ */
+async function requestPasswordResetSms(username) {
+  return request('POST', '/auth/request-sms', { username, type: 'RESET_PWD' });
+}
+
+/**
  * 忘记密码重置
  */
-async function resetPassword(phone, newPassword, smsCode) {
+async function resetPassword(username, newPassword, smsCode) {
   const data = await request('POST', '/auth/reset-password', {
-    phone, newPassword, smsCode,
+    username, newPassword, smsCode,
   });
   return data;
 }
@@ -159,6 +173,8 @@ module.exports = {
   registerByPhone,
   loginByPhone,
   requestSmsCode,
+  getPasswordResetTarget,
+  requestPasswordResetSms,
   resetPassword,
   getUser, setUser, isLoggedIn, saveUser, saveSession, logout,
   ensureLogin, refreshUser,

@@ -39,7 +39,7 @@
 
 .form-group input {
   width: 100%;
-  height: 80rpx;
+  height: 88rpx;
   padding: 0 20rpx;
   border: 1rpx solid #DDDDDD;
   border-radius: var(--r-md);
@@ -49,31 +49,50 @@
   box-sizing: border-box;
 }
 
-.sms-input {
+.sms-input,
+.account-input {
   display: flex;
   gap: 16rpx;
 }
 
-.sms-input input {
+.sms-input input,
+.account-input input {
   flex: 1;
+  min-width: 0;
 }
 
-.btn-sms {
+.btn-sms,
+.btn-account {
   flex: 0 0 170rpx;
-  height: 80rpx;
+  min-height: 88rpx;
   padding: 0;
   background: #FFFFFF;
   border: 1rpx solid var(--neon-violet);
   border-radius: var(--r-md);
   font-size: 24rpx;
   color: var(--neon-violet);
-  line-height: 78rpx;
+  line-height: 86rpx;
 }
 
-.btn-sms[disabled] {
+.btn-sms[disabled],
+.btn-account[disabled] {
   background: #F0F0F0;
   border-color: #DDDDDD;
   color: #999999;
+}
+
+.phone-hint {
+  margin-top: 16rpx;
+  padding: 18rpx 20rpx;
+  border-radius: var(--r-md);
+  background: #F5F2FF;
+  color: var(--c-text-2);
+  font-size: 26rpx;
+}
+
+.phone-hint text {
+  color: var(--neon-violet);
+  font-weight: 600;
 }
 
 .btn-primary {

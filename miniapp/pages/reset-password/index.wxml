@@ -6,11 +6,18 @@
 
   <view class="form-card">
     <view class="form-group">
-      <label>手机号</label>
-      <input type="tel" placeholder="请输入注册手机号" value="{{phone}}" bindinput="onPhone" />
+      <label>用户名</label>
+      <view class="account-input">
+        <input type="number" maxlength="12" disabled="{{targetReady}}" placeholder="请输入6-12位数字用户名" value="{{username}}" bindinput="onUsername" />
+        <button wx:if="{{!targetReady}}" class="btn-account" bindtap="confirmAccount" loading="{{targetLoading}}" disabled="{{targetLoading}}">确认账号</button>
+        <button wx:else class="btn-account" bindtap="changeAccount">更换账号</button>
+      </view>
+      <view class="phone-hint" wx:if="{{targetReady}}">
+        验证码将发送至绑定手机：<text>{{phoneMasked}}</text>
+      </view>
     </view>
 
-    <view class="form-group">
+    <view class="form-group" wx:if="{{targetReady}}">
       <label>验证码</label>
       <view class="sms-input">
         <input type="text" placeholder="请输入验证码" value="{{smsCode}}" bindinput="onSmsCode" />
@@ -24,17 +31,17 @@
       </view>
     </view>
 
-    <view class="form-group">
+    <view class="form-group" wx:if="{{targetReady}}">
       <label>新密码</label>
       <input type="password" placeholder="请输入新密码（至少6位）" value="{{newPassword}}" bindinput="onNewPassword" />
     </view>
 
-    <view class="form-group">
+    <view class="form-group" wx:if="{{targetReady}}">
       <label>确认密码</label>
       <input type="password" placeholder="请再次输入密码" value="{{confirmPassword}}" bindinput="onConfirmPassword" />
     </view>
 
-    <button class="btn-primary" bindtap="resetPassword" disabled="{{loading}}">
+    <button wx:if="{{targetReady}}" class="btn-primary" bindtap="resetPassword" disabled="{{loading}}">
       {{loading ? '重置中...' : '确认重置'}}
     </button>
   </view>

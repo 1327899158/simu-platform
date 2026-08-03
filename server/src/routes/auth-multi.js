@@ -7,7 +7,7 @@
  * 4. 忘记密码重置
  */
 const { readJson, ok, err } = require('../lib/http');
-const { newId, nowIso, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry } = require('../lib/util');
+const { newId, nowIso, maskPhone, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry } = require('../lib/util');
 const { query, queryOne } = require('../db');
 const { getOrCreateUser, findUserByUsername, findUserByPhone, getOrCreateUserByPhone, requireUser } = require('../lib/auth-mw');
 const { sendSmsCode, verifySmsCode } = require('../services/sms-svc');
@@ -33,12 +33,35 @@ function register(router) {
 
   // ========== 短信验证码相关 ==========
 
+  // POST /api/auth/reset-password-target
+  // { username } -> 仅返回绑定手机号的脱敏值，不向客户端暴露完整号码。
+  router.post('/api/auth/reset-password-target', async (req, res) => {
+    const b = await readJson(req);
+    const username = v.str(b.username, '用户名', { min: 6, max: 12 });
+    if (!/^\d+$/.test(username)) throw err.bad('用户名只能是数字');
+
+    const user = await findUserByUsername(username);
+    if (!user || !user.phone) throw err.notFound('账号不存在或未绑定手机号');
+    ok(res, { username, phoneMasked: maskPhone(user.phone) });
+  });
+
   // POST /api/auth/request-sms
-  // { phone, type: 'REGISTER' | 'LOGIN' | 'RESET_PWD' }
+  // REGISTER/LOGIN: { phone, type }
+  // RESET_PWD: { username, type }，手机号必须由服务端按账号获取。
   router.post('/api/auth/request-sms', async (req, res) => {
     const b = await readJson(req);
-    const phone = v.str(b.phone, '手机号', { min: 11, max: 11 });
     const type = v.oneOf(b.type, 'type', ['REGISTER', 'LOGIN', 'RESET_PWD']);
+    let phone;
+
+    if (type === 'RESET_PWD') {
+      const username = v.str(b.username, '用户名', { min: 6, max: 12 });
+      if (!/^\d+$/.test(username)) throw err.bad('用户名只能是数字');
+      const user = await findUserByUsername(username);
+      if (!user || !user.phone) throw err.notFound('账号不存在或未绑定手机号');
+      phone = user.phone;
+    } else {
+      phone = v.str(b.phone, '手机号', { min: 11, max: 11 });
+    }
 
     // REGISTER 类型：检查手机号是否已注册
     if (type === 'REGISTER') {
@@ -52,15 +75,9 @@ function register(router) {
       if (!existing) throw err.notFound('该手机号未注册，请先注册');
     }
 
-    // RESET_PWD 类型：检查手机号是否存在
-    if (type === 'RESET_PWD') {
-      const existing = await findUserByPhone(phone);
-      if (!existing) throw err.notFound('该手机号未注册');
-    }
-
     const rateKey = req.socket && req.socket.remoteAddress ? req.socket.remoteAddress : '';
     const result = await sendSmsCode(phone, type, rateKey);
-    ok(res, result);
+    ok(res, type === 'RESET_PWD' ? { ...result, phoneMasked: maskPhone(phone) } : result);
   });
 
   // ========== 账号密码登录 ==========
@@ -155,19 +172,21 @@ function register(router) {
   // ========== 忘记密码 ==========
 
   // POST /api/auth/reset-password
-  // { phone, newPassword, smsCode }
+  // { username, newPassword, smsCode }
   router.post('/api/auth/reset-password', async (req, res) => {
     const b = await readJson(req);
-    const phone = v.str(b.phone, '手机号', { min: 11, max: 11 });
+    const username = v.str(b.username, '用户名', { min: 6, max: 12 });
     const newPassword = v.str(b.newPassword, '新密码', { min: 6, max: 50 });
     const smsCode = v.str(b.smsCode, '验证码', { min: 6, max: 6 });
+    if (!/^\d+$/.test(username)) throw err.bad('用户名只能是数字');
+
+    // 必须先按用户名取得该账号绑定的手机号。客户端不能指定验证码接收号码，
+    // 防止使用其他已注册号码的验证码重置当前账号。
+    const user = await findUserByUsername(username);
+    if (!user || !user.phone) throw err.notFound('账号不存在或未绑定手机号');
 
     // 验证短信码
-    await verifySmsCode(phone, smsCode, 'RESET_PWD');
-
-    // 查找用户
-    const user = await findUserByPhone(phone);
-    if (!user) throw err.notFound('用户不存在');
+    await verifySmsCode(user.phone, smsCode, 'RESET_PWD');
 
     // 更新密码
     const passwordHash = await hashPassword(newPassword);

@@ -31,6 +31,14 @@ const parseDbDate = (value) => {
   return new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(normalized) ? normalized : `${normalized}Z`);
 };
 
+// 对外展示手机号时只保留前三位和后四位，服务端内部仍使用完整号码。
+const maskPhone = (phone) => {
+  const value = String(phone || '');
+  if (!value) return null;
+  if (value.length < 7) return '*'.repeat(value.length);
+  return `${value.slice(0, 3)}****${value.slice(-4)}`;
+};
+
 // ---------- 校验 ----------
 const v = {
   str(x, name, { min = 0, max = 100000, optional = false } = {}) {
@@ -95,4 +103,4 @@ const verifyPassword = async (passwordHash, inputPassword) => {
   return bcrypt.compare(inputPassword, passwordHash);
 };
 
-module.exports = { newId, nowIso, parseDbDate, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry };
+module.exports = { newId, nowIso, parseDbDate, maskPhone, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry };

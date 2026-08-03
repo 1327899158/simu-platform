@@ -8,8 +8,8 @@
     <view class="info">
       <text class="name">{{user.nickname || '用户'}}</text>
       <view class="phone-row">
-        <text class="phone">{{user.phone || '未绑定手机'}}</text>
-        <button wx:if="{{!user.phone}}" class="bind-phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">绑定手机号</button>
+        <text class="phone">{{user.phoneMasked || '未绑定手机'}}</text>
+        <button wx:if="{{!user.hasPhone}}" class="bind-phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">绑定手机号</button>
       </view>
       <text class="role">{{user.role === 'ENGINEER' ? '🛠️ 工程师' : '👤 客户'}}</text>
     </view>

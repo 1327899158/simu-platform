@@ -45,7 +45,7 @@ async function sendSmsCode(phone, type = 'LOGIN', rateKey = '') {
   // 检查冷却期（60 秒内不能重复发送）
   const recent = await queryOne(
     `SELECT createdAt FROM sms_codes WHERE phone = ? AND type = ?
-     AND createdAt > DATE_SUB(NOW(), INTERVAL ${config.sms.sendCooldown} SECOND)
+     AND createdAt > DATE_SUB(UTC_TIMESTAMP(), INTERVAL ${config.sms.sendCooldown} SECOND)
      ORDER BY createdAt DESC LIMIT 1`,
     [phone, type]
   );
@@ -140,7 +140,7 @@ async function verifySmsCode(phone, code, type = 'LOGIN') {
      WHERE id = ? AND usedAt IS NULL AND expiresAt > UTC_TIMESTAMP(3)`,
     [nowIso(), record.id]
   );
-  if (!consumed[0] || !consumed[0].affectedRows) throw err.conflict('验证码已被使用或已过期');
+  if (!consumed || !consumed.affectedRows) throw err.conflict('验证码已被使用或已过期');
 
   return { valid: true };
 }

@@ -186,7 +186,8 @@ Page({
   },
 
   goResetPassword() {
-    wx.navigateTo({ url: '/pages/reset-password/index' });
+    const query = this.data.username ? `?username=${encodeURIComponent(this.data.username)}` : '';
+    wx.navigateTo({ url: `/pages/reset-password/index${query}` });
   },
 
   // ========== 手机验证码 ==========

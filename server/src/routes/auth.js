@@ -12,7 +12,7 @@
  * PATCH /api/me             → 更新昵称、头像 fileID、工程师资料
  */
 const { readJson, ok, err } = require('../lib/http');
-const { newId, nowIso, v } = require('../lib/util');
+const { newId, nowIso, maskPhone, v } = require('../lib/util');
 const { query, queryOne } = require('../db');
 const { requireUser, getOrCreateUser, switchUserRole, getOpenid } = require('../lib/auth-mw');
 const { parseJson } = require('../db');
@@ -26,7 +26,9 @@ function userView(u, profile) {
     avatarUrl: u.avatarUrl || null,
     openid: u.openid,
     username: u.username,
-    phone: u.phone,
+    // 完整手机号仅保留在服务端，任何用户视图都只返回脱敏值。
+    hasPhone: Boolean(u.phone),
+    phoneMasked: maskPhone(u.phone),
     // 与账号/手机号登录返回结构保持一致，前端可直接读取资格状态
     verifyStatus: profile ? profile.verifyStatus : null,
     engineer: profile
@@ -203,7 +205,7 @@ function register(router) {
     if (existing) throw err.conflict('该手机号已被其他账号绑定');
 
     await query(`UPDATE users SET phone = ?, updatedAt = ? WHERE id = ?`, [phoneNumber, nowIso(), user.id]);
-    ok(res, { phone: phoneNumber, user: await loadUserView(user.id) });
+    ok(res, { phoneMasked: maskPhone(phoneNumber), user: await loadUserView(user.id) });
   });
 }
 
