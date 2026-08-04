@@ -75,7 +75,7 @@ module.exports = {
     <view class="form-group">
       <text class="form-label">预算弹性</text>
       <view class="flexible-row" bindtap="toggleFlexible">
-        <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" color="#7C3AED" />
+      <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" color="#667EEA" />
         <text class="form-hint">预算有弹性，可与工程师协商</text>
       </view>
     </view>

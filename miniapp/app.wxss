@@ -1,22 +1,31 @@
 /* ================================================================
-   仿真服务平台 · 浅色商务风 Design Token 体系
-   （L1 换肤：变量名与深色版保持一致，仅替换值——页面级 WXSS 无需大改）
-   浅灰底 + 白卡片 + 紫色渐变主色 + 浅阴影
+   仿真服务平台 · new_simu 同款紫色轻商务 Design Token
+   主色 #667EEA → #764BA2，浅灰蓝底 + 白卡片 + 柔和阴影。
+   neon-* 名称作为旧页面兼容别名保留，业务页面无需改动逻辑。
    ================================================================ */
 
 /* ---------- Design Tokens ---------- */
 page {
   /* ===== 底色 · 浅灰空间 ===== */
-  --bg-deep: #EFEFEF;
-  --bg-base: #F5F5F5;
+  --bg-deep: #E8EDF5;
+  --bg-base: #F0F4F8;
   --bg-elev: #FFFFFF;
   --bg-card: #FFFFFF;
 
-  /* ===== 主色与语义色（沿用 neon-* 变量名，值换商务色） ===== */
-  --neon-violet: #7C3AED;
-  --neon-violet-2: #A855F7;
-  --neon-pink: #D946EF;
-  --neon-pink-2: #E879F9;
+  /* ===== 品牌色与语义色 ===== */
+  --color-primary: #667EEA;
+  --color-primary-dark: #764BA2;
+  --color-primary-light: #EEF2FF;
+  --color-success: #27AE60;
+  --color-warning: #F39C12;
+  --color-error: #E74C3C;
+  --color-info: #3498DB;
+
+  /* 旧变量兼容映射 */
+  --neon-violet: #667EEA;
+  --neon-violet-2: #764BA2;
+  --neon-pink: #9B59B6;
+  --neon-pink-2: #B58BD1;
   --neon-cyan: #3498DB;
   --neon-cyan-2: #5DADE2;
   --neon-blue: #3498DB;
@@ -25,23 +34,23 @@ page {
   --neon-red: #E74C3C;
 
   /* ===== 渐变（商务化：低饱和同色系） ===== */
-  --grad-neon: linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #9333EA 100%);
-  --grad-violet-pink: linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #9333EA 100%);
+  --grad-neon: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+  --grad-violet-pink: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
   --grad-cyan-blue: linear-gradient(135deg, #5DADE2, #3498DB);
   --grad-pink-cyan: linear-gradient(90deg, #EC7063, #5DADE2);
   --grad-gold: linear-gradient(135deg, #F39C12, #E67E22);
 
   /* ===== 文字 ===== */
-  --c-text: #333333;
-  --c-text-2: #666666;
-  --c-text-3: #999999;
-  --c-text-4: #BBBBBB;
+  --c-text: #1A1A2E;
+  --c-text-2: #4B5563;
+  --c-text-3: #767676;
+  --c-text-4: #8A8A8A;
   --c-money: #E74C3C;
 
   /* ===== 线条 ===== */
-  --c-border: #E8E8E8;
-  --c-border-strong: #7C3AED;
-  --c-divider: #F0F0F0;
+  --c-border: #E4E7EE;
+  --c-border-strong: #667EEA;
+  --c-divider: #F0F2F5;
 
   /* ===== 间距 — 8px 基准 → rpx (×2) ===== */
   --sp-1: 8rpx;
@@ -65,9 +74,9 @@ page {
   --shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.10);
   --shadow-card: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   --glow-cyan: 0 4rpx 12rpx rgba(52, 152, 219, 0.18);
-  --glow-violet: 0 4rpx 12rpx rgba(124, 58, 237, 0.20);
+  --glow-violet: 0 4rpx 12rpx rgba(102, 126, 234, 0.22);
   --glow-pink: 0 4rpx 12rpx rgba(231, 76, 60, 0.18);
-  --glow-primary: 0 4rpx 14rpx rgba(124, 58, 237, 0.28);
+  --glow-primary: 0 8rpx 24rpx rgba(102, 126, 234, 0.28);
 
   /* ===== 字体 ===== */
   --font-family: -apple-system, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -122,7 +131,7 @@ page {
 }
 .btn-primary:active {
   transform: scale(0.97);
-  background: #5B21B6;
+  background: #596CD4;
 }
 .btn-primary.disabled {
   background: #B0B7BD;
@@ -192,9 +201,9 @@ page {
 /* ---------- 标签 Tag ---------- */
 .tag {
   display: inline-block;
-  background: #EBF5FB;
-  border: 1rpx solid #D6EAF8;
-  color: #2874A6;
+  background: #EEF2FF;
+  border: 1rpx solid #DDE4FF;
+  color: #596CD4;
   border-radius: var(--r-sm);
   padding: 6rpx 16rpx;
   margin: 0 var(--sp-2) var(--sp-2) 0;

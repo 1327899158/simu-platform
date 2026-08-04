@@ -40,8 +40,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #F7F4FF;
-  border: 1rpx solid #E7D9FF;
+  background: #F7F8FF;
+  border: 1rpx solid #DDE4FF;
   border-radius: var(--r-md);
   color: var(--c-text);
   font-size: 28rpx;
@@ -70,9 +70,9 @@
 }
 .filter-item:active { transform: scale(0.95); }
 .filter-item.active {
-  background: #F1E8FF;
-  border-color: #C4A7F7;
-  color: #5B21B6;
+  background: #EEF2FF;
+  border-color: #C7D2FE;
+  color: #596CD4;
   font-weight: 600;
 }
 .filter-label { margin-left: 12rpx; }
@@ -87,15 +87,15 @@
   justify-content: center;
   border-radius: var(--r-pill);
   background: rgba(124, 58, 237, .10);
-  color: #6D28D9;
+  color: #667EEA;
   font-size: 20rpx;
 }
 .status-dot { width: 14rpx; height: 14rpx; border-radius: 50%; flex-shrink: 0; }
-.dot-purple { background: #7C3AED; }
+.dot-purple { background: #667EEA; }
 .dot-blue { background: #3B82F6; }
 .dot-orange { background: #F59E0B; }
 .dot-cyan { background: #06B6D4; }
-.dot-pink { background: #D946EF; }
+.dot-pink { background: #9B59B6; }
 .dot-green { background: #22C55E; }
 .dot-red { background: #EF4444; }
 .dot-gray { background: #94A3B8; }

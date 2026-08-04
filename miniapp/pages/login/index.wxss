@@ -99,7 +99,7 @@
   display: block;
   font-size: 36rpx;
   font-weight: 800;
-  color: #7C3AED;
+  color: #667EEA;
   letter-spacing: 4rpx;
   margin-bottom: 4rpx;
 }
@@ -169,7 +169,7 @@
 }
 .sub-tab-item.active {
   background: var(--bg-card);
-  color: #7C3AED;
+  color: #667EEA;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
 }
 
@@ -199,7 +199,7 @@
   padding: 0 4rpx;
 }
 .input-wrapper:focus-within {
-  border-color: #7C3AED;
+  border-color: #667EEA;
   background: var(--bg-card);
   box-shadow: 0 0 0 4rpx rgba(44, 62, 80, 0.06);
 }
@@ -275,7 +275,7 @@
 }
 .btn-primary:active {
   transform: scale(0.98);
-  background: #5B21B6;
+  background: #596CD4;
 }
 .btn-primary::after { border: none; }
 .btn-wechat {
@@ -344,7 +344,7 @@
 }
 .role-item.active {
   background: rgba(44, 62, 80, 0.06);
-  border-color: #7C3AED;
+  border-color: #667EEA;
 }
 .role-item:active {
   transform: scale(0.96);
@@ -360,7 +360,7 @@
   color: var(--c-text-2);
 }
 .role-item.active .role-text {
-  color: #7C3AED;
+  color: #667EEA;
   font-weight: 600;
 }
 
