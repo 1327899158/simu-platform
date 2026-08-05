@@ -1,7 +1,8 @@
 @import "../../admin.wxss";
 .user-card { padding: 22rpx; }
-.user-name { display: block; font-size: 29rpx; line-height: 42rpx; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-name-row { min-height: 88rpx; display: flex; align-items: center; gap: 12rpx; }.user-name { flex: 1; min-width: 0; display: block; font-size: 29rpx; line-height: 42rpx; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .info-line { min-height: 50rpx; display: flex; justify-content: space-between; gap: 20rpx; color: #4B5563; font-size: 24rpx; line-height: 36rpx; }
 .user-card .admin-button { margin-top: 18rpx; }
 .user-card.user-pressed { transform: scale(.988); opacity: .88; }
-.user-detail-hint { min-height: 54rpx; line-height: 54rpx; margin-top: 10rpx; color: #596CD4; text-align: right; font-size: 23rpx; }
+.review-inline-link { flex-shrink: 0; min-height: 88rpx; padding: 0 12rpx; display: flex; align-items: center; color: #596CD4; font-size: 22rpx; font-weight: 600; }
+.review-inline-link:active { opacity: .72; }

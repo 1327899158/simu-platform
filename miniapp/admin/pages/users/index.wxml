@@ -6,7 +6,7 @@
 
   <view class="admin-card user-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" data-role="{{item.role}}" bindtap="open" hover-class="user-pressed">
     <view class="admin-between">
-      <view class="admin-grow"><text class="user-name">{{item.nickname || item.username || '未设置昵称'}}</text><text class="admin-small">{{item.id}}</text></view>
+      <view class="admin-grow"><view class="user-name-row"><text class="user-name">{{item.nickname || item.username || '未设置昵称'}}</text><view class="review-inline-link" data-id="{{item.id}}" data-role="{{item.role}}" catchtap="open">{{item.role === 'ENGINEER' ? '收到的评价 ›' : '给出的评价 ›'}}</view></view><text class="admin-small">{{item.id}}</text></view>
       <text class="admin-badge {{item.status === 'ACTIVE' ? 'badge-green' : 'badge-red'}}">{{item.statusText}}</text>
     </view>
     <view class="admin-tags"><text class="admin-badge {{item.roleBadgeClass}}">{{item.roleText}}</text><text class="admin-badge badge-orange" wx:if="{{item.isAdmin}}">管理员</text><text class="admin-badge {{item.verifyBadgeClass}}" wx:if="{{item.verifyText}}">{{item.verifyText}}</text></view>
@@ -14,7 +14,6 @@
     <view class="info-line"><text>用户名</text><text>{{item.username || '—'}}</text></view>
     <view class="info-line"><text>手机号</text><text>{{item.phone || '—'}}</text></view>
     <view class="info-line"><text>注册时间</text><text>{{item.createdText}}</text></view>
-    <view class="user-detail-hint">点击查看{{item.role === 'ENGINEER' ? '收到的评价' : '给出的评价'}} ›</view>
     <button wx:if="{{canManage}}" class="admin-button small {{item.status === 'ACTIVE' ? 'danger' : 'secondary'}}" data-id="{{item.id}}" data-name="{{item.nickname || item.username}}" data-status="{{item.status}}" catchtap="changeStatus">{{item.status === 'ACTIVE' ? '停用账号' : '恢复账号'}}</button>
   </view>
   <view class="admin-empty" wx:if="{{!loading && !items.length}}">没有符合条件的用户</view>
