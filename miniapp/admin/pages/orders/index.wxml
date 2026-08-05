@@ -1,0 +1,22 @@
+<view class="admin-page">
+  <view class="admin-hero"><text class="admin-hero-title">订单管理</text><text class="admin-hero-desc">共 {{total}} 个订单 · 管理端不参与正常履约流程</text></view>
+  <view class="admin-search"><input class="admin-input" placeholder="项目名称、订单号或订单ID" value="{{search}}" bindinput="onSearchInput" bindconfirm="search"/><button class="admin-button small" bindtap="search">查询</button></view>
+  <scroll-view scroll-x class="admin-chips">
+    <view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部</view>
+    <view class="admin-chip {{status === 'QUOTING' ? 'active' : ''}}" data-value="QUOTING" bindtap="setStatus">待报价</view>
+    <view class="admin-chip {{status === 'AWAITING_PAYMENT' ? 'active' : ''}}" data-value="AWAITING_PAYMENT" bindtap="setStatus">待支付</view>
+    <view class="admin-chip {{status === 'IN_PROGRESS' ? 'active' : ''}}" data-value="IN_PROGRESS" bindtap="setStatus">执行中</view>
+    <view class="admin-chip {{status === 'DELIVERED' ? 'active' : ''}}" data-value="DELIVERED" bindtap="setStatus">待验收</view>
+    <view class="admin-chip {{status === 'COMPLETED' ? 'active' : ''}}" data-value="COMPLETED" bindtap="setStatus">已完成</view>
+    <view class="admin-chip {{status === 'CLOSED' ? 'active' : ''}}" data-value="CLOSED" bindtap="setStatus">已关闭</view>
+  </scroll-view>
+  <view class="admin-card order-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="open" hover-class="order-pressed">
+    <view class="admin-between"><text class="order-title">{{item.projectName}}</text><text class="admin-badge {{item.badgeClass}}">{{item.statusText}}</text></view>
+    <text class="order-no">{{item.orderNo}}</text>
+    <view class="order-metrics"><view><text class="metric-value">¥{{item.amountText}}</text><text class="metric-label">预算/成交</text></view><view><text class="metric-value">{{item.quoteCount}}</text><text class="metric-label">有效报价</text></view><view><text class="metric-value">{{item.viewCount}}</text><text class="metric-label">浏览</text></view></view>
+    <view class="admin-divider"></view>
+    <view class="admin-between"><text class="admin-small">客户：{{item.customerName || '未设置昵称'}}</text><text class="admin-small">{{item.createdText}} ›</text></view>
+  </view>
+  <view class="admin-empty" wx:if="{{!loading && !items.length}}">没有符合条件的订单</view>
+  <view class="admin-loading" wx:if="{{loading}}">正在加载订单…</view>
+</view>

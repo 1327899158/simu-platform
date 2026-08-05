@@ -1,0 +1,6 @@
+<view class="gate-page">
+  <view class="gate-mark {{state}}">{{state === 'success' ? '✓' : (state === 'error' ? '!' : '···')}}</view>
+  <text class="gate-title">管理员安全入口</text>
+  <text class="gate-message">{{message}}</text>
+  <text class="gate-note">小程序码仅用于打开入口，最终权限由服务端核验。</text>
+</view>

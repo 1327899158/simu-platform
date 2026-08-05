@@ -1,0 +1,11 @@
+@import "../../admin.wxss";
+.timeline { position: relative; margin-top: 10rpx; padding-left: 18rpx; border-left: 2rpx solid #DDE4FF; }
+.log-row { position: relative; }
+.timeline-dot { position: absolute; left: -27rpx; top: 42rpx; width: 16rpx; height: 16rpx; border: 5rpx solid #EEF2FF; border-radius: 50%; background: #667EEA; z-index: 2; }
+.log-card { margin-left: 10rpx; }
+.log-action { font-size: 28rpx; line-height: 40rpx; font-weight: 650; }
+.log-actor,.log-target,.log-detail,.request-id { display: block; margin-top: 10rpx; }
+.log-actor { color: #596CD4; font-size: 23rpx; }
+.log-target { color: #4B5563; font-size: 24rpx; word-break: break-all; }
+.log-detail { padding: 14rpx; border-radius: 12rpx; background: #F7F8FB; color: #4B5563; font-size: 23rpx; line-height: 36rpx; }
+.request-id { word-break: break-all; }

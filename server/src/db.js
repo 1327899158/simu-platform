@@ -116,6 +116,9 @@ async function init() {
       paidAt          DATETIME(3),
       deliveredAt     DATETIME(3),
       completedAt     DATETIME(3),
+      closedAt        DATETIME(3),
+      closedByAdminId VARCHAR(32),
+      adminCloseReason VARCHAR(500),
       viewCount       INT UNSIGNED NOT NULL DEFAULT 0,
       createdAt       DATETIME(3) NOT NULL,
       updatedAt       DATETIME(3) NOT NULL,
@@ -237,6 +240,37 @@ async function init() {
       PRIMARY KEY(action, subjectHash),
       INDEX idx_auth_rate_updated(updatedAt)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS admin_accounts (
+      id            VARCHAR(32) PRIMARY KEY,
+      userId        VARCHAR(32) NOT NULL,
+      openid        VARCHAR(64),
+      adminRole     VARCHAR(32) NOT NULL,
+      status        VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+      displayName   VARCHAR(100),
+      createdAt     DATETIME(3) NOT NULL,
+      updatedAt     DATETIME(3) NOT NULL,
+      lastLoginAt   DATETIME(3),
+      UNIQUE KEY uq_admin_user(userId),
+      UNIQUE KEY uq_admin_openid(openid),
+      INDEX idx_admin_status_role(status, adminRole),
+      FOREIGN KEY(userId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS admin_audit_logs (
+      id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+      adminId       VARCHAR(32) NOT NULL,
+      action        VARCHAR(64) NOT NULL,
+      targetType    VARCHAR(32) NOT NULL,
+      targetId      VARCHAR(64),
+      detail        JSON,
+      requestId     VARCHAR(128),
+      createdAt     DATETIME(3) NOT NULL,
+      INDEX idx_admin_audit_time(createdAt),
+      INDEX idx_admin_audit_actor(adminId, createdAt),
+      INDEX idx_admin_audit_target(targetType, targetId, createdAt),
+      FOREIGN KEY(adminId) REFERENCES admin_accounts(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   ];
 
   for (const sql of sqls) {
@@ -257,6 +291,12 @@ async function init() {
     { table: 'users', sql: `ALTER TABLE users ADD COLUMN sessionToken VARCHAR(64)`, check: "sessionToken" },
     { table: 'users', sql: `ALTER TABLE users ADD COLUMN sessionExpiresAt DATETIME(3)`, check: "sessionExpiresAt" },
     { table: 'orders', sql: `ALTER TABLE orders ADD COLUMN viewCount INT UNSIGNED NOT NULL DEFAULT 0`, check: "viewCount" },
+    { table: 'orders', sql: `ALTER TABLE orders ADD COLUMN closedAt DATETIME(3)`, check: "closedAt" },
+    { table: 'orders', sql: `ALTER TABLE orders ADD COLUMN closedByAdminId VARCHAR(32)`, check: "closedByAdminId" },
+    { table: 'orders', sql: `ALTER TABLE orders ADD COLUMN adminCloseReason VARCHAR(500)`, check: "adminCloseReason" },
+    { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewReason VARCHAR(500)`, check: "reviewReason" },
+    { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedAt DATETIME(3)`, check: "reviewedAt" },
+    { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedBy VARCHAR(32)`, check: "reviewedBy" },
   ];
 
   for (const m of migrations) {

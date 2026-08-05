@@ -1,0 +1,7 @@
+@import "../../admin.wxss";
+.engineer-name { display: block; font-size: 30rpx; line-height: 42rpx; font-weight: 650; }
+.intro { display: block; margin-top: 16rpx; padding: 18rpx; border-radius: 14rpx; background: #F7F8FB; color: #4B5563; font-size: 24rpx; line-height: 38rpx; }
+.time-line { display: block; margin-top: 16rpx; }
+.review-note { margin-top: 14rpx; color: #A55A00; font-size: 24rpx; line-height: 38rpx; }
+.review-actions { display: flex; gap: 14rpx; margin-top: 20rpx; }
+.review-actions .admin-button { flex: 1; }

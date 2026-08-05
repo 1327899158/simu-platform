@@ -1,0 +1,8 @@
+@import "../../admin.wxss";
+.gate-page { min-height: 100vh; padding: 0 64rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; background: #F0F4F8; }
+.gate-mark { width: 128rpx; height: 128rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg,#667EEA,#764BA2); color: #fff; font-size: 42rpx; font-weight: 700; box-shadow: 0 12rpx 30rpx rgba(102,126,234,.28); }
+.gate-mark.success { background: #27AE60; }
+.gate-mark.error { background: #E74C3C; }
+.gate-title { margin-top: 36rpx; font-size: 38rpx; font-weight: 700; color: #1A1A2E; }
+.gate-message { margin-top: 18rpx; font-size: 27rpx; line-height: 42rpx; color: #4B5563; text-align: center; }
+.gate-note { margin-top: 42rpx; font-size: 22rpx; line-height: 36rpx; color: #8A8A8A; text-align: center; }

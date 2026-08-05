@@ -23,6 +23,7 @@ require('./routes/market').register(router);
 require('./routes/quotes').register(router);
 require('./routes/payments').register(router);
 require('./routes/chat').register(router);
+require('./routes/admin').register(router);
 
 router.get('/api/health', async (_req, res) =>
   sendJson(res, 200, { code: 0, data: { ok: true, now: new Date().toISOString() } }));
@@ -70,6 +71,9 @@ async function bootstrap() {
       chatImageMode: 'direct-cloud-file-id',
       attachmentSchema: 'order-attachments-v1',
       maxUploadMb: config.uploadMaxMb,
+      adminBootstrapConfigured: !!(
+        config.adminBootstrapOpenids.length || config.adminBootstrapUserIds.length
+      ),
     }));
     startSweeper(); // 支付超时清扫备用定时器（推荐用云函数触发器替代）
 

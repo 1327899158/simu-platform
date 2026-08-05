@@ -1,0 +1,8 @@
+<view class="admin-page">
+  <view class="admin-hero"><text class="admin-hero-title">操作日志</text><text class="admin-hero-desc">共 {{total}} 条记录 · 日志由服务端生成，前端不可伪造</text></view>
+  <view class="timeline">
+    <view class="log-row" wx:for="{{items}}" wx:key="id"><view class="timeline-dot"></view><view class="admin-card log-card"><view class="admin-between"><text class="log-action">{{item.actionText}}</text><text class="admin-small">{{item.createdText}}</text></view><text class="log-actor">{{item.adminName}} · {{item.adminRole}}</text><text class="log-target">{{item.targetType}}：{{item.targetId || '—'}}</text><text class="log-detail" wx:if="{{item.detailText}}">{{item.detailText}}</text><text class="admin-small request-id" wx:if="{{item.requestId}}">请求ID：{{item.requestId}}</text></view></view>
+  </view>
+  <view class="admin-empty" wx:if="{{!loading && !items.length}}">暂无管理操作记录</view>
+  <view class="admin-loading" wx:if="{{loading}}">正在加载审计日志…</view>
+</view>

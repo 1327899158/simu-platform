@@ -24,6 +24,8 @@ function loadDotEnv(file) {
 loadDotEnv(path.join(__dirname, '..', '.env'));
 
 const int = (v, d) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : d; };
+const csv = (v) => String(v || '')
+  .split(',').map((item) => item.trim()).filter(Boolean);
 
 // 云托管 MySQL 注入的环境变量名（在容器内自动可用）
 // 本地开发时在 .env 里手动填
@@ -40,6 +42,11 @@ const config = {
 
   // 微信小程序 AppID（用于校验 X-WX-APPID 头）
   wxAppid: process.env.WX_APPID || '',
+
+  // 首位管理员引导白名单。仅服务端环境变量可配置，前端 scene 参数不能授予权限。
+  // 推荐优先使用 OpenID；用户需至少登录过一次普通小程序以建立 users 记录。
+  adminBootstrapOpenids: csv(process.env.ADMIN_BOOTSTRAP_OPENIDS),
+  adminBootstrapUserIds: csv(process.env.ADMIN_BOOTSTRAP_USER_IDS),
 
   // 单个附件大小上限。修改云托管 MAX_UPLOAD_MB 后，前端会通过 /api/dicts 自动同步。
   uploadMaxMb,

@@ -3,7 +3,7 @@ const { request } = require('./utils/request');
 const UNREAD_POLL_MS = 10000;
 
 App({
-  globalData: {},
+  globalData: { adminMode: false },
   _unreadTimer: null,
 
   onLaunch() {
@@ -13,7 +13,9 @@ App({
     this.refreshUser();
   },
   onShow() {
-    this.startUnreadPoll();
+    // 管理分包使用独立数据流，进入管理模式后不轮询普通会话列表。
+    if (this.globalData.adminMode) this.stopUnreadPoll();
+    else this.startUnreadPoll();
   },
   onHide() {
     this.stopUnreadPoll();

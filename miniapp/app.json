@@ -14,6 +14,21 @@
     "pages/profile-edit/index",
     "pages/reset-password/index"
   ],
+  "subPackages": [
+    {
+      "root": "admin",
+      "name": "admin",
+      "pages": [
+        "pages/gate/index",
+        "pages/dashboard/index",
+        "pages/users/index",
+        "pages/engineers/index",
+        "pages/orders/index",
+        "pages/order-detail/index",
+        "pages/audit-logs/index"
+      ]
+    }
+  ],
   "window": {
     "navigationBarBackgroundColor": "#667EEA",
     "navigationBarTextStyle": "white",
