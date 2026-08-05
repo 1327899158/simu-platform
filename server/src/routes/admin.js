@@ -3,7 +3,7 @@
 const { readJson, ok, err } = require('../lib/http');
 const { v, nowIso, maskPhone } = require('../lib/util');
 const { query, queryOne, tx, parseJson } = require('../db');
-const { requireAdmin, hasPermission, writeAdminAudit } = require('../lib/admin-mw');
+const { requireAdmin, writeAdminAudit } = require('../lib/admin-mw');
 const { DICTS } = require('./dicts');
 const { requireUser } = require('../lib/auth-mw');
 
@@ -179,6 +179,46 @@ function register(router) {
       })),
       total: Number(totalRow.count || 0), limit, offset,
     });
+  });
+
+  router.get('/api/admin/engineers/:id', async (req, res, params) => {
+    await requireAdmin(req, 'ENGINEER_READ');
+    const engineer = await queryOne(
+      `SELECT u.id, u.nickname, u.avatarUrl, u.username, u.phone, u.status AS userStatus, u.createdAt,
+              ep.realName, ep.specialties, ep.softwares, ep.intro, ep.verifyStatus,
+              ep.reviewReason, ep.reviewedAt
+       FROM engineer_profiles ep JOIN users u ON u.id = ep.userId
+       WHERE ep.userId = ? AND u.deletedAt IS NULL`, [params.id]
+    );
+    if (!engineer) throw err.notFound('工程师资料不存在');
+    const files = await query(
+      `SELECT f.id, f.name, f.kind, f.mime, f.sizeBytes, evf.createdAt
+       FROM engineer_verification_files evf
+       JOIN uploaded_files f ON f.id = evf.fileId
+       WHERE evf.engineerId = ? ORDER BY evf.createdAt DESC`, [params.id]
+    );
+    return ok(res, {
+      ...engineer,
+      phone: maskPhone(engineer.phone),
+      specialties: parseJson(engineer.specialties),
+      softwares: parseJson(engineer.softwares),
+      verifyStatusText: VERIFY_TEXT[engineer.verifyStatus] || engineer.verifyStatus,
+      files: files.map((file) => ({ ...file, fileId: file.id, sizeBytes: Number(file.sizeBytes || 0) })),
+    });
+  });
+
+  // 资格资料是私密文件。管理员只能在通过 ENGINEER_READ 鉴权后取得 fileID，
+  // 由小程序直接下载/预览，避免开放通用文件读取权限。
+  router.get('/api/admin/files/:id/url', async (req, res, params) => {
+    await requireAdmin(req, 'ENGINEER_READ');
+    const file = await queryOne(
+      `SELECT f.id, f.fileID, f.name, f.mime, f.sizeBytes
+       FROM engineer_verification_files evf
+       JOIN uploaded_files f ON f.id = evf.fileId
+       WHERE f.id = ?`, [params.id]
+    );
+    if (!file) throw err.notFound('资格资料不存在');
+    return ok(res, { ...file, sizeBytes: Number(file.sizeBytes || 0) });
   });
 
   router.post('/api/admin/engineers/:id/review', async (req, res, params) => {

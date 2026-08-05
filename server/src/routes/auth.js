@@ -47,6 +47,12 @@ async function loadUserView(id) {
   const profile = u.role === 'ENGINEER'
     ? await queryOne(`SELECT * FROM engineer_profiles WHERE userId = ?`, [u.id])
     : null;
+  if (profile) {
+    const count = await queryOne(
+      `SELECT COUNT(*) AS count FROM engineer_verification_files WHERE engineerId = ?`, [u.id]
+    );
+    profile.qualificationFileCount = Number(count.count || 0);
+  }
   return userView(u, profile);
 }
 

@@ -3,7 +3,7 @@ const { getAdmin, hasPermission, denyAndExit } = require('../../utils/admin');
 const { timeShort } = require('../../../utils/format');
 
 Page({
-  data: { items: [], total: 0, loading: true, search: '', role: '', status: '', canManage: false },
+  data: { items: [], total: 0, loading: true, search: '', role: '', status: '', canManage: false, showFilters: false, filterText: '全部用户' },
   onLoad() {
     const admin = getAdmin();
     if (!admin) { denyAndExit('管理员会话不存在，请重新扫码进入。'); return; }
@@ -13,8 +13,23 @@ Page({
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   onSearchInput(e) { this.setData({ search: e.detail.value }); },
   search() { this.load(); },
-  setRole(e) { this.setData({ role: e.currentTarget.dataset.value }); this.load(); },
-  setStatus(e) { this.setData({ status: e.currentTarget.dataset.value }); this.load(); },
+  toggleFilters() { this.setData({ showFilters: !this.data.showFilters }); },
+  setRole(e) {
+    const value = e.currentTarget.dataset.value;
+    this.setData({ role: this.data.role === value ? '' : value }, () => { this.syncFilterText(); this.load(); });
+  },
+  setStatus(e) {
+    const value = e.currentTarget.dataset.value;
+    this.setData({ status: this.data.status === value ? '' : value }, () => { this.syncFilterText(); this.load(); });
+  },
+  syncFilterText() {
+    const parts = [];
+    if (this.data.role === 'CUSTOMER') parts.push('客户');
+    if (this.data.role === 'ENGINEER') parts.push('工程师');
+    if (this.data.status === 'ACTIVE') parts.push('正常');
+    if (this.data.status === 'DISABLED') parts.push('已停用');
+    this.setData({ filterText: parts.length ? parts.join(' · ') : '全部用户' });
+  },
   async load() {
     this.setData({ loading: true });
     try {
@@ -28,6 +43,9 @@ Page({
           ...item, roleText: roleText[item.role] || item.role,
           createdText: timeShort(item.createdAt),
           statusText: item.status === 'ACTIVE' ? '正常' : '已停用',
+          roleBadgeClass: item.role === 'ENGINEER' ? 'badge-purple' : 'badge-blue',
+          verifyText: item.verifyStatus === 'APPROVED' ? '资格已通过' : item.verifyStatus === 'PENDING' ? '资格待审核' : item.verifyStatus === 'REJECTED' ? '资格已驳回' : '',
+          verifyBadgeClass: item.verifyStatus === 'APPROVED' ? 'badge-green' : item.verifyStatus === 'REJECTED' ? 'badge-red' : 'badge-orange',
         })),
       });
     } catch (error) {

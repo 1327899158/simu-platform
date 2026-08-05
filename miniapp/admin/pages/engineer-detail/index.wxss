@@ -1,0 +1,14 @@
+@import "../../admin.wxss";
+.detail-status { flex-shrink: 0; padding: 8rpx 18rpx; border-radius: 999rpx; background: rgba(255,255,255,.18); font-size: 23rpx; }
+.detail-line { min-height: 58rpx; padding-top: 12rpx; display: flex; justify-content: space-between; gap: 24rpx; border-bottom: 1rpx solid #F0F2F5; color: #4B5563; font-size: 24rpx; line-height: 38rpx; }
+.detail-line text:last-child { max-width: 68%; color: #1A1A2E; text-align: right; word-break: break-all; }
+.intro { display: block; margin-top: 20rpx; padding: 18rpx; border-radius: 14rpx; background: #F7F8FB; color: #4B5563; font-size: 25rpx; line-height: 40rpx; white-space: pre-wrap; }
+.file-row { min-height: 94rpx; padding: 12rpx 0; display: flex; align-items: center; gap: 16rpx; border-top: 1rpx solid #F0F2F5; }
+.file-pressed { opacity: .78; }
+.file-icon { width: 58rpx; height: 58rpx; display: flex; align-items: center; justify-content: center; border-radius: 14rpx; background: #EEF2FF; color: #596CD4; font-size: 23rpx; font-weight: 700; }
+.file-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 25rpx; line-height: 36rpx; }
+.file-arrow { color: #9CA3AF; font-size: 40rpx; }
+.small-empty { padding: 46rpx 0; font-size: 24rpx; }
+.review-reason { display: block; margin-top: 14rpx; color: #A55A00; font-size: 25rpx; line-height: 40rpx; }
+.review-actions { display: flex; gap: 14rpx; margin-top: 20rpx; }
+.review-actions .admin-button { flex: 1; }

@@ -17,7 +17,9 @@ function verifyView(user) {
   return {
     verifyStatus: status,
     verifyText: status === 'APPROVED' ? '已通过' : status === 'PENDING' ? '待核验' : '未申请',
-    showSelfVerify: status !== 'APPROVED',
+    qualificationFileCount: Number(profile?.qualificationFileCount || 0),
+    // 已提交资料后必须等待管理员审核，避免演示自核验绕过已发起的人工审核。
+    showSelfVerify: status !== 'APPROVED' && !Number(profile?.qualificationFileCount || 0),
   };
 }
 
@@ -47,6 +49,9 @@ Page({
   },
   goMyQuotes() {
     wx.navigateTo({ url: '/pages/my-quotes/index' });
+  },
+  goQualification() {
+    wx.navigateTo({ url: '/pages/engineer-qualification/index' });
   },
   goResetPassword() {
     wx.navigateTo({ url: '/pages/reset-password/index' });

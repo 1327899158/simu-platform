@@ -1,22 +1,18 @@
 <view class="admin-page">
   <view class="admin-hero"><text class="admin-hero-title">工程师审核</text><text class="admin-hero-desc">当前筛选 {{total}} 人 · 所有审核操作写入审计日志</text></view>
   <view class="admin-search"><input class="admin-input" placeholder="昵称、真实姓名或用户ID" value="{{search}}" bindinput="onSearchInput" bindconfirm="search"/><button class="admin-button small" bindtap="search">查询</button></view>
-  <scroll-view scroll-x class="admin-chips">
-    <view class="admin-chip {{status === 'PENDING' ? 'active' : ''}}" data-value="PENDING" bindtap="setStatus">待审核</view>
-    <view class="admin-chip {{status === 'APPROVED' ? 'active' : ''}}" data-value="APPROVED" bindtap="setStatus">已通过</view>
-    <view class="admin-chip {{status === 'REJECTED' ? 'active' : ''}}" data-value="REJECTED" bindtap="setStatus">已驳回</view>
-    <view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部</view>
-  </scroll-view>
-  <view class="admin-card" wx:for="{{items}}" wx:key="id">
+  <view class="admin-filter-bar"><view class="admin-filter-copy"><text class="admin-filter-label">当前筛选</text><text class="admin-filter-value">{{filterText}}</text></view><button class="admin-filter-button" bindtap="toggleFilters">{{showFilters ? '收起' : '筛选'}}</button></view>
+  <view class="admin-filter-panel" wx:if="{{showFilters}}"><view class="admin-filter-section"><text class="admin-filter-section-title">审核状态</text><scroll-view scroll-x class="admin-chips"><view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部</view><view class="admin-chip {{status === 'PENDING' ? 'active' : ''}}" data-value="PENDING" bindtap="setStatus">待审核</view><view class="admin-chip {{status === 'APPROVED' ? 'active' : ''}}" data-value="APPROVED" bindtap="setStatus">已通过</view><view class="admin-chip {{status === 'REJECTED' ? 'active' : ''}}" data-value="REJECTED" bindtap="setStatus">已驳回</view></scroll-view></view></view>
+  <view class="admin-card engineer-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="open" hover-class="engineer-pressed">
     <view class="admin-between">
       <view class="admin-grow"><text class="engineer-name">{{item.realName || item.nickname || '未填写姓名'}}</text><text class="admin-small">{{item.nickname}} · {{item.id}}</text></view>
       <text class="admin-badge {{item.verifyStatus === 'APPROVED' ? 'badge-green' : (item.verifyStatus === 'REJECTED' ? 'badge-red' : 'badge-orange')}}">{{item.verifyStatusText}}</text>
     </view>
     <view class="admin-tags"><text class="admin-tag" wx:for="{{item.specialties}}" wx:key="*this">{{item}}</text><text class="admin-tag" wx:for="{{item.softwares}}" wx:key="*this">{{item}}</text></view>
     <text class="intro" wx:if="{{item.intro}}">{{item.intro}}</text>
-    <text class="admin-small time-line">申请账号创建于 {{item.createdText}}</text>
+    <text class="admin-small time-line">申请账号创建于 {{item.createdText}} · 点击查看完整资料与附件 ›</text>
     <view class="review-note" wx:if="{{item.reviewReason}}">审核说明：{{item.reviewReason}}</view>
-    <view class="review-actions" wx:if="{{canReview && item.verifyStatus === 'PENDING'}}"><button class="admin-button secondary" data-id="{{item.id}}" bindtap="approve">通过</button><button class="admin-button danger" data-id="{{item.id}}" bindtap="reject">驳回</button></view>
+    <view class="review-actions" wx:if="{{canReview && item.verifyStatus === 'PENDING'}}"><button class="admin-button secondary" data-id="{{item.id}}" catchtap="approve">通过</button><button class="admin-button danger" data-id="{{item.id}}" catchtap="reject">驳回</button></view>
   </view>
   <view class="admin-empty" wx:if="{{!loading && !items.length}}">当前没有符合条件的工程师</view>
   <view class="admin-loading" wx:if="{{loading}}">正在加载工程师资料…</view>

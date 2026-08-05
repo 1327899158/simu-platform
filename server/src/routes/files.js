@@ -21,6 +21,7 @@ const path = require('node:path');
 
 const KINDS = ['MODEL', 'DOC', 'IMAGE', 'RESULT'];
 const MAX_UPLOAD_BYTES = config.uploadMaxBytes;
+const MAX_ENGINEER_VERIFICATION_FILES = 10;
 
 function assertCloudFileId(fileID) {
   if (typeof fileID !== 'string' || !fileID.startsWith('cloud://')) {
@@ -96,6 +97,12 @@ async function canReadFile(user, file) {
   return access === 'ALL' || (file.purpose || (file.kind === 'RESULT' ? 'RESULT' : 'REQUIREMENT')) === 'REQUIREMENT';
 }
 
+async function requireEngineerIdentity(req) {
+  const user = await requireUser(req);
+  if (user.role !== 'ENGINEER') throw err.forbidden('仅工程师可管理资格资料');
+  return user;
+}
+
 function register(router) {
   // Local wx.uploadFile fallback. CloudBase deployments normally use
   // wx.cloud.uploadFile followed by /commit, but local mode also needs a real
@@ -145,6 +152,78 @@ function register(router) {
     }
 
     ok(res, await saveFileRecord(user, { fileID, name, kind, orderId, sizeBytes, mime }));
+  });
+
+  // 工程师资格资料：文件先按普通无订单附件提交，再通过关系表关联到工程师。
+  // 这样既能复用云存储上传流程，也不会让资格文件落入订单附件权限范围。
+  router.get('/api/engineer/verification-files', async (req, res) => {
+    const user = await requireEngineerIdentity(req);
+    const rows = await query(
+      `SELECT f.id, f.fileID, f.name, f.kind, f.mime, f.sizeBytes, evf.createdAt
+       FROM engineer_verification_files evf
+       JOIN uploaded_files f ON f.id = evf.fileId
+       WHERE evf.engineerId = ? ORDER BY evf.createdAt DESC`, [user.id]
+    );
+    ok(res, rows.map((file) => ({ ...file, fileId: file.id, sizeBytes: Number(file.sizeBytes || 0) })));
+  });
+
+  router.post('/api/engineer/verification-files', async (req, res) => {
+    const user = await requireEngineerIdentity(req);
+    const body = await readJson(req);
+    const fileIds = v.arr(body.fileIds, '资格资料', { minLen: 1, maxLen: MAX_ENGINEER_VERIFICATION_FILES })
+      .map((id) => v.str(id, '文件ID', { min: 1, max: 32 }));
+    if (new Set(fileIds).size !== fileIds.length) throw err.bad('资格资料不能重复');
+    const existingCount = await queryOne(
+      `SELECT COUNT(*) AS count FROM engineer_verification_files WHERE engineerId = ?`, [user.id]
+    );
+    if (Number(existingCount.count || 0) + fileIds.length > MAX_ENGINEER_VERIFICATION_FILES) {
+      throw err.bad(`资格资料最多上传 ${MAX_ENGINEER_VERIFICATION_FILES} 个文件`);
+    }
+    const marks = fileIds.map(() => '?').join(',');
+    const files = await query(
+      `SELECT id, orderId, uploaderId FROM uploaded_files WHERE id IN (${marks})`, fileIds
+    );
+    if (files.length !== fileIds.length || files.some((file) => file.uploaderId !== user.id || file.orderId)) {
+      throw err.forbidden('只能提交本人上传的非订单文件');
+    }
+    const now = nowIso();
+    await tx(async (conn) => {
+      for (const fileId of fileIds) {
+        await conn.execute(
+          `INSERT INTO engineer_verification_files(engineerId, fileId, createdAt) VALUES(?, ?, ?)`,
+          [user.id, fileId, now]
+        );
+      }
+      // 上传或补充资料意味着需要重新复核；演示自核验开关不改变资料的归属与访问控制。
+      await conn.execute(
+        `UPDATE engineer_profiles
+         SET verifyStatus = 'PENDING', reviewReason = NULL, reviewedAt = NULL, reviewedBy = NULL
+         WHERE userId = ?`, [user.id]
+      );
+    });
+    ok(res, { attached: fileIds.length, maxFiles: MAX_ENGINEER_VERIFICATION_FILES, verifyStatus: 'PENDING' });
+  });
+
+  router.del('/api/engineer/verification-files/:id', async (req, res, params) => {
+    const user = await requireEngineerIdentity(req);
+    const file = await queryOne(
+      `SELECT f.id, f.fileID, f.uploaderId
+       FROM engineer_verification_files evf
+       JOIN uploaded_files f ON f.id = evf.fileId
+       WHERE evf.engineerId = ? AND evf.fileId = ?`, [user.id, params.id]
+    );
+    if (!file) throw err.notFound('资格资料不存在');
+    if (file.uploaderId !== user.id) throw err.forbidden('无权删除该资格资料');
+    await tx(async (conn) => {
+      await conn.execute(`DELETE FROM engineer_verification_files WHERE engineerId = ? AND fileId = ?`, [user.id, file.id]);
+      await conn.execute(`DELETE FROM uploaded_files WHERE id = ? AND uploaderId = ?`, [file.id, user.id]);
+      await conn.execute(
+        `UPDATE engineer_profiles
+         SET verifyStatus = 'PENDING', reviewReason = NULL, reviewedAt = NULL, reviewedBy = NULL
+         WHERE userId = ?`, [user.id]
+      );
+    });
+    ok(res, { deleted: true, fileID: file.fileID, verifyStatus: 'PENDING' });
   });
 
   /**
@@ -216,6 +295,8 @@ function register(router) {
     if (!file) throw err.notFound('文件不存在');
     if (file.uploaderId !== user.id) throw err.forbidden('仅上传者可删除');
     if (file.orderId) throw err.conflict('订单附件不能直接删除');
+    const verification = await queryOne(`SELECT fileId FROM engineer_verification_files WHERE fileId = ?`, [file.id]);
+    if (verification) throw err.conflict('资格资料请在“工程师资格资料”页面删除');
     await query(`DELETE FROM uploaded_files WHERE id = ?`, [params.id]);
     if (config.env !== 'production') {
       try { await getStorage().deleteFile({ fileList: [file.fileID] }); } catch (e) {

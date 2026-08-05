@@ -182,6 +182,17 @@ async function init() {
       FOREIGN KEY(uploaderId) REFERENCES users(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+    `CREATE TABLE IF NOT EXISTS engineer_verification_files (
+      engineerId  VARCHAR(32) NOT NULL,
+      fileId      VARCHAR(32) NOT NULL,
+      createdAt   DATETIME(3) NOT NULL,
+      PRIMARY KEY(engineerId, fileId),
+      UNIQUE KEY uq_engineer_verification_file(fileId),
+      INDEX idx_engineer_verification_engineer(engineerId, createdAt),
+      FOREIGN KEY(engineerId) REFERENCES users(id),
+      FOREIGN KEY(fileId) REFERENCES uploaded_files(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
     `CREATE TABLE IF NOT EXISTS conversations (
       id          VARCHAR(32) PRIMARY KEY,
       orderId     VARCHAR(32) NOT NULL UNIQUE,

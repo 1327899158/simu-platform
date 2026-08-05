@@ -3,7 +3,7 @@ const { getAdmin, hasPermission, denyAndExit } = require('../../utils/admin');
 const { timeShort } = require('../../../utils/format');
 
 Page({
-  data: { items: [], total: 0, loading: true, status: 'PENDING', search: '', canReview: false },
+  data: { items: [], total: 0, loading: true, status: 'PENDING', search: '', canReview: false, showFilters: false, filterText: '待审核' },
   onLoad() {
     const admin = getAdmin();
     if (!admin) { denyAndExit('管理员会话不存在，请重新扫码进入。'); return; }
@@ -13,7 +13,15 @@ Page({
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   onSearchInput(e) { this.setData({ search: e.detail.value }); },
   search() { this.load(); },
-  setStatus(e) { this.setData({ status: e.currentTarget.dataset.value }); this.load(); },
+  toggleFilters() { this.setData({ showFilters: !this.data.showFilters }); },
+  setStatus(e) {
+    const value = e.currentTarget.dataset.value;
+    this.setData({ status: this.data.status === value ? '' : value }, () => { this.syncFilterText(); this.load(); });
+  },
+  syncFilterText() {
+    const text = { PENDING: '待审核', APPROVED: '已通过', REJECTED: '已驳回' }[this.data.status] || '全部工程师';
+    this.setData({ filterText: text });
+  },
   async load() {
     this.setData({ loading: true });
     try {
@@ -52,4 +60,5 @@ Page({
       this.load();
     } catch (error) { wx.showToast({ title: error.message || '审核失败', icon: 'none' }); }
   },
+  open(e) { wx.navigateTo({ url: `/admin/pages/engineer-detail/index?id=${e.currentTarget.dataset.id}` }); },
 });

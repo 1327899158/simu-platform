@@ -1,15 +1,8 @@
 <view class="admin-page">
   <view class="admin-hero"><text class="admin-hero-title">订单管理</text><text class="admin-hero-desc">共 {{total}} 个订单 · 管理端不参与正常履约流程</text></view>
   <view class="admin-search"><input class="admin-input" placeholder="项目名称、订单号或订单ID" value="{{search}}" bindinput="onSearchInput" bindconfirm="search"/><button class="admin-button small" bindtap="search">查询</button></view>
-  <scroll-view scroll-x class="admin-chips">
-    <view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部</view>
-    <view class="admin-chip {{status === 'QUOTING' ? 'active' : ''}}" data-value="QUOTING" bindtap="setStatus">待报价</view>
-    <view class="admin-chip {{status === 'AWAITING_PAYMENT' ? 'active' : ''}}" data-value="AWAITING_PAYMENT" bindtap="setStatus">待支付</view>
-    <view class="admin-chip {{status === 'IN_PROGRESS' ? 'active' : ''}}" data-value="IN_PROGRESS" bindtap="setStatus">执行中</view>
-    <view class="admin-chip {{status === 'DELIVERED' ? 'active' : ''}}" data-value="DELIVERED" bindtap="setStatus">待验收</view>
-    <view class="admin-chip {{status === 'COMPLETED' ? 'active' : ''}}" data-value="COMPLETED" bindtap="setStatus">已完成</view>
-    <view class="admin-chip {{status === 'CLOSED' ? 'active' : ''}}" data-value="CLOSED" bindtap="setStatus">已关闭</view>
-  </scroll-view>
+  <view class="admin-filter-bar"><view class="admin-filter-copy"><text class="admin-filter-label">当前筛选</text><text class="admin-filter-value">{{filterText}}</text></view><button class="admin-filter-button" bindtap="toggleFilters">{{showFilters ? '收起' : '筛选'}}</button></view>
+  <view class="admin-filter-panel" wx:if="{{showFilters}}"><view class="admin-filter-section"><text class="admin-filter-section-title">订单状态</text><scroll-view scroll-x class="admin-chips"><view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部</view><view class="admin-chip {{status === 'QUOTING' ? 'active' : ''}}" data-value="QUOTING" bindtap="setStatus">待报价</view><view class="admin-chip {{status === 'AWAITING_PAYMENT' ? 'active' : ''}}" data-value="AWAITING_PAYMENT" bindtap="setStatus">待支付</view><view class="admin-chip {{status === 'IN_PROGRESS' ? 'active' : ''}}" data-value="IN_PROGRESS" bindtap="setStatus">执行中</view><view class="admin-chip {{status === 'DELIVERED' ? 'active' : ''}}" data-value="DELIVERED" bindtap="setStatus">待验收</view><view class="admin-chip {{status === 'COMPLETED' ? 'active' : ''}}" data-value="COMPLETED" bindtap="setStatus">已完成</view><view class="admin-chip {{status === 'CLOSED' ? 'active' : ''}}" data-value="CLOSED" bindtap="setStatus">已关闭</view></scroll-view></view></view>
   <view class="admin-card order-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="open" hover-class="order-pressed">
     <view class="admin-between"><text class="order-title">{{item.projectName}}</text><text class="admin-badge {{item.badgeClass}}">{{item.statusText}}</text></view>
     <text class="order-no">{{item.orderNo}}</text>

@@ -5,3 +5,5 @@
 .review-note { margin-top: 14rpx; color: #A55A00; font-size: 24rpx; line-height: 38rpx; }
 .review-actions { display: flex; gap: 14rpx; margin-top: 20rpx; }
 .review-actions .admin-button { flex: 1; }
+.engineer-card { transition: transform .15s ease, opacity .15s ease; }
+.engineer-pressed { transform: scale(.985); opacity: .86; }

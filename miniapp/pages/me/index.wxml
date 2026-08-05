@@ -32,7 +32,7 @@
       disabled="{{selfVerifyLoading}}"
       bindtap="selfVerifyEngineer"
     >自主核验通过（调试）</button>
-    <text class="verify-hint">演示阶段使用；正式上线前请关闭服务端自主核验开关。</text>
+    <text class="verify-hint">{{qualificationFileCount ? '已提交 ' + qualificationFileCount + ' 份资料，等待管理员审核。' : '演示阶段使用；正式上线前请关闭服务端自主核验开关。'}}</text>
   </view>
 
   <!-- 菜单（仅保留 simu-platform 已有功能的跳转） -->
@@ -45,6 +45,11 @@
     <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goMyQuotes">
       <text class="icon">💰</text>
       <text class="title">我的报价</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goQualification">
+      <text class="icon">📎</text>
+      <text class="title">工程师资格资料</text>
       <text class="arrow">›</text>
     </view>
     <view class="menu-item" bindtap="goResetPassword">

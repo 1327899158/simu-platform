@@ -12,6 +12,7 @@
     "pages/chat-room/index",
     "pages/me/index",
     "pages/profile-edit/index",
+    "pages/engineer-qualification/index",
     "pages/reset-password/index"
   ],
   "subPackages": [
@@ -23,6 +24,7 @@
         "pages/dashboard/index",
         "pages/users/index",
         "pages/engineers/index",
+        "pages/engineer-detail/index",
         "pages/orders/index",
         "pages/order-detail/index",
         "pages/audit-logs/index"
