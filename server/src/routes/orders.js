@@ -152,7 +152,21 @@ function register(router) {
          JOIN users u ON u.id = qt.engineerId WHERE qt.id = ?`, [o.selectedQuoteId]);
       if (row) engineer = { id: row.id, nickname: row.nickname, avatarUrl: row.avatarUrl };
     }
-    ok(res, orderView(o, { quoteCount: await quoteCountOf(o.id), engineer }));
+    const review = await queryOne(
+      `SELECT id, qualityScore, attitudeScore, speedScore, content, revisionCount, createdAt, updatedAt
+         FROM engineer_reviews WHERE orderId=? AND customerId=?`, [o.id, user.id]);
+    ok(res, orderView(o, {
+      quoteCount: await quoteCountOf(o.id),
+      engineer,
+      review: review ? {
+        ...review,
+        qualityScore: Number(review.qualityScore),
+        attitudeScore: Number(review.attitudeScore),
+        speedScore: Number(review.speedScore),
+        revisionCount: Number(review.revisionCount || 0),
+        content: review.content || '',
+      } : null,
+    }));
   });
 
   // DELETE /api/orders/:id

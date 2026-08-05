@@ -50,6 +50,9 @@ Page({
   goMyQuotes() {
     wx.navigateTo({ url: '/pages/my-quotes/index' });
   },
+  goMyReviews() {
+    wx.navigateTo({ url: '/pages/my-reviews/index' });
+  },
   goQualification() {
     wx.navigateTo({ url: '/pages/engineer-qualification/index' });
   },

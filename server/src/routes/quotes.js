@@ -148,13 +148,20 @@ function register(router) {
       const doneRow = await queryOne(
         `SELECT COUNT(*) AS c FROM orders o JOIN quotes s ON o.selectedQuoteId=s.id
          WHERE s.engineerId=? AND o.status='COMPLETED'`, [qt.engineerId]);
+      const ratingRow = await queryOne(
+        `SELECT COUNT(*) AS reviewCount,
+                AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+           FROM engineer_reviews WHERE engineerId=?`, [qt.engineerId]);
+      const reviewCount = Number(ratingRow?.reviewCount || 0);
       return quoteView(qt, {
         engineer: {
           id: qt.engineerId,
           nickname: qt.nickname,
           avatarUrl: qt.avatarUrl,
           specialties: prof ? parseJson(prof.specialties) : [],
-          completedCount: doneRow ? doneRow.c : 0,
+          completedCount: Number(doneRow?.c || 0),
+          reviewCount,
+          averageScore: reviewCount ? Number(Number(ratingRow.averageScore).toFixed(1)) : null,
         },
       });
     }));

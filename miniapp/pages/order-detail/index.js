@@ -222,6 +222,21 @@ Page({
       },
     });
   },
+  goReview() {
+    const review = this.data.order && this.data.order.review;
+    if (review && Number(review.revisionCount || 0) >= 1) {
+      wx.showToast({ title: '该评价已修改过，不能再次修改', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/review-form/index?orderId=${this.data.id}${review ? '&edit=1' : ''}`,
+    });
+  },
+  goEngineerProfile(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    wx.navigateTo({ url: `/pages/engineer-profile/index?id=${id}` });
+  },
   rejectDelivery() {
     const that = this;
     wx.showModal({

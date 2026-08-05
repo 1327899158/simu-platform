@@ -223,6 +223,15 @@
   line-height: 1.7;
   margin-top: 12rpx;
 }
+.quote-profile-link {
+  display: inline-block;
+  min-height: 56rpx;
+  line-height: 56rpx;
+  margin-top: 12rpx;
+  color: var(--neon-violet);
+  font-size: 24rpx;
+}
+.quote-profile-link:active { opacity: .7; }
 .btn-select {
   margin-top: 20rpx;
   padding: 18rpx 0;
@@ -297,6 +306,22 @@
   box-shadow: var(--shadow-card);
   margin-bottom: 20rpx;
 }
+.review-action-card {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  background: #FFFFFF;
+  border-radius: var(--r-lg);
+  padding: 28rpx;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20rpx;
+}
+.review-action-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8rpx; }
+.review-action-title { color: var(--c-text); font-size: 28rpx; font-weight: 700; }
+.review-action-desc { color: var(--c-text-3); font-size: 22rpx; line-height: 1.5; }
+.review-action-btn { flex-shrink: 0; min-width: 136rpx; min-height: 72rpx; line-height: 72rpx; margin: 0; padding: 0 16rpx; border: 0; border-radius: var(--r-pill); background: var(--grad-violet-pink); color: #fff; font-size: 24rpx; }
+.review-action-btn::after { border: none; }
+.review-action-btn[disabled] { background: #C8CCD8; color: #fff; }
 .action-section {
   display: flex;
   flex-direction: column;

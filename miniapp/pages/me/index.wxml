@@ -47,6 +47,11 @@
       <text class="title">我的报价</text>
       <text class="arrow">›</text>
     </view>
+    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goMyReviews">
+      <text class="icon">⭐</text>
+      <text class="title">我的评价</text>
+      <text class="arrow">›</text>
+    </view>
     <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goQualification">
       <text class="icon">📎</text>
       <text class="title">工程师资格资料</text>

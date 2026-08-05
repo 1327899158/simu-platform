@@ -105,7 +105,7 @@ module.exports = {
             <view wx:else class="quote-avatar quote-avatar-fallback">{{item.engineer.nickname[0]}}</view>
             <view class="quote-engineer-info">
               <text class="quote-engineer-name">👨‍💼 {{item.engineer.nickname}}</text>
-              <text class="quote-sub">已完成 {{item.engineer.completedCount}} 单</text>
+              <text class="quote-sub">已完成 {{item.engineer.completedCount}} 单 · {{item.engineer.reviewCount ? ('★ ' + item.engineer.averageScore + '（' + item.engineer.reviewCount + '条）') : '暂无评价'}}</text>
             </view>
           </view>
           <text class="status st-blue" wx:if="{{item.status === 'SELECTED'}}">已选中</text>
@@ -115,6 +115,7 @@ module.exports = {
           <text class="quote-days">📅 承诺 {{item.days}} 天</text>
         </view>
         <text class="quote-desc" wx:if="{{item.solution}}">{{item.solution}}</text>
+        <view class="quote-profile-link" bindtap="goEngineerProfile" data-id="{{item.engineer.id}}">查看工程师资料与评价 ›</view>
         <view class="btn-select" wx:if="{{order.status === 'QUOTING'}}"
           bindtap="select" data-id="{{item.id}}" data-nick="{{item.engineer.nickname}}"
           data-amounty="{{item.amountY}}" data-days="{{item.days}}">选择该工程师</view>
@@ -137,6 +138,16 @@ module.exports = {
     <view class="action-card" wx:if="{{order.status === 'DELIVERED'}}">
       <button class="btn-primary-block" bindtap="confirmDone">✅ 确认验收，完成订单</button>
       <button class="btn-danger-block" bindtap="rejectDelivery">驳回本次交付</button>
+    </view>
+
+    <!-- 已完成订单：评价仅可首次提交一次，之后可修改一次 -->
+    <view class="review-action-card" wx:if="{{order.status === 'COMPLETED'}}">
+      <view class="review-action-copy">
+        <text class="review-action-title">{{order.review ? '已评价工程师' : '评价本次服务'}}</text>
+        <text class="review-action-desc" wx:if="{{order.review}}">质量 {{order.review.qualityScore}} 星 · 态度 {{order.review.attitudeScore}} 星 · 速度 {{order.review.speedScore}} 星</text>
+        <text class="review-action-desc" wx:else>从质量、态度、速度三个维度为工程师评分</text>
+      </view>
+      <button class="review-action-btn" bindtap="goReview" disabled="{{order.review && order.review.revisionCount >= 1}}">{{!order.review ? '去评价' : (order.review.revisionCount >= 1 ? '已完成' : '修改评价')}}</button>
     </view>
 
     <!-- 操作区 -->

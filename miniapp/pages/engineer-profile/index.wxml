@@ -1,0 +1,26 @@
+<view class="page" wx:if="{{profile}}">
+  <view class="profile-card">
+    <image wx:if="{{profile.avatarUrl}}" class="avatar" src="{{profile.avatarUrl}}" mode="aspectFill" />
+    <view wx:else class="avatar avatar-fallback">{{profile.nickname[0] || '工'}}</view>
+    <view class="profile-copy">
+      <text class="name">{{profile.nickname}}</text>
+      <text class="intro">{{profile.intro || '该工程师暂未填写个人简介'}}</text>
+    </view>
+  </view>
+  <view class="rating-card">
+    <text class="rating-number">{{profile.averageScore === null ? '--' : profile.averageScore}}</text>
+    <view><text class="rating-title">综合评分 / 5.0</text><text class="rating-sub">{{profile.reviewCount}} 条客户评价</text></view>
+  </view>
+  <view class="card" wx:if="{{profile.specialties.length || profile.softwares.length}}">
+    <text class="section-title">专业资料</text>
+    <view class="tag-row"><text class="label">方向</text><text class="tag" wx:for="{{profile.specialties}}" wx:key="*this">{{item}}</text></view>
+    <view class="tag-row"><text class="label">软件</text><text class="tag" wx:for="{{profile.softwares}}" wx:key="*this">{{item}}</text></view>
+  </view>
+  <view class="section-title reviews-title">客户评价</view>
+  <view class="empty" wx:if="{{!profile.reviews.length}}">该工程师暂未获得评价</view>
+  <view class="review-card" wx:for="{{profile.reviews}}" wx:key="id">
+    <view class="review-head"><text>{{item.customerNickname}}</text><text class="score">★ {{item.averageScore}}</text></view>
+    <view class="score-lines"><text>质量 {{item.qualityScore}} 星</text><text>态度 {{item.attitudeScore}} 星</text><text>速度 {{item.speedScore}} 星</text></view>
+    <text class="review-content">{{item.contentText}}</text>
+  </view>
+</view>

@@ -193,6 +193,27 @@ async function init() {
       FOREIGN KEY(fileId) REFERENCES uploaded_files(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+    `CREATE TABLE IF NOT EXISTS engineer_reviews (
+      id              VARCHAR(32) PRIMARY KEY,
+      orderId         VARCHAR(32) NOT NULL,
+      customerId      VARCHAR(32) NOT NULL,
+      engineerId      VARCHAR(32) NOT NULL,
+      qualityScore    TINYINT UNSIGNED NOT NULL,
+      attitudeScore   TINYINT UNSIGNED NOT NULL,
+      speedScore      TINYINT UNSIGNED NOT NULL,
+      content         VARCHAR(100),
+      revisionCount   TINYINT UNSIGNED NOT NULL DEFAULT 0,
+      createdAt       DATETIME(3) NOT NULL,
+      updatedAt       DATETIME(3) NOT NULL,
+      revisedAt       DATETIME(3),
+      UNIQUE KEY uq_engineer_review_order(orderId),
+      INDEX idx_engineer_reviews_engineer(engineerId, createdAt),
+      INDEX idx_engineer_reviews_customer(customerId, createdAt),
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      FOREIGN KEY(customerId) REFERENCES users(id),
+      FOREIGN KEY(engineerId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
     `CREATE TABLE IF NOT EXISTS conversations (
       id          VARCHAR(32) PRIMARY KEY,
       orderId     VARCHAR(32) NOT NULL UNIQUE,

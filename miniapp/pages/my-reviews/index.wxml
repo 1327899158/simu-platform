@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="summary-card">
+    <view class="summary-score">
+      <text class="summary-number">{{summary.averageScore === null ? '--' : summary.averageScore}}</text>
+      <text class="summary-unit">/ 5.0</text>
+    </view>
+    <view class="summary-copy">
+      <text class="summary-title">我的评价</text>
+      <text class="summary-desc">来自 {{summary.reviewCount}} 位客户的订单完成评价</text>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{!loading && !items.length}}">完成订单后，客户的评价会显示在这里</view>
+  <view class="review-card" wx:for="{{items}}" wx:key="id">
+    <view class="card-head">
+      <view>
+        <text class="customer">{{item.customer.nickname || '客户'}}</text>
+        <text class="project">{{item.order.projectName}}</text>
+      </view>
+      <view class="score-box"><text class="score-star">★</text><text>{{item.scoreText}}</text></view>
+    </view>
+    <view class="scores">
+      <text>质量 {{item.qualityScore}} 星</text><text>态度 {{item.attitudeScore}} 星</text><text>速度 {{item.speedScore}} 星</text>
+    </view>
+    <text class="content">{{item.contentText}}</text>
+    <view class="card-foot" bindtap="goOrder" data-id="{{item.order.id}}">查看所属订单 ›</view>
+  </view>
+</view>

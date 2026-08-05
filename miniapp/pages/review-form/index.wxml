@@ -1,0 +1,27 @@
+<view class="page" wx:if="{{order}}">
+  <view class="hero">
+    <text class="hero-title">评价 {{order.engineer.nickname || '工程师'}}</text>
+    <text class="hero-sub">请基于本次已完成订单的实际体验评分</text>
+  </view>
+
+  <view class="card rating-card">
+    <view class="rating-row" wx:for="{{rows}}" wx:key="key" wx:for-index="rowIndex">
+      <text class="rating-label">{{item.label}}</text>
+      <view class="stars">
+        <text class="star {{star <= item.score ? 'active' : ''}}" wx:for="{{item.stars}}" wx:key="*this" wx:for-item="star" data-index="{{rowIndex}}" data-score="{{star}}" bindtap="chooseStar">★</text>
+      </view>
+      <text class="rating-score">{{item.score ? item.score + ' 分' : '必填'}}</text>
+    </view>
+  </view>
+
+  <view class="card comment-card">
+    <view class="comment-head">
+      <text class="comment-title">评价内容（选填）</text>
+      <text class="counter">{{contentLength}}/100</text>
+    </view>
+    <textarea class="comment-input" maxlength="100" value="{{content}}" bindinput="inputContent" placeholder="分享本次服务体验（不填写将显示“该用户未给出评价”）" placeholder-class="placeholder" />
+  </view>
+
+  <view class="tip">三项星级均为必填；提交后可修改一次。</view>
+  <button class="submit" loading="{{saving}}" disabled="{{saving}}" bindtap="submit">{{saving ? '提交中…' : (editing ? '确认修改评价' : '提交评价')}}</button>
+</view>
