@@ -69,4 +69,12 @@ Page({
       },
     });
   },
+  open(e) {
+    const { id, role } = e.currentTarget.dataset;
+    if (!id) return;
+    const url = role === 'ENGINEER'
+      ? `/admin/pages/engineer-detail/index?id=${id}`
+      : `/admin/pages/user-detail/index?id=${id}`;
+    wx.navigateTo({ url });
+  },
 });

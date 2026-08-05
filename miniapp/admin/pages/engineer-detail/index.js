@@ -31,6 +31,7 @@ Page({
         createdText: timeShort(engineer.createdAt),
         reviewedText: timeShort(engineer.reviewedAt),
         files: (engineer.files || []).map((file) => ({ ...file, sizeText: sizeText(file.sizeBytes) })),
+        receivedReviews: (engineer.receivedReviews || []).map((item) => ({ ...item, updatedText: timeShort(item.updatedAt) })),
       } });
     } catch (error) {
       if (error.statusCode === 403) denyAndExit(error.message);

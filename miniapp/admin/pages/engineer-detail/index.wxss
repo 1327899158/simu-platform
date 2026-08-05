@@ -12,3 +12,4 @@
 .review-reason { display: block; margin-top: 14rpx; color: #A55A00; font-size: 25rpx; line-height: 40rpx; }
 .review-actions { display: flex; gap: 14rpx; margin-top: 20rpx; }
 .review-actions .admin-button { flex: 1; }
+.received-review { padding: 22rpx 0; border-top: 1rpx solid #F0F2F5; }.review-top { display: flex; justify-content: space-between; gap: 16rpx; }.review-customer { display: block; color: #1A1A2E; font-size: 26rpx; font-weight: 650; }.review-score { flex-shrink: 0; color: #C87C00; font-size: 26rpx; font-weight: 700; }.review-pills { display: flex; flex-wrap: wrap; gap: 10rpx; margin: 14rpx 0; }.review-pills text { padding: 5rpx 12rpx; border-radius: 999rpx; background: #EEF2FF; color: #596CD4; font-size: 21rpx; }.review-content { display: block; color: #4B5563; font-size: 24rpx; line-height: 38rpx; word-break: break-all; }

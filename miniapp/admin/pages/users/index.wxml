@@ -4,7 +4,7 @@
   <view class="admin-filter-bar"><view class="admin-filter-copy"><text class="admin-filter-label">当前筛选</text><text class="admin-filter-value">{{filterText}}</text></view><button class="admin-filter-button" bindtap="toggleFilters">{{showFilters ? '收起' : '展开'}}</button></view>
   <view class="admin-filter-panel" wx:if="{{showFilters}}"><view class="admin-filter-section"><text class="admin-filter-section-title">用户角色</text><scroll-view scroll-x class="admin-chips"><view class="admin-chip {{role === '' ? 'active' : ''}}" data-value="" bindtap="setRole">全部角色</view><view class="admin-chip {{role === 'CUSTOMER' ? 'active' : ''}}" data-value="CUSTOMER" bindtap="setRole">客户</view><view class="admin-chip {{role === 'ENGINEER' ? 'active' : ''}}" data-value="ENGINEER" bindtap="setRole">工程师</view></scroll-view></view><view class="admin-filter-section"><text class="admin-filter-section-title">账号状态</text><scroll-view scroll-x class="admin-chips"><view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部状态</view><view class="admin-chip {{status === 'ACTIVE' ? 'active' : ''}}" data-value="ACTIVE" bindtap="setStatus">正常</view><view class="admin-chip {{status === 'DISABLED' ? 'active' : ''}}" data-value="DISABLED" bindtap="setStatus">已停用</view></scroll-view></view></view>
 
-  <view class="admin-card user-card" wx:for="{{items}}" wx:key="id">
+  <view class="admin-card user-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" data-role="{{item.role}}" bindtap="open" hover-class="user-pressed">
     <view class="admin-between">
       <view class="admin-grow"><text class="user-name">{{item.nickname || item.username || '未设置昵称'}}</text><text class="admin-small">{{item.id}}</text></view>
       <text class="admin-badge {{item.status === 'ACTIVE' ? 'badge-green' : 'badge-red'}}">{{item.statusText}}</text>
@@ -14,7 +14,8 @@
     <view class="info-line"><text>用户名</text><text>{{item.username || '—'}}</text></view>
     <view class="info-line"><text>手机号</text><text>{{item.phone || '—'}}</text></view>
     <view class="info-line"><text>注册时间</text><text>{{item.createdText}}</text></view>
-    <button wx:if="{{canManage}}" class="admin-button small {{item.status === 'ACTIVE' ? 'danger' : 'secondary'}}" data-id="{{item.id}}" data-name="{{item.nickname || item.username}}" data-status="{{item.status}}" bindtap="changeStatus">{{item.status === 'ACTIVE' ? '停用账号' : '恢复账号'}}</button>
+    <view class="user-detail-hint">点击查看{{item.role === 'ENGINEER' ? '收到的评价' : '给出的评价'}} ›</view>
+    <button wx:if="{{canManage}}" class="admin-button small {{item.status === 'ACTIVE' ? 'danger' : 'secondary'}}" data-id="{{item.id}}" data-name="{{item.nickname || item.username}}" data-status="{{item.status}}" catchtap="changeStatus">{{item.status === 'ACTIVE' ? '停用账号' : '恢复账号'}}</button>
   </view>
   <view class="admin-empty" wx:if="{{!loading && !items.length}}">没有符合条件的用户</view>
   <view class="admin-loading" wx:if="{{loading}}">正在加载用户…</view>

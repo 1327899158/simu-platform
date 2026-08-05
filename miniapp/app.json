@@ -26,11 +26,13 @@
         "pages/gate/index",
         "pages/dashboard/index",
         "pages/users/index",
+        "pages/user-detail/index",
         "pages/engineers/index",
         "pages/engineer-detail/index",
         "pages/orders/index",
         "pages/order-detail/index",
-        "pages/audit-logs/index"
+        "pages/audit-logs/index",
+        "pages/data-preview/index"
       ]
     }
   ],

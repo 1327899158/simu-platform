@@ -3,3 +3,5 @@
 .user-name { display: block; font-size: 29rpx; line-height: 42rpx; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .info-line { min-height: 50rpx; display: flex; justify-content: space-between; gap: 20rpx; color: #4B5563; font-size: 24rpx; line-height: 36rpx; }
 .user-card .admin-button { margin-top: 18rpx; }
+.user-card.user-pressed { transform: scale(.988); opacity: .88; }
+.user-detail-hint { min-height: 54rpx; line-height: 54rpx; margin-top: 10rpx; color: #596CD4; text-align: right; font-size: 23rpx; }

@@ -38,6 +38,25 @@ function adminView(user, admin) {
   };
 }
 
+function adminReviewView(row, extra = {}) {
+  const qualityScore = Number(row.qualityScore);
+  const attitudeScore = Number(row.attitudeScore);
+  const speedScore = Number(row.speedScore);
+  return {
+    id: row.id,
+    orderId: row.orderId,
+    qualityScore,
+    attitudeScore,
+    speedScore,
+    averageScore: Number(((qualityScore + attitudeScore + speedScore) / 3).toFixed(1)),
+    content: row.content || '该用户未给出评价',
+    revisionCount: Number(row.revisionCount || 0),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    ...extra,
+  };
+}
+
 function register(router) {
   router.get('/api/admin/me', async (req, res) => {
     // 管理员可能首次直接扫码进入；这里只建立普通 users 身份，不切换已有用户角色。
@@ -82,6 +101,54 @@ function register(router) {
       },
       orders: { ...orderCounts, recent7d: Number(recentOrders.count || 0) },
       quotes: { total: Number(quotes.total || 0) },
+    });
+  });
+
+  // 数据预览使用聚合数据，不返回用户手机号、订单描述等业务明细。
+  router.get('/api/admin/data-preview', async (req, res) => {
+    await requireAdmin(req, 'DASHBOARD_READ');
+    const [orderStates, verifyStates, ratingStates, trendRows, reviewSummary] = await Promise.all([
+      query(`SELECT status AS keyName, COUNT(*) AS count FROM orders WHERE deletedAt IS NULL GROUP BY status`),
+      query(`SELECT verifyStatus AS keyName, COUNT(*) AS count FROM engineer_profiles GROUP BY verifyStatus`),
+      query(`SELECT ROUND((qualityScore + attitudeScore + speedScore) / 3) AS keyName, COUNT(*) AS count
+               FROM engineer_reviews GROUP BY ROUND((qualityScore + attitudeScore + speedScore) / 3)`),
+      query(`SELECT DATE_FORMAT(dayValue, '%m-%d') AS day,
+                    SUM(kind = 'USER') AS users,
+                    SUM(kind = 'ORDER') AS orders,
+                    SUM(kind = 'REVIEW') AS reviews
+               FROM (
+                 SELECT DATE(createdAt) AS dayValue, 'USER' AS kind FROM users
+                   WHERE deletedAt IS NULL AND createdAt >= DATE_SUB(UTC_DATE(), INTERVAL 6 DAY)
+                 UNION ALL
+                 SELECT DATE(createdAt) AS dayValue, 'ORDER' AS kind FROM orders
+                   WHERE deletedAt IS NULL AND createdAt >= DATE_SUB(UTC_DATE(), INTERVAL 6 DAY)
+                 UNION ALL
+                 SELECT DATE(createdAt) AS dayValue, 'REVIEW' AS kind FROM engineer_reviews
+                   WHERE createdAt >= DATE_SUB(UTC_DATE(), INTERVAL 6 DAY)
+               ) daily
+              GROUP BY dayValue ORDER BY dayValue ASC`),
+      queryOne(`SELECT COUNT(*) AS count,
+                AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+                   FROM engineer_reviews`),
+    ]);
+    const today = new Date();
+    const trendMap = new Map(trendRows.map((row) => [row.day, row]));
+    const trend = [];
+    for (let offset = 6; offset >= 0; offset -= 1) {
+      const day = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - offset));
+      const label = `${String(day.getUTCMonth() + 1).padStart(2, '0')}-${String(day.getUTCDate()).padStart(2, '0')}`;
+      const row = trendMap.get(label) || {};
+      trend.push({ day: label, users: Number(row.users || 0), orders: Number(row.orders || 0), reviews: Number(row.reviews || 0) });
+    }
+    return ok(res, {
+      orderStates: orderStates.map((row) => ({ key: row.keyName, label: DICTS.orderStatus[row.keyName] || row.keyName, count: Number(row.count || 0) })),
+      verifyStates: verifyStates.map((row) => ({ key: row.keyName, label: VERIFY_TEXT[row.keyName] || row.keyName, count: Number(row.count || 0) })),
+      ratingStates: [1, 2, 3, 4, 5].map((score) => ({ score, count: Number(ratingStates.find((row) => Number(row.keyName) === score)?.count || 0) })),
+      trend,
+      reviews: {
+        count: Number(reviewSummary?.count || 0),
+        averageScore: reviewSummary?.count ? Number(Number(reviewSummary.averageScore).toFixed(1)) : null,
+      },
     });
   });
 
@@ -142,6 +209,30 @@ function register(router) {
     return ok(res, { id: target.id, status });
   });
 
+  // 用户详情供管理员查看其作为客户已提交的评价；不暴露评价对象的联系方式。
+  router.get('/api/admin/users/:id', async (req, res, params) => {
+    await requireAdmin(req, 'USER_READ');
+    const target = await queryOne(
+      `SELECT id, role, username, phone, nickname, avatarUrl, status, createdAt
+         FROM users WHERE id=? AND deletedAt IS NULL`, [params.id]);
+    if (!target) throw err.notFound('用户不存在');
+    const reviews = await query(
+      `SELECT r.*, o.orderNo, o.projectName, e.nickname AS engineerNickname
+         FROM engineer_reviews r
+         JOIN orders o ON o.id=r.orderId
+         JOIN users e ON e.id=r.engineerId
+        WHERE r.customerId=?
+        ORDER BY r.updatedAt DESC LIMIT 100`, [target.id]);
+    return ok(res, {
+      ...target,
+      phone: maskPhone(target.phone),
+      sentReviews: reviews.map((row) => adminReviewView(row, {
+        order: { id: row.orderId, orderNo: row.orderNo, projectName: row.projectName },
+        engineerNickname: row.engineerNickname || '工程师',
+      })),
+    });
+  });
+
   router.get('/api/admin/engineers', async (req, res, _params, q) => {
     await requireAdmin(req, 'ENGINEER_READ');
     const { limit, offset } = pageArgs(q);
@@ -197,6 +288,18 @@ function register(router) {
        JOIN uploaded_files f ON f.id = evf.fileId
        WHERE evf.engineerId = ? ORDER BY evf.createdAt DESC`, [params.id]
     );
+    const [reviewSummary, receivedReviews] = await Promise.all([
+      queryOne(`SELECT COUNT(*) AS reviewCount,
+                AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+                 FROM engineer_reviews WHERE engineerId=?`, [params.id]),
+      query(`SELECT r.*, o.orderNo, o.projectName, c.nickname AS customerNickname
+               FROM engineer_reviews r
+               JOIN orders o ON o.id=r.orderId
+               JOIN users c ON c.id=r.customerId
+              WHERE r.engineerId=?
+              ORDER BY r.updatedAt DESC LIMIT 100`, [params.id]),
+    ]);
+    const reviewCount = Number(reviewSummary?.reviewCount || 0);
     return ok(res, {
       ...engineer,
       phone: maskPhone(engineer.phone),
@@ -204,6 +307,14 @@ function register(router) {
       softwares: parseJson(engineer.softwares),
       verifyStatusText: VERIFY_TEXT[engineer.verifyStatus] || engineer.verifyStatus,
       files: files.map((file) => ({ ...file, fileId: file.id, sizeBytes: Number(file.sizeBytes || 0) })),
+      receivedReviewSummary: {
+        count: reviewCount,
+        averageScore: reviewCount ? Number(Number(reviewSummary.averageScore).toFixed(1)) : null,
+      },
+      receivedReviews: receivedReviews.map((row) => adminReviewView(row, {
+        order: { id: row.orderId, orderNo: row.orderNo, projectName: row.projectName },
+        customerNickname: row.customerNickname || '客户',
+      })),
     });
   });
 
