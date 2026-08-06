@@ -17,7 +17,11 @@ const BADGE = {
 };
 
 Page({
-  data: { tabs: TABS, tab: '', items: [], loading: true, filterOpen: false },
+  data: {
+    tabs: TABS, tab: '',
+    currentLabel: '全部', currentDotCls: 'dot-purple',
+    items: [], loading: true, filterOpen: false,
+  },
   onShow() {
     const user = ensureLogin();
     if (!user) return;
@@ -26,7 +30,13 @@ Page({
   toggleFilter() { this.setData({ filterOpen: !this.data.filterOpen }); },
   pickTab(e) {
     const key = e.currentTarget.dataset.key;
-    this.setData({ tab: key, filterOpen: false }, () => this.load());
+    const t = TABS.find((x) => x.key === key) || TABS[0];
+    this.setData({
+      tab: key,
+      currentLabel: t.label,
+      currentDotCls: t.dotCls,
+      filterOpen: false,
+    }, () => this.load());
   },
   async load() {
     this.setData({ loading: true });
