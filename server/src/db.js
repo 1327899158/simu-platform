@@ -303,6 +303,55 @@ async function init() {
       INDEX idx_admin_audit_target(targetType, targetId, createdAt),
       FOREIGN KEY(adminId) REFERENCES admin_accounts(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS disputes (
+      id                  VARCHAR(32) PRIMARY KEY,
+      orderId             VARCHAR(32) NOT NULL,
+      initiatorId         VARCHAR(32) NOT NULL,
+      reasonType          VARCHAR(20) NOT NULL,
+      description         TEXT NOT NULL,
+      status              VARCHAR(16) NOT NULL DEFAULT 'OPEN',
+      orderStatusAtOpen   VARCHAR(24) NOT NULL,
+      refundAmountFen     BIGINT,
+      refundStatus        VARCHAR(16) NOT NULL DEFAULT 'NONE',
+      refundTransactionId VARCHAR(64),
+      verdict             VARCHAR(20) NOT NULL DEFAULT 'NONE',
+      orderAction         VARCHAR(20) NOT NULL DEFAULT 'KEEP',
+      resolutionNote      TEXT,
+      resolvedBy          VARCHAR(32),
+      resolvedAt          DATETIME(3),
+      createdAt           DATETIME(3) NOT NULL,
+      updatedAt           DATETIME(3) NOT NULL,
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      FOREIGN KEY(initiatorId) REFERENCES users(id),
+      INDEX idx_disputes_order_status(orderId, status),
+      INDEX idx_disputes_initiator(initiatorId, status),
+      INDEX idx_disputes_status(status, createdAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS dispute_evidence (
+      disputeId   VARCHAR(32) NOT NULL,
+      fileId      VARCHAR(32) NOT NULL,
+      uploaderId  VARCHAR(32) NOT NULL,
+      createdAt   DATETIME(3) NOT NULL,
+      PRIMARY KEY(disputeId, fileId),
+      INDEX idx_dispute_evidence_dispute(disputeId, createdAt),
+      FOREIGN KEY(disputeId) REFERENCES disputes(id),
+      FOREIGN KEY(fileId) REFERENCES uploaded_files(id),
+      FOREIGN KEY(uploaderId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS dispute_messages (
+      id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+      disputeId   VARCHAR(32) NOT NULL,
+      senderId    VARCHAR(64) NOT NULL,
+      type        VARCHAR(16) NOT NULL DEFAULT 'TEXT',
+      content     TEXT,
+      fileId      VARCHAR(32),
+      createdAt   DATETIME(3) NOT NULL,
+      FOREIGN KEY(disputeId) REFERENCES disputes(id),
+      INDEX idx_dispute_messages(disputeId, id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   ];
 
   for (const sql of sqls) {

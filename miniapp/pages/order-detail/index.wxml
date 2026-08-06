@@ -1,12 +1,13 @@
 <wxs module="u">
-var STATUS_ICONS = { QUOTING: '📋', AWAITING_PAYMENT: '💳', IN_PROGRESS: '⚙️', DELIVERED: '📦', COMPLETED: '✅', CLOSED: '❌' };
+var STATUS_ICONS = { QUOTING: '📋', AWAITING_PAYMENT: '💳', IN_PROGRESS: '⚙️', DELIVERED: '📦', COMPLETED: '✅', CLOSED: '❌', DISPUTING: '⚖️' };
 var STATUS_HINTS = {
   QUOTING: '需求已发布，等待工程师报价',
   AWAITING_PAYMENT: '已选定工程师，请尽快完成支付',
   IN_PROGRESS: '工程师正在执行，请保持沟通',
   DELIVERED: '成果已交付，请及时验收',
   COMPLETED: '订单已完成，感谢使用',
-  CLOSED: '订单已关闭'
+  CLOSED: '订单已关闭',
+  DISPUTING: '订单存在纠纷，已暂停处理'
 };
 module.exports = {
   statusIcon: function (s) { return STATUS_ICONS[s] || '📋'; },
@@ -23,6 +24,18 @@ module.exports = {
       <text class="status-label">{{order.statusText}}</text>
       <text class="status-hint">{{u.statusHint(order.status)}}</text>
     </view>
+  </view>
+
+  <!-- 纠纷横幅 -->
+  <view class="dispute-banner" wx:if="{{dispute}}">
+    <view class="dispute-banner-left">
+      <text class="dispute-banner-icon">⚖️</text>
+      <view class="dispute-banner-copy">
+        <text class="dispute-banner-title">{{dispute.status === 'OPEN' ? '订单存在进行中的纠纷' : '该订单已有纠纷记录'}}</text>
+        <text class="dispute-banner-desc">{{dispute.reasonText}} · {{dispute.statusText}}</text>
+      </view>
+    </view>
+    <text class="dispute-banner-link" bindtap="goDisputeDetail">查看 ›</text>
   </view>
 
   <!-- 基本信息 -->
@@ -156,6 +169,10 @@ module.exports = {
         wx:if="{{order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED'}}"
         bindtap="goChat">💬 与工程师沟通</button>
       <button class="btn-delete-order" wx:if="{{order.status === 'QUOTING'}}" bindtap="del">🗑️ 删除订单</button>
+      <!-- 纠纷入口：待支付起的任意阶段，无进行中纠纷时发起 -->
+      <button class="btn-dispute"
+        wx:if="{{order.status !== 'QUOTING' && order.status !== 'CLOSED' && !dispute}}"
+        bindtap="goDisputeForm">⚖️ 发起纠纷</button>
     </view>
   </block>
 
@@ -187,6 +204,10 @@ module.exports = {
       <button class="btn-chat"
         wx:if="{{order.iAmSelected && (order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED')}}"
         bindtap="goChat">💬 与客户沟通</button>
+      <!-- 纠纷入口：被选中且已进入履约阶段，无进行中纠纷时发起 -->
+      <button class="btn-dispute"
+        wx:if="{{order.iAmSelected && order.status !== 'QUOTING' && order.status !== 'CLOSED' && !dispute}}"
+        bindtap="goDisputeForm">⚖️ 发起纠纷</button>
     </view>
 
     <view class="info-card" wx:if="{{order.customer}}">

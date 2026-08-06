@@ -18,7 +18,7 @@
 
   <view class="menu-list" wx:if="{{!loading}}">
     <view class="menu-card" wx:for="{{menus}}" wx:key="key" data-path="{{item.path}}" bindtap="open" hover-class="menu-pressed">
-      <view class="menu-icon">{{item.key === 'users' ? '人' : (item.key === 'engineers' ? '审' : (item.key === 'orders' ? '单' : (item.key === 'preview' ? '数' : '志')))}}</view>
+      <view class="menu-icon">{{item.key === 'users' ? '人' : (item.key === 'engineers' ? '审' : (item.key === 'orders' ? '单' : (item.key === 'disputes' ? '纷' : (item.key === 'preview' ? '数' : '志'))))}}</view>
       <view class="admin-grow"><text class="menu-title">{{item.title}}</text><text class="menu-desc">{{item.desc}}</text></view>
       <text class="menu-count" wx:if="{{item.count}}">{{item.count}}</text>
       <text class="menu-arrow">›</text>

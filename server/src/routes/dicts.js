@@ -27,6 +27,7 @@ const DICTS = {
     DELIVERED: '待验收',
     COMPLETED: '已完成',
     CLOSED: '已关闭',
+    DISPUTING: '纠纷中',
   },
   quoteStatus: {
     PENDING: '待客户确认',

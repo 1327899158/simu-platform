@@ -1,0 +1,122 @@
+.detail-badge {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255,255,255,0.22);
+  color: #FFFFFF;
+  font-size: 22rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.detail-line {
+  display: flex;
+  padding: 10rpx 0;
+  font-size: 25rpx;
+}
+.detail-line > text:first-child {
+  width: 170rpx;
+  flex-shrink: 0;
+  color: #767676;
+}
+.detail-line > text:last-child {
+  flex: 1;
+  min-width: 0;
+  color: #1A1A2E;
+  word-break: break-all;
+}
+.admin-description {
+  display: block;
+  margin-top: 14rpx;
+  padding: 16rpx;
+  background: #F8F9FA;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: #4B5563;
+  line-height: 1.7;
+}
+.party-line {
+  display: flex;
+  padding: 8rpx 0;
+  font-size: 25rpx;
+}
+.party-line > text:first-child {
+  width: 170rpx;
+  flex-shrink: 0;
+  color: #767676;
+}
+.sys-msg {
+  text-align: center;
+  font-size: 22rpx;
+  color: #8A8A8A;
+  background: #F4F5F7;
+  border-radius: 999rpx;
+  padding: 10rpx 20rpx;
+  margin: 8rpx auto;
+  max-width: 90%;
+}
+.conv-line {
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #F0F2F5;
+}
+.conv-sender {
+  font-size: 22rpx;
+  color: #667EEA;
+  font-weight: 600;
+}
+.conv-content {
+  font-size: 25rpx;
+  color: #1A1A2E;
+  line-height: 1.6;
+  margin-top: 4rpx;
+  word-break: break-all;
+}
+.conv-time {
+  font-size: 20rpx;
+  color: #A0A0A0;
+  margin-top: 4rpx;
+}
+.section-label {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 24rpx;
+  color: #767676;
+}
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 10rpx;
+}
+.verdict-chip {
+  min-height: 68rpx;
+  padding: 0 26rpx;
+  display: flex;
+  align-items: center;
+  border-radius: 999rpx;
+  border: 2rpx solid #DDE1EA;
+  background: #FFFFFF;
+  color: #4B5563;
+  font-size: 24rpx;
+}
+.verdict-chip.active {
+  border-color: #E74C3C;
+  background: #FDECEA;
+  color: #C0392B;
+  font-weight: 600;
+}
+.refund-input {
+  margin-top: 10rpx;
+}
+.admin-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 140rpx;
+  margin-top: 10rpx;
+  padding: 16rpx 20rpx;
+  border: 2rpx solid #DDE1EA;
+  border-radius: 16rpx;
+  background: #FFFFFF;
+  font-size: 25rpx;
+  line-height: 1.6;
+}
+.admin-button[disabled] { opacity: 0.5; }
+.small-empty { padding: 30rpx 20rpx; }

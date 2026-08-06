@@ -13,6 +13,7 @@ Page({
     id: '', mode: 'customer', role: '',
     order: null, quotes: [], files: [],
     paying: false, delivering: false, downloadingFileId: '',
+    dispute: null,
   },
   onLoad(q) { this.setData({ id: q.id, mode: q.mode || 'customer' }); },
   onShow() {
@@ -36,6 +37,14 @@ Page({
     order.time = timeShort(order.createdAt);
     order.cls = STATUS_CLASS[order.status] || 'st-gray';
     this.setData({ order });
+
+    // 查询是否有进行中的纠纷（仅当事人可见）
+    try {
+      const dispute = await request('GET', `/orders/${id}/dispute`, null, { silent: true });
+      this.setData({ dispute });
+    } catch (e) {
+      this.setData({ dispute: null });
+    }
 
     // 文件列表（无权限时静默忽略）
     try {
@@ -279,5 +288,15 @@ Page({
         that.setData({ delivering: false });
       },
     });
+  },
+
+  // ---------- 纠纷 ----------
+  goDisputeForm() {
+    wx.navigateTo({ url: `/pages/dispute-form/index?orderId=${this.data.id}` });
+  },
+  goDisputeDetail() {
+    const d = this.data.dispute;
+    if (d && d.id) wx.navigateTo({ url: `/pages/dispute-detail/index?id=${d.id}` });
+    else wx.showToast({ title: '暂无纠纷', icon: 'none' });
   },
 });

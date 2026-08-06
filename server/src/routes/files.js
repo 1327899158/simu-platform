@@ -87,14 +87,45 @@ async function orderFileAccess(user, order) {
 async function canReadFile(user, file) {
   if (!user) return false;
   if (file.uploaderId === user.id) return true;
-  // 无订单关联的 IMAGE（头像等）所有登录用户均可读
-  if (!file.orderId && file.kind === 'IMAGE') return true;
-  if (!file.orderId) return false;
+
+  // 无订单关联的文件：先判断是否为纠纷证据（仅当事人/管理员可读），
+  // 避免通用 IMAGE 规则把纠纷证据泄漏给所有登录用户。
+  if (!file.orderId) {
+    if (await canReadDisputeEvidence(user, file)) return true;
+    // 头像等公开 IMAGE 所有登录用户均可读
+    if (file.kind === 'IMAGE') return true;
+    return false;
+  }
   const order = await queryOne(`SELECT * FROM orders WHERE id = ? AND deletedAt IS NULL`, [file.orderId]);
   if (!order) return false;
   const access = await orderFileAccess(user, order);
   if (!access) return false;
   return access === 'ALL' || (file.purpose || (file.kind === 'RESULT' ? 'RESULT' : 'REQUIREMENT')) === 'REQUIREMENT';
+}
+
+/** 纠纷证据读取权限：当事人（客户/选中工程师）或管理员 */
+async function canReadDisputeEvidence(user, file) {
+  const row = await queryOne(
+    `SELECT d.id, d.orderId, o.customerId, o.selectedQuoteId
+       FROM dispute_evidence ev
+       JOIN disputes d ON d.id = ev.disputeId
+       JOIN orders o ON o.id = d.orderId
+      WHERE ev.fileId = ?
+      ORDER BY ev.createdAt DESC LIMIT 1`,
+    [file.id]
+  );
+  if (!row) return false;
+  if (row.customerId === user.id) return true;
+  if (row.selectedQuoteId) {
+    const q = await queryOne(`SELECT engineerId FROM quotes WHERE id = ?`, [row.selectedQuoteId]);
+    if (q && q.engineerId === user.id) return true;
+  }
+  // 管理员
+  const admin = await queryOne(
+    `SELECT id FROM admin_accounts WHERE userId = ? AND status = 'ACTIVE'`,
+    [user.id]
+  );
+  return !!admin;
 }
 
 async function requireEngineerIdentity(req) {

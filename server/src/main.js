@@ -23,6 +23,7 @@ require('./routes/market').register(router);
 require('./routes/quotes').register(router);
 require('./routes/reviews').register(router);
 require('./routes/payments').register(router);
+require('./routes/disputes').register(router);
 require('./routes/chat').register(router);
 require('./routes/admin').register(router);
 

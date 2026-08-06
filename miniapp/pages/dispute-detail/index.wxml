@@ -1,0 +1,83 @@
+<view class="page-container" wx:if="{{dispute}}">
+
+  <!-- 状态卡片 -->
+  <view class="hero">
+    <view class="hero-top">
+      <text class="hero-title">⚠️ 订单纠纷</text>
+      <text class="status {{dispute.statusCls}}">{{dispute.statusText}}</text>
+    </view>
+    <text class="hero-desc">{{dispute.order.projectName}} · {{dispute.order.orderNo}}</text>
+  </view>
+
+  <!-- 纠纷信息 -->
+  <view class="card">
+    <text class="card-title">纠纷信息</text>
+    <view class="info-row"><text class="info-label">纠纷类型</text><text class="info-value">{{dispute.reasonText}}</text></view>
+    <view class="info-row"><text class="info-label">发起人</text><text class="info-value">{{dispute.initiatorId === dispute.customer.id ? '买家' : (dispute.initiatorId === dispute.engineer.id ? '工程师' : '—')}}</text></view>
+    <view class="info-row"><text class="info-label">发起时间</text><text class="info-value">{{dispute.createdText}}</text></view>
+    <view class="info-row"><text class="info-label">订单状态</text><text class="info-value">{{dispute.order.statusText || dispute.order.status}}</text></view>
+    <view class="info-row" wx:if="{{dispute.resolutionNote}}"><text class="info-label">仲裁说明</text><text class="info-value">{{dispute.resolutionNote}}</text></view>
+    <view class="info-row" wx:if="{{dispute.verdictText && dispute.verdict !== 'NONE'}}"><text class="info-label">仲裁结论</text><text class="info-value">{{dispute.verdictText}} · {{dispute.orderActionText}}</text></view>
+    <view class="info-row" wx:if="{{dispute.refundAmountFen != null}}"><text class="info-label">应退金额</text><text class="info-value budget">¥{{dispute.refundY}}（{{dispute.refundStatusText}}）</text></view>
+    <view class="desc-text" wx:if="{{dispute.description}}">{{dispute.description}}</view>
+  </view>
+
+  <!-- 当事人 -->
+  <view class="card">
+    <text class="card-title">当事人</text>
+    <view class="party-row" wx:if="{{dispute.customer}}">
+      <view class="party-avatar">{{dispute.customer.nickname[0]}}</view>
+      <view class="party-info">
+        <text class="party-name">👤 {{dispute.customer.nickname}}（买家）</text>
+        <text class="party-phone">{{dispute.customer.phoneMasked || '未绑定手机'}}</text>
+      </view>
+    </view>
+    <view class="party-row" wx:if="{{dispute.engineer}}">
+      <view class="party-avatar eng">{{dispute.engineer.nickname[0]}}</view>
+      <view class="party-info">
+        <text class="party-name">🛠️ {{dispute.engineer.nickname}}（工程师）</text>
+        <text class="party-phone">{{dispute.engineer.phoneMasked || '未绑定手机'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 证据材料 -->
+  <view class="card" wx:if="{{dispute.evidence.length}}">
+    <text class="card-title">📎 证据材料（{{dispute.evidence.length}}）</text>
+    <view class="evid-item" wx:for="{{dispute.evidence}}" wx:key="fileId"
+      data-index="{{index}}" bindtap="openEvidence">
+      <text class="evid-name">{{item.name}}</text>
+      <text class="evid-size">{{item.sizeText}}</text>
+      <text class="evid-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 沟通线程 -->
+  <view class="card">
+    <text class="card-title">💬 纠纷沟通</text>
+    <view class="msg-list">
+      <view class="sys-msg" wx:if="{{item.sys}}" wx:for="{{dispute.msgs}}" wx:key="id">{{item.content}}</view>
+      <view class="msg-item {{item.mine ? 'mine' : 'other'}}" wx:elif="{{item.senderKind !== 'system'}}" wx:for="{{dispute.msgs}}" wx:key="id">
+        <view class="msg-bubble">
+          <text class="msg-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</text>
+          <text class="msg-content" wx:if="{{item.type === 'TEXT'}}">{{item.content}}</text>
+          <text class="msg-content" wx:elif="{{item.type === 'IMAGE'}}">[图片] {{item.content}}</text>
+          <text class="msg-content" wx:else>📎 {{item.content}}</text>
+          <text class="msg-time">{{item.time}}</text>
+        </view>
+      </view>
+      <view class="empty-msg" wx:if="{{!dispute.msgs.length}}">暂无沟通记录</view>
+    </view>
+
+    <!-- 输入区 -->
+    <view class="input-area" wx:if="{{dispute.status === 'OPEN'}}">
+      <button class="img-btn {{uploading ? 'disabled' : ''}}" bindtap="sendImage" disabled="{{uploading}}">{{uploading ? '…' : '🖼️'}}</button>
+      <input class="chat-input" placeholder="输入消息…" value="{{text}}" bindinput="onInput"
+        confirm-type="send" bindconfirm="send" maxlength="2000" />
+      <button class="send-btn {{sending ? 'dim' : ''}}" bindtap="send" disabled="{{!text}}">发送</button>
+    </view>
+    <text class="closed-tip" wx:else>该纠纷已{{dispute.statusText}}，沟通已关闭</text>
+  </view>
+
+</view>
+<view class="loading" wx:if="{{!dispute}}">正在加载纠纷详情…</view>

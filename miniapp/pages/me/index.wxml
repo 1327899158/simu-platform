@@ -57,6 +57,11 @@
       <text class="title">工程师资格资料</text>
       <text class="arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="goMyDisputes">
+      <text class="icon">⚖️</text>
+      <text class="title">我的纠纷</text>
+      <text class="arrow">›</text>
+    </view>
     <view class="menu-item" bindtap="goResetPassword">
       <text class="icon">🔑</text>
       <text class="title">重置密码</text>

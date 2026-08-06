@@ -56,6 +56,9 @@ Page({
   goQualification() {
     wx.navigateTo({ url: '/pages/engineer-qualification/index' });
   },
+  goMyDisputes() {
+    wx.navigateTo({ url: '/pages/disputes/index' });
+  },
   goResetPassword() {
     wx.navigateTo({ url: '/pages/reset-password/index' });
   },

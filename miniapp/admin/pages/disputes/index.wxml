@@ -1,0 +1,52 @@
+<view class="admin-page">
+  <view class="admin-hero">
+    <text class="admin-hero-title">纠纷管理</text>
+    <text class="admin-hero-desc">共 {{total}} 条纠纷 · 处理订单履约争议</text>
+  </view>
+
+  <view class="admin-filter-bar">
+    <view class="admin-filter-copy">
+      <text class="admin-filter-label">当前筛选</text>
+      <text class="admin-filter-value">{{filterText}}</text>
+    </view>
+    <button class="admin-filter-button" bindtap="toggleFilters">{{filterOpen ? '收起' : '展开'}}</button>
+  </view>
+  <view class="admin-filter-panel" wx:if="{{filterOpen}}">
+    <view class="admin-filter-section">
+      <text class="admin-filter-section-title">纠纷状态</text>
+      <scroll-view scroll-x class="admin-chips">
+        <view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部</view>
+        <view class="admin-chip {{status === 'OPEN' ? 'active' : ''}}" data-value="OPEN" bindtap="setStatus">进行中</view>
+        <view class="admin-chip {{status === 'RESOLVED' ? 'active' : ''}}" data-value="RESOLVED" bindtap="setStatus">已结案</view>
+        <view class="admin-chip {{status === 'CANCELLED' ? 'active' : ''}}" data-value="CANCELLED" bindtap="setStatus">已取消</view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="admin-card dispute-card" wx:for="{{items}}" wx:key="id"
+    data-id="{{item.id}}" bindtap="open" hover-class="order-pressed">
+    <view class="admin-between">
+      <view class="admin-grow">
+        <text class="reason-icon">{{item.reasonIcon}} {{item.reasonText}}</text>
+        <text class="dispute-order">{{item.order.projectName}} · {{item.order.orderNo}}</text>
+      </view>
+      <text class="admin-badge {{item.badgeClass}}">{{item.statusText}}</text>
+    </view>
+    <view class="dispute-meta">
+      <text>买家：{{item.customerName || '—'}}</text>
+      <text>工程师：{{item.engineerName || '—'}}</text>
+    </view>
+    <view class="dispute-meta">
+      <text>发起时间：{{item.createdText}}</text>
+      <text wx:if="{{item.refundAmountFen != null}}">应退：{{item.refundText}}（{{item.refundStatusText}}）</text>
+    </view>
+    <view class="admin-divider"></view>
+    <view class="admin-between">
+      <text class="admin-small">订单状态：{{item.orderStatusText}} · {{item.orderActionText}}</text>
+      <text class="admin-small">查看 ›</text>
+    </view>
+  </view>
+
+  <view class="admin-empty" wx:if="{{!loading && !items.length}}">没有符合条件的纠纷</view>
+  <view class="admin-loading" wx:if="{{loading}}">正在加载纠纷…</view>
+</view>

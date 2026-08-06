@@ -1,0 +1,23 @@
+.dispute-card .reason-icon {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 650;
+  color: #1A1A2E;
+}
+.dispute-order {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 23rpx;
+  color: #767676;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dispute-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #767676;
+}

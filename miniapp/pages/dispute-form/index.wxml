@@ -1,0 +1,49 @@
+<view class="page-container">
+
+  <view class="hero">
+    <text class="hero-title">⚠️ 发起纠纷</text>
+    <text class="hero-desc">纠纷发起后订单将暂停处理，等待双方举证与平台仲裁</text>
+  </view>
+
+  <!-- 纠纷类型 -->
+  <view class="card">
+    <text class="card-title">纠纷类型</text>
+    <view class="reason-grid">
+      <view wx:for="{{reasons}}" wx:key="key"
+        class="reason-item {{reasonType === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="pickReason">
+        <text class="reason-icon">{{item.icon}}</text>
+        <text class="reason-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 纠纷说明 -->
+  <view class="card">
+    <text class="card-title">纠纷说明</text>
+    <textarea class="desc-input" placeholder="请详细描述纠纷情况、诉求与期望的处理方式（不少于10字）"
+      value="{{description}}" bindinput="onDesc" maxlength="3000" auto-height />
+    <text class="char-count">{{description.length}}/3000</text>
+  </view>
+
+  <!-- 证据上传 -->
+  <view class="card">
+    <text class="card-title">证据材料（可选，最多5个）</text>
+    <text class="card-subtitle">可上传聊天记录截图、成果文件等，作为仲裁依据</text>
+    <view class="evid-list" wx:if="{{uploads.length}}">
+      <view class="evid-item" wx:for="{{uploads}}" wx:key="fileId">
+        <text class="evid-name">📎 {{item.name}}</text>
+        <text class="evid-size">{{item.sizeText}}</text>
+        <text class="evid-remove" data-index="{{index}}" bindtap="removeEvidence">✕</text>
+      </view>
+    </view>
+    <button class="btn-upload {{uploading ? 'disabled' : ''}}" bindtap="addEvidence" disabled="{{uploading}}">
+      {{uploading ? '上传中…' : '＋ 添加证据文件'}}
+    </button>
+  </view>
+
+  <button class="btn-submit {{submitting ? 'disabled' : ''}}" bindtap="submit" disabled="{{submitting}}">
+    {{submitting ? '提交中…' : '提交纠纷'}}
+  </button>
+
+</view>

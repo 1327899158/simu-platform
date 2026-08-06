@@ -1,0 +1,51 @@
+<view class="page-container">
+
+  <view class="page-header">
+    <text class="page-title">⚖️ 我的纠纷</text>
+  </view>
+
+  <!-- 状态筛选 -->
+  <view class="filter-wrap">
+    <button class="filter-trigger" bindtap="toggleFilter">
+      <view class="filter-current">
+        <text class="status-dot {{tab === '' ? 'dot-purple' : (tab === 'OPEN' ? 'dot-orange' : (tab === 'RESOLVED' ? 'dot-green' : 'dot-gray'))}}"></text>
+        <text>{{tabs.find(t => t.key === tab).label}}</text>
+      </view>
+      <text class="filter-arrow {{filterOpen ? 'open' : ''}}">⌄</text>
+    </button>
+    <view class="filter-panel" wx:if="{{filterOpen}}">
+      <button wx:for="{{tabs}}" wx:key="key"
+        class="filter-item {{tab === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="pickTab">
+        <text class="status-dot {{item.dotCls}}"></text>
+        <text class="filter-label">{{item.label}}</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 列表 -->
+  <view class="list">
+    <view wx:for="{{items}}" wx:key="id" class="dispute-card" data-id="{{item.id}}" bindtap="open" hover-class="card-hover">
+      <view class="card-top">
+        <text class="reason-icon">{{item.reasonType === 'QUALITY' ? '📉' : item.reasonType === 'DELAY' ? '⏰' : item.reasonType === 'MISSING' ? '📭' : item.reasonType === 'PAYMENT' ? '💳' : item.reasonType === 'COMMUNICATION' ? '💬' : '📌'}}</text>
+        <view class="card-grow">
+          <text class="card-title">{{item.reasonText}}</text>
+          <text class="card-sub">{{item.order.projectName}} · {{item.order.orderNo}}</text>
+        </view>
+        <text class="status {{item.badgeCls}}">{{item.statusText}}</text>
+      </view>
+      <view class="card-desc" wx:if="{{item.description}}">{{item.description}}</view>
+      <view class="card-footer">
+        <text class="time">📆 {{item.time}}</text>
+        <text class="detail-link">查看详情 ›</text>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{!loading && !items.length}}">
+      <text class="empty-icon">⚖️</text>
+      <text class="empty-text">暂无纠纷记录</text>
+    </view>
+    <view class="loading" wx:if="{{loading}}">正在加载…</view>
+  </view>
+
+</view>

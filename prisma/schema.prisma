@@ -39,6 +39,7 @@ enum OrderStatus {
   DELIVERED
   COMPLETED
   CLOSED
+  DISPUTING
 }
 
 enum QuoteStatus {
@@ -86,6 +87,8 @@ model User {
   quotes   Quote[]
   uploadedAttachments OrderAttachment[]
   orderViews OrderView[]
+  initiatedDisputes Dispute[]         @relation("DisputeInitiator")
+  disputeEvidence    DisputeEvidence[]
 }
 
 model EngineerProfile {
@@ -127,6 +130,7 @@ model Order {
   files    UploadedFile[]
   attachments OrderAttachment[]
   views       OrderView[]
+  disputes    Dispute[]
 
   @@index([status, createdAt])
   @@index([customerId, status])
@@ -176,6 +180,7 @@ model UploadedFile {
 
   order Order? @relation(fields: [orderId], references: [id])
   attachment OrderAttachment?
+  disputeEvidence DisputeEvidence[]
 
   @@index([orderId])
 }
@@ -242,4 +247,99 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+  CANCELLED
+}
+
+enum DisputeReasonType {
+  QUALITY
+  DELAY
+  MISSING
+  PAYMENT
+  COMMUNICATION
+  OTHER
+}
+
+enum DisputeVerdict {
+  NONE
+  CUSTOMER_FAVOR
+  ENGINEER_FAVOR
+  PARTIAL
+}
+
+enum DisputeOrderAction {
+  KEEP
+  FORCE_COMPLETE
+  REOPEN
+  CLOSE
+}
+
+enum RefundStatus {
+  NONE
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+model Dispute {
+  id              String      @id @default(cuid())
+  orderId         String
+  initiatorId     String
+  reasonType      DisputeReasonType
+  description     String      @db.Text
+  status          DisputeStatus @default(OPEN)
+  orderStatusAtOpen String   // 冻结前的订单状态快照，结案/取消时用于恢复
+  refundAmountFen Int?
+  refundStatus    RefundStatus @default(NONE)
+  refundTransactionId String?
+  verdict         DisputeVerdict @default(NONE)
+  orderAction     DisputeOrderAction @default(KEEP)
+  resolutionNote  String?     @db.Text
+  resolvedBy      String?
+  resolvedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  order     Order             @relation(fields: [orderId], references: [id])
+  initiator User              @relation("DisputeInitiator", fields: [initiatorId], references: [id])
+  evidence  DisputeEvidence[]
+  messages  DisputeMessage[]
+
+  @@index([orderId, status])
+  @@index([initiatorId, status])
+  @@index([status, createdAt])
+}
+
+model DisputeEvidence {
+  disputeId String
+  fileId    String
+  uploaderId String
+  createdAt DateTime @default(now())
+
+  dispute Dispute      @relation(fields: [disputeId], references: [id])
+  file    UploadedFile @relation(fields: [fileId], references: [id])
+  uploader User        @relation(fields: [uploaderId], references: [id])
+
+  @@id([disputeId, fileId])
+  @@index([disputeId, createdAt])
+  @@map("dispute_evidence")
+}
+
+model DisputeMessage {
+  id        BigInt   @id @default(autoincrement())
+  disputeId String
+  senderId  String // 管理员发送时为 admin_accounts.id，SYSTEM 为 'SYSTEM'，因此不设外键
+  type      MsgType  @default(TEXT)
+  content   String?  @db.Text
+  fileId    String?
+  createdAt DateTime @default(now())
+
+  dispute Dispute @relation(fields: [disputeId], references: [id])
+
+  @@index([disputeId, id])
+  @@map("dispute_messages")
 }

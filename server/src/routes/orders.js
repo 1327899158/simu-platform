@@ -42,6 +42,13 @@ async function quoteCountOf(orderId) {
   return r ? r.c : 0;
 }
 
+/** 若订单处于纠纷中则抛出冲突，用于拦截任何推进订单状态的操作 */
+async function assertNotDisputing(orderId) {
+  const o = await queryOne(`SELECT status FROM orders WHERE id = ?`, [orderId]);
+  if (o && o.status === 'DISPUTING') throw err.conflict('订单处于纠纷处理中，请等待平台仲裁');
+  return o;
+}
+
 function register(router) {
   // POST /api/orders
   router.post('/api/orders', async (req, res) => {
@@ -244,6 +251,7 @@ function register(router) {
   // POST /api/orders/:id/deliver { fileIds?, note? }
   router.post('/api/orders/:id/deliver', async (req, res, params) => {
     const user = await requireEngineer(req);
+    await assertNotDisputing(params.id);
     const b = await readJson(req);
     const note = v.str(b.note, '交付说明', { max: 1000, optional: true });
     const fileIds = v.arr(b.fileIds, '成果文件', { maxLen: 20, optional: true }) || [];
@@ -269,6 +277,7 @@ function register(router) {
   // POST /api/orders/:id/confirm
   router.post('/api/orders/:id/confirm', async (req, res, params) => {
     const user = await requireCustomer(req);
+    await assertNotDisputing(params.id);
     await tx(async (conn) => {
       const [r] = await conn.execute(
         `UPDATE orders SET status='COMPLETED', completedAt=?, updatedAt=?
@@ -283,6 +292,7 @@ function register(router) {
   // POST /api/orders/:id/reject-delivery { reason }
   router.post('/api/orders/:id/reject-delivery', async (req, res, params) => {
     const user = await requireCustomer(req);
+    await assertNotDisputing(params.id);
     const b = await readJson(req);
     const reason = v.str(b.reason, '驳回原因', { min: 2, max: 500 });
     await tx(async (conn) => {

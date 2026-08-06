@@ -1,0 +1,95 @@
+<view class="admin-page" wx:if="{{dispute}}">
+  <view class="admin-hero">
+    <view class="admin-between">
+      <view class="admin-grow">
+        <text class="admin-hero-title">⚖️ 订单纠纷</text>
+        <text class="admin-hero-desc">{{dispute.order.projectName}} · {{dispute.order.orderNo}}</text>
+      </view>
+      <text class="detail-badge">{{dispute.statusText}}</text>
+    </view>
+  </view>
+
+  <!-- 纠纷信息 -->
+  <view class="admin-card">
+    <text class="admin-card-title">纠纷信息</text>
+    <view class="detail-line"><text>纠纷类型</text><text>{{dispute.reasonText}}</text></view>
+    <view class="detail-line"><text>发起时间</text><text>{{dispute.createdText}}</text></view>
+    <view class="detail-line"><text>订单状态</text><text>{{dispute.orderStatusAtOpen}} → {{dispute.order.status}}</text></view>
+    <view class="detail-line" wx:if="{{dispute.verdict !== 'NONE'}}"><text>仲裁结论</text><text>{{dispute.verdictText}} · {{dispute.orderActionText}}</text></view>
+    <view class="detail-line" wx:if="{{dispute.resolvedAt}}"><text>结案时间</text><text>{{dispute.resolvedText}}</text></view>
+    <view class="detail-line" wx:if="{{dispute.refundAmountFen != null}}"><text>应退金额</text><text>¥{{dispute.refundY}}（{{dispute.refundStatusText}}）</text></view>
+    <view class="detail-line" wx:if="{{dispute.resolutionNote}}"><text>仲裁说明</text><text>{{dispute.resolutionNote}}</text></view>
+    <text class="admin-description" wx:if="{{dispute.description}}">{{dispute.description}}</text>
+  </view>
+
+  <!-- 当事人 -->
+  <view class="admin-card">
+    <text class="admin-card-title">当事人</text>
+    <view class="party-line"><text>买家</text><text>{{dispute.customer.nickname}}（{{dispute.customer.phoneMasked || '无'}}）</text></view>
+    <view class="party-line"><text>工程师</text><text>{{dispute.engineer.nickname}}（{{dispute.engineer.phoneMasked || '无'}}）</text></view>
+    <view class="party-line"><text>发起人</text><text>{{dispute.initiatorId === dispute.customer.id ? '买家' : '工程师'}}</text></view>
+  </view>
+
+  <!-- 证据 -->
+  <view class="admin-card">
+    <text class="admin-card-title">证据材料（{{dispute.evidence.length}}）</text>
+    <view class="file-row" wx:for="{{dispute.evidence}}" wx:key="fileId"
+      data-index="{{index}}" bindtap="openEvidence" hover-class="file-pressed">
+      <text class="file-icon">{{item.kind === 'IMAGE' ? '图' : '文'}}</text>
+      <view class="admin-grow">
+        <text class="file-name">{{item.name}}</text>
+        <text class="admin-small">{{item.sizeText}}</text>
+      </view>
+      <text class="file-arrow">›</text>
+    </view>
+    <view class="admin-empty small-empty" wx:if="{{!dispute.evidence.length}}">无证据材料</view>
+  </view>
+
+  <!-- 沟通记录 -->
+  <view class="admin-card">
+    <text class="admin-card-title">沟通记录</text>
+    <view class="sys-msg" wx:for="{{dispute.msgs}}" wx:key="id" wx:if="{{item.sys}}">{{item.content}}</view>
+    <view class="conv-line" wx:for="{{dispute.msgs}}" wx:key="id" wx:elif="{{!item.sys}}">
+      <view class="conv-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</view>
+      <view class="conv-content">{{item.content}}</view>
+      <view class="conv-time">{{item.time}}</view>
+    </view>
+    <view class="admin-muted" wx:if="{{!dispute.msgs.length}}">暂无沟通记录</view>
+  </view>
+
+  <!-- 仲裁表单 -->
+  <view class="admin-card review-card" wx:if="{{canResolve && dispute.status === 'OPEN'}}">
+    <text class="admin-card-title">仲裁处理</text>
+    <text class="admin-card-subtitle">仲裁结案会改变订单状态并登记退款诉求，操作写入审计日志。</text>
+
+    <text class="section-label">仲裁结论</text>
+    <view class="chip-group">
+      <view wx:for="{{VERDICTS}}" wx:key="key"
+        class="verdict-chip {{verdict === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="pickVerdict">{{item.label}}</view>
+    </view>
+
+    <text class="section-label">订单处理</text>
+    <view class="chip-group">
+      <view wx:for="{{ACTIONS}}" wx:key="key"
+        class="verdict-chip {{orderAction === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="pickAction">{{item.label}}</view>
+    </view>
+
+    <text class="section-label">应退金额（元，可选）</text>
+    <input class="admin-input refund-input" type="digit" placeholder="留空表示无需退款"
+      value="{{refundAmount}}" bindinput="onRefund" />
+
+    <text class="section-label">仲裁说明（可选）</text>
+    <textarea class="admin-textarea" placeholder="填写仲裁理由，将同步给双方" value="{{note}}"
+      bindinput="onNote" maxlength="1000" />
+
+    <button class="admin-button danger" bindtap="resolve" disabled="{{submitting}}">
+      {{submitting ? '提交中…' : '提交仲裁并结案'}}
+    </button>
+  </view>
+  <view class="admin-card" wx:if="{{dispute.status !== 'OPEN'}}">
+    <text class="admin-muted">该纠纷已{{dispute.statusText}}，不可再次仲裁。</text>
+  </view>
+</view>
+<view class="admin-loading" wx:if="{{loading}}">正在加载纠纷详情…</view>
