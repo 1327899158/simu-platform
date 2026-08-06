@@ -1,3 +1,5 @@
+@import "../../admin.wxss";
+.order-pressed { transform: scale(.985); opacity: .86; }
 .dispute-card .reason-icon {
   display: block;
   font-size: 30rpx;
