@@ -56,26 +56,30 @@
   <view class="card">
     <text class="card-title">💬 纠纷沟通</text>
     <view class="msg-list">
-      <view class="sys-msg" wx:if="{{item.sys}}" wx:for="{{dispute.msgs}}" wx:key="id">{{item.content}}</view>
-      <view class="msg-item {{item.mine ? 'mine' : 'other'}}" wx:elif="{{item.senderKind !== 'system'}}" wx:for="{{dispute.msgs}}" wx:key="id">
-        <view class="msg-bubble">
-          <text class="msg-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</text>
-          <text class="msg-content" wx:if="{{item.type === 'TEXT'}}">{{item.content}}</text>
-          <text class="msg-content" wx:elif="{{item.type === 'IMAGE'}}">[图片] {{item.content}}</text>
-          <text class="msg-content" wx:else>📎 {{item.content}}</text>
-          <text class="msg-time">{{item.time}}</text>
+      <block wx:for="{{dispute.msgs}}" wx:key="id">
+        <view class="sys-msg" wx:if="{{item.sys}}">{{item.content}}</view>
+        <view class="msg-item {{item.mine ? 'mine' : 'other'}}" wx:elif="{{item.senderKind !== 'system'}}">
+          <view class="msg-bubble">
+            <text class="msg-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</text>
+            <text class="msg-content" wx:if="{{item.type === 'TEXT'}}">{{item.content}}</text>
+            <text class="msg-content" wx:elif="{{item.type === 'IMAGE'}}">[图片] {{item.content}}</text>
+            <text class="msg-content" wx:else>📎 {{item.content}}</text>
+            <text class="msg-time">{{item.time}}</text>
+          </view>
         </view>
-      </view>
+      </block>
       <view class="empty-msg" wx:if="{{!dispute.msgs.length}}">暂无沟通记录</view>
     </view>
 
     <!-- 输入区 -->
-    <view class="input-area" wx:if="{{dispute.status === 'OPEN'}}">
-      <button class="img-btn {{uploading ? 'disabled' : ''}}" bindtap="sendImage" disabled="{{uploading}}">{{uploading ? '…' : '🖼️'}}</button>
-      <input class="chat-input" placeholder="输入消息…" value="{{text}}" bindinput="onInput"
-        confirm-type="send" bindconfirm="send" maxlength="2000" />
-      <button class="send-btn {{sending ? 'dim' : ''}}" bindtap="send" disabled="{{!text}}">发送</button>
-    </view>
+    <block wx:if="{{dispute.status === 'OPEN'}}">
+      <view class="input-area">
+        <button class="img-btn {{uploading ? 'disabled' : ''}}" bindtap="sendImage" disabled="{{uploading}}">{{uploading ? '…' : '🖼️'}}</button>
+        <input class="chat-input" placeholder="输入消息…" value="{{text}}" bindinput="onInput"
+          confirm-type="send" bindconfirm="send" maxlength="2000" />
+        <button class="send-btn {{sending ? 'dim' : ''}}" bindtap="send" disabled="{{!text}}">发送</button>
+      </view>
+    </block>
     <text class="closed-tip" wx:else>该纠纷已{{dispute.statusText}}，沟通已关闭</text>
   </view>
 

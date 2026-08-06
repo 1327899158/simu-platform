@@ -48,12 +48,14 @@
   <!-- 沟通记录 -->
   <view class="admin-card">
     <text class="admin-card-title">沟通记录</text>
-    <view class="sys-msg" wx:for="{{dispute.msgs}}" wx:key="id" wx:if="{{item.sys}}">{{item.content}}</view>
-    <view class="conv-line" wx:for="{{dispute.msgs}}" wx:key="id" wx:elif="{{!item.sys}}">
-      <view class="conv-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</view>
-      <view class="conv-content">{{item.content}}</view>
-      <view class="conv-time">{{item.time}}</view>
-    </view>
+    <block wx:for="{{dispute.msgs}}" wx:key="id">
+      <view class="sys-msg" wx:if="{{item.sys}}">{{item.content}}</view>
+      <view class="conv-line" wx:elif="{{!item.sys}}">
+        <view class="conv-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</view>
+        <view class="conv-content">{{item.content}}</view>
+        <view class="conv-time">{{item.time}}</view>
+      </view>
+    </block>
     <view class="admin-muted" wx:if="{{!dispute.msgs.length}}">暂无沟通记录</view>
   </view>
 
