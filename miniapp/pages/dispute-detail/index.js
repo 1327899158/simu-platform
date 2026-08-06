@@ -39,7 +39,7 @@ Page({
       mine: !this.data.isAdmin && m.senderId === this.data.myId,
       adminMsg: this.data.isAdmin,
       time: timeShort(m.createdAt),
-      sys: m.senderId === 'SYSTEM' || m.sender.kind === 'system',
+      sys: m.senderId === 'SYSTEM' || !!(m.sender && m.sender.kind === 'system'),
       senderName: m.sender ? m.sender.nickname : (m.senderId === 'SYSTEM' ? '系统' : ''),
       senderKind: m.sender ? m.sender.kind : 'user',
     }));

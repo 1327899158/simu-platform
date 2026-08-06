@@ -29,8 +29,11 @@
       <view class="card-top">
         <text class="reason-icon">{{item.reasonType === 'QUALITY' ? '📉' : item.reasonType === 'DELAY' ? '⏰' : item.reasonType === 'MISSING' ? '📭' : item.reasonType === 'PAYMENT' ? '💳' : item.reasonType === 'COMMUNICATION' ? '💬' : '📌'}}</text>
         <view class="card-grow">
-          <text class="card-title">{{item.reasonText}}</text>
-          <text class="card-sub">{{item.order.projectName}} · {{item.order.orderNo}}</text>
+          <view class="title-row">
+            <text class="card-title">{{item.reasonText}}</text>
+            <text class="role-tag {{item.myRole === 'INITIATOR' ? 'mine' : 'other'}}">{{item.myRole === 'INITIATOR' ? '我提出' : '对方提出'}}</text>
+          </view>
+          <text class="card-sub">{{item.orderName}} · {{item.orderNo}}</text>
         </view>
         <text class="status {{item.badgeCls}}">{{item.statusText}}</text>
       </view>

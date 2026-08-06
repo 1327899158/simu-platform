@@ -3,7 +3,7 @@
     <view class="admin-between">
       <view class="admin-grow">
         <text class="admin-hero-title">⚖️ 订单纠纷</text>
-        <text class="admin-hero-desc">{{dispute.order.projectName}} · {{dispute.order.orderNo}}</text>
+        <text class="admin-hero-desc">{{dispute.order ? dispute.order.projectName : '纠纷'}}<text wx:if="{{dispute.order}}"> · {{dispute.order.orderNo}}</text></text>
       </view>
       <text class="detail-badge">{{dispute.statusText}}</text>
     </view>
@@ -14,7 +14,7 @@
     <text class="admin-card-title">纠纷信息</text>
     <view class="detail-line"><text>纠纷类型</text><text>{{dispute.reasonText}}</text></view>
     <view class="detail-line"><text>发起时间</text><text>{{dispute.createdText}}</text></view>
-    <view class="detail-line"><text>订单状态</text><text>{{dispute.orderStatusAtOpen}} → {{dispute.order.status}}</text></view>
+    <view class="detail-line"><text>订单状态</text><text>{{dispute.orderStatusAtOpen}} → {{dispute.order ? dispute.order.status : '—'}}</text></view>
     <view class="detail-line" wx:if="{{dispute.verdict !== 'NONE'}}"><text>仲裁结论</text><text>{{dispute.verdictText}} · {{dispute.orderActionText}}</text></view>
     <view class="detail-line" wx:if="{{dispute.resolvedAt}}"><text>结案时间</text><text>{{dispute.resolvedText}}</text></view>
     <view class="detail-line" wx:if="{{dispute.refundAmountFen != null}}"><text>应退金额</text><text>¥{{dispute.refundY}}（{{dispute.refundStatusText}}）</text></view>
@@ -25,9 +25,9 @@
   <!-- 当事人 -->
   <view class="admin-card">
     <text class="admin-card-title">当事人</text>
-    <view class="party-line"><text>买家</text><text>{{dispute.customer.nickname}}（{{dispute.customer.phoneMasked || '无'}}）</text></view>
-    <view class="party-line"><text>工程师</text><text>{{dispute.engineer.nickname}}（{{dispute.engineer.phoneMasked || '无'}}）</text></view>
-    <view class="party-line"><text>发起人</text><text>{{dispute.initiatorId === dispute.customer.id ? '买家' : '工程师'}}</text></view>
+    <view class="party-line"><text>买家</text><text>{{dispute.customer ? dispute.customer.nickname : '—'}}（{{dispute.customer ? dispute.customer.phoneMasked : '无'}}）</text></view>
+    <view class="party-line"><text>工程师</text><text>{{dispute.engineer ? dispute.engineer.nickname : '—'}}（{{dispute.engineer ? dispute.engineer.phoneMasked : '无'}}）</text></view>
+    <view class="party-line"><text>发起人</text><text>{{dispute.customer && dispute.initiatorId === dispute.customer.id ? '买家' : (dispute.engineer && dispute.initiatorId === dispute.engineer.id ? '工程师' : '—')}}</text></view>
   </view>
 
   <!-- 证据 -->

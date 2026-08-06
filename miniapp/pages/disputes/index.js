@@ -48,6 +48,8 @@ Page({
           time: timeShort(d.createdAt),
           badgeCls: BADGE[d.status] || 'st-gray',
           statusText: d.statusText,
+          orderName: d.order ? d.order.projectName : '订单',
+          orderNo: d.order ? d.order.orderNo : '',
         })),
       });
     } catch (e) {

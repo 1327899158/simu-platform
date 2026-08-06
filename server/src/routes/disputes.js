@@ -161,7 +161,9 @@ function register(router) {
     const user = await requireUser(req);
     if (!(await isOrderParty(params.id, user.id))) throw err.forbidden('仅当事人可查看纠纷状态');
     const d = await findOpenDispute(params.id);
-    ok(res, d ? disputeView(d) : null);
+    ok(res, d ? disputeView(d, {
+      myRole: d.initiatorId === user.id ? 'INITIATOR' : 'OPPOSITE',
+    }) : null);
   });
 
   // GET /api/disputes/mine?status=
@@ -178,14 +180,25 @@ function register(router) {
     const rows = await query(
       `SELECT d.* FROM disputes d
         JOIN orders o ON o.id = d.orderId
-       WHERE (o.customerId = ? OR d.initiatorId = ?) ${where}
+       WHERE (
+         o.customerId = ?
+         OR d.initiatorId = ?
+         OR EXISTS (
+           SELECT 1 FROM quotes q
+           WHERE q.id = o.selectedQuoteId AND q.engineerId = ?
+         )
+       ) ${where}
        ORDER BY d.createdAt DESC LIMIT 100`,
-      [user.id, user.id, ...args]
+      [user.id, user.id, user.id, ...args]
     );
     const result = await Promise.all(rows.map(async (d) => {
       const order = await queryOne(
         `SELECT orderNo, projectName, status FROM orders WHERE id = ?`, [d.orderId]);
-      return disputeView(d, { order: order || null });
+      return disputeView(d, {
+        order: order || null,
+        // 当前用户视角：是自己发起还是对方发起
+        myRole: d.initiatorId === user.id ? 'INITIATOR' : 'OPPOSITE',
+      });
     }));
     ok(res, result);
   });
@@ -196,7 +209,8 @@ function register(router) {
     const d = await queryOne(`SELECT * FROM disputes WHERE id = ?`, [params.id]);
     if (!d) throw err.notFound('纠纷不存在');
     if (!(await isOrderParty(d.orderId, user.id))) throw err.forbidden('仅当事人可查看');
-    ok(res, await disputeDetail(d));
+    const detail = await disputeDetail(d);
+    ok(res, { ...detail, myRole: d.initiatorId === user.id ? 'INITIATOR' : 'OPPOSITE' });
   });
 
   // POST /api/disputes/:id/messages { type, content?, fileId? }

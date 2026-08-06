@@ -49,8 +49,8 @@ Page({
           refundY: d.refundAmountFen == null ? null : fenToYuan(d.refundAmountFen),
           msgs: (d.messages || []).map((m) => ({
             ...m,
-            sys: m.senderId === 'SYSTEM' || m.sender.kind === 'system',
-            senderName: m.sender ? m.sender.nickname : '未知',
+            sys: m.senderId === 'SYSTEM' || !!(m.sender && m.sender.kind === 'system'),
+            senderName: m.sender ? m.sender.nickname : (m.senderId === 'SYSTEM' ? '系统' : '未知'),
             senderKind: m.sender ? m.sender.kind : 'user',
             time: timeShort(m.createdAt),
           })),

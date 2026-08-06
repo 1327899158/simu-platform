@@ -1,13 +1,20 @@
 /** 发布需求：五步表单（方案 3.1.2），本地草稿，文件直传后携 fileIds 提交。 */
-const { ensureLogin } = require('../../utils/auth');
+const { ensureLogin, getUser } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
 const { deleteCloudFile } = require('../../utils/cloud-file');
 const { yuanToFen } = require('../../utils/format');
 const { digits, money, validMoney } = require('../../utils/input');
 
-const DRAFT_KEY = 'publishDraft';
 const MAX_ATTACHMENTS = 20;
 const DEFAULT_MAX_FILE_MB = 30;
+
+/**
+ * 草稿按用户隔离：不同用户读不到彼此未提交的草稿。
+ * key 格式：publishDraft_<userId>，避免全局共享键导致串号。
+ */
+function draftKey(userId) {
+  return `publishDraft_${userId || 'anonymous'}`;
+}
 
 function attachmentKind(name, mime) {
   const filename = String(name || '').toLowerCase();
@@ -77,12 +84,13 @@ Page({
   async onLoad() {
     const user = ensureLogin();
     if (!user) return;
+    this._userId = user.id;
     if (user.role !== 'CUSTOMER') {
       wx.showToast({ title: '仅客户可以发布需求', icon: 'none' });
       setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
       return;
     }
-    const draft = wx.getStorageSync(DRAFT_KEY);
+    const draft = wx.getStorageSync(draftKey(user.id));
     if (draft) {
       this.setData({
         ...draft,
@@ -109,9 +117,10 @@ Page({
   },
   onUnload() {
     if (this.data.submitting) return;
+    if (!this._userId) return;
     const { projectName, description, budgetYuan, budgetFlexible, softwareTags,
       directionTags, otherSoftware, otherDirection, deliveryKey, customDays, specialNote, files } = this.data;
-    wx.setStorageSync(DRAFT_KEY, {
+    wx.setStorageSync(draftKey(this._userId), {
       projectName, description, budgetYuan, budgetFlexible, softwareTags,
       directionTags, otherSoftware, otherDirection, deliveryKey, customDays, specialNote, files,
     });
@@ -305,7 +314,7 @@ Page({
       };
       if (d.budgetYuan) body.budgetFen = yuanToFen(d.budgetYuan);
       const order = await request('POST', '/orders', body);
-      wx.removeStorageSync(DRAFT_KEY);
+      wx.removeStorageSync(draftKey(this._userId));
       wx.showToast({ title: '发布成功', icon: 'success' });
       setTimeout(() => {
         wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}&mode=customer` });

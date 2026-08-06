@@ -28,7 +28,7 @@
     <view class="admin-between">
       <view class="admin-grow">
         <text class="reason-icon">{{item.reasonIcon}} {{item.reasonText}}</text>
-        <text class="dispute-order">{{item.order.projectName}} · {{item.order.orderNo}}</text>
+        <text class="dispute-order">{{item.orderName}} · {{item.orderNo}}</text>
       </view>
       <text class="admin-badge {{item.badgeClass}}">{{item.statusText}}</text>
     </view>

@@ -49,6 +49,15 @@
 .reason-icon { font-size: 40rpx; flex-shrink: 0; }
 .card-grow { flex: 1; min-width: 0; }
 .card-title { display: block; font-size: 28rpx; font-weight: 600; color: var(--c-text); }
+.title-row { display: flex; align-items: center; gap: 10rpx; }
+.role-tag {
+  flex-shrink: 0;
+  font-size: 18rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+}
+.role-tag.mine { background: #E8F6ED; color: #247A43; }
+.role-tag.other { background: #EEF2FF; color: #596CD4; }
 .card-sub { display: block; font-size: 22rpx; color: var(--c-text-4); margin-top: 4rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status { flex-shrink: 0; padding: 6rpx 16rpx; border-radius: var(--r-pill); font-size: 22rpx; font-weight: 600; }
 .st-orange { color: #A55A00; background: #FFF1DB; }

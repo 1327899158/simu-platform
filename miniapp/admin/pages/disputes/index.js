@@ -39,6 +39,8 @@ Page({
           reasonIcon: REASON_ICON[item.reasonType] || '📌',
           refundText: item.refundAmountFen == null ? '—' : `¥${fenToYuan(item.refundAmountFen)}`,
           orderStatusText: item.order ? item.order.status : '',
+          orderName: item.order ? item.order.projectName : '订单',
+          orderNo: item.order ? item.order.orderNo : '',
         })),
       });
     } catch (error) {

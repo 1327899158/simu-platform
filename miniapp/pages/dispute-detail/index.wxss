@@ -63,6 +63,15 @@
 }
 .info-value.budget { color: var(--c-money); font-weight: 700; }
 
+.role-inline {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  margin-left: 8rpx;
+}
+.role-inline.mine { background: #E8F6ED; color: #247A43; }
+.role-inline.other { background: #EEF2FF; color: #596CD4; }
+
 .desc-text {
   margin-top: 12rpx;
   padding: 16rpx;

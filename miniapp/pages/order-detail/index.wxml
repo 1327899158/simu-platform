@@ -75,7 +75,7 @@ module.exports = {
     </view>
     <view class="info-row">
       <text class="info-label">浏览量</text>
-      <text class="info-value">{{order.viewCount || 0}} 次（按工程师账号去重）</text>
+      <text class="info-value">{{order.viewCount || 0}} 次</text>
     </view>
   </view>
 

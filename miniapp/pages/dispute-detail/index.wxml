@@ -6,16 +6,16 @@
       <text class="hero-title">⚠️ 订单纠纷</text>
       <text class="status {{dispute.statusCls}}">{{dispute.statusText}}</text>
     </view>
-    <text class="hero-desc">{{dispute.order.projectName}} · {{dispute.order.orderNo}}</text>
+    <text class="hero-desc">{{dispute.order ? dispute.order.projectName : '纠纷'}}<text wx:if="{{dispute.order}}"> · {{dispute.order.orderNo}}</text></text>
   </view>
 
   <!-- 纠纷信息 -->
   <view class="card">
     <text class="card-title">纠纷信息</text>
     <view class="info-row"><text class="info-label">纠纷类型</text><text class="info-value">{{dispute.reasonText}}</text></view>
-    <view class="info-row"><text class="info-label">发起人</text><text class="info-value">{{dispute.initiatorId === dispute.customer.id ? '买家' : (dispute.initiatorId === dispute.engineer.id ? '工程师' : '—')}}</text></view>
+    <view class="info-row"><text class="info-label">发起人</text><text class="info-value">{{dispute.customer && dispute.initiatorId === dispute.customer.id ? '买家' : (dispute.engineer && dispute.initiatorId === dispute.engineer.id ? '工程师' : '—')}}<text wx:if="{{dispute.myRole}}" class="role-inline {{dispute.myRole === 'INITIATOR' ? 'mine' : 'other'}}">{{dispute.myRole === 'INITIATOR' ? '（我提出）' : '（对方提出）'}}</text></text></view>
     <view class="info-row"><text class="info-label">发起时间</text><text class="info-value">{{dispute.createdText}}</text></view>
-    <view class="info-row"><text class="info-label">订单状态</text><text class="info-value">{{dispute.order.statusText || dispute.order.status}}</text></view>
+    <view class="info-row" wx:if="{{dispute.order}}"><text class="info-label">订单状态</text><text class="info-value">{{dispute.order.statusText || dispute.order.status}}</text></view>
     <view class="info-row" wx:if="{{dispute.resolutionNote}}"><text class="info-label">仲裁说明</text><text class="info-value">{{dispute.resolutionNote}}</text></view>
     <view class="info-row" wx:if="{{dispute.verdictText && dispute.verdict !== 'NONE'}}"><text class="info-label">仲裁结论</text><text class="info-value">{{dispute.verdictText}} · {{dispute.orderActionText}}</text></view>
     <view class="info-row" wx:if="{{dispute.refundAmountFen != null}}"><text class="info-label">应退金额</text><text class="info-value budget">¥{{dispute.refundY}}（{{dispute.refundStatusText}}）</text></view>
