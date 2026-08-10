@@ -1,0 +1,64 @@
+<view class="page-container">
+  <view class="page-header">
+    <view>
+      <text class="page-title">🔍 接单大厅</text>
+      <text class="page-subtitle">浏览正在发布的仿真需求</text>
+    </view>
+    <view class="visitor-badge"><text>游客预览</text></view>
+  </view>
+
+  <view class="visitor-tip">
+    <text class="visitor-tip-icon">💡</text>
+    <text class="visitor-tip-text">登录后可查看完整需求详情并提交报价</text>
+  </view>
+
+  <view class="stats-card">
+    <view class="stat-item">
+      <text class="stat-number">36</text>
+      <view><text class="stat-label">全部需求</text><text class="stat-desc">等待工程师响应</text></view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item highlight">
+      <text class="stat-number">8</text>
+      <view><text class="stat-label">今日新增</text><text class="stat-desc">最新发布项目</text></view>
+    </view>
+  </view>
+
+  <view class="filter-card">
+    <view class="section-header"><text class="section-title">📂 分类筛选</text><text class="section-hint">全部分类</text></view>
+    <view class="filter-bar">
+      <view class="filter-item active">全部 <text>✓</text></view>
+      <view class="filter-item">结构分析</view>
+      <view class="filter-item">流体仿真</view>
+      <view class="filter-item">热分析</view>
+    </view>
+    <view class="section-header sort-header"><text class="section-title">📊 排序方式</text></view>
+    <view class="sort-bar"><view class="sort-item active">🕐 最新发布</view><view class="sort-item">🔥 最热门</view></view>
+  </view>
+
+  <view class="requirement-list">
+    <view class="requirement-card">
+      <view class="req-header"><text class="req-title">新能源汽车电池包热管理仿真</text><text class="req-status">待报价</text></view>
+      <text class="req-description">建立电池包三维热仿真模型，评估不同散热方案下的温度分布与热失控风险。</text>
+      <view class="req-tags"><text class="tag">热分析</text><text class="tag">CFD</text><text class="tag">Fluent</text></view>
+      <view class="req-data"><view><text class="data-label">预算</text><text class="data-value price">¥8,000</text></view><view><text class="data-label">工期</text><text class="data-value">14 天</text></view><view><text class="data-label">浏览</text><text class="data-value">32 次</text></view></view>
+      <view class="req-footer"><text class="req-meta">📆 今天 · 💬 3 个报价</text><text class="login-to-quote">登录后报价</text></view>
+    </view>
+
+    <view class="requirement-card">
+      <view class="req-header"><text class="req-title">工业离心泵流道优化设计</text><text class="req-status">待报价</text></view>
+      <text class="req-description">针对现有叶轮与蜗壳结构进行流场仿真，提出降低能耗、提升效率的优化建议。</text>
+      <view class="req-tags"><text class="tag">流体仿真</text><text class="tag">CFX</text></view>
+      <view class="req-data"><view><text class="data-label">预算</text><text class="data-value price">¥12,000</text></view><view><text class="data-label">工期</text><text class="data-value">21 天</text></view><view><text class="data-label">浏览</text><text class="data-value">18 次</text></view></view>
+      <view class="req-footer"><text class="req-meta">📆 昨天 · 💬 1 个报价</text><text class="login-to-quote">登录后报价</text></view>
+    </view>
+
+    <view class="requirement-card">
+      <view class="req-header"><text class="req-title">机架轻量化与强度校核</text><text class="req-status">待报价</text></view>
+      <text class="req-description">根据现有三维模型完成静力学分析，并在满足安全系数前提下给出轻量化建议。</text>
+      <view class="req-tags"><text class="tag">结构分析</text><text class="tag">ANSYS</text><text class="tag">优化设计</text></view>
+      <view class="req-data"><view><text class="data-label">预算</text><text class="data-value price">¥5,000</text></view><view><text class="data-label">工期</text><text class="data-value">7 天</text></view><view><text class="data-label">浏览</text><text class="data-value">45 次</text></view></view>
+      <view class="req-footer"><text class="req-meta">📆 2 天前 · 💬 5 个报价</text><text class="login-to-quote">登录后报价</text></view>
+    </view>
+  </view>
+</view>

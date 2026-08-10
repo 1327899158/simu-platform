@@ -267,10 +267,16 @@
   gap: 12rpx;
 }
 .compact-role-select .role-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
   padding: 14rpx 0;
 }
 .compact-role-select .role-icon {
-  display: none;
+  display: block;
+  margin: 0;
+  font-size: 30rpx;
 }
 .login-action {
   margin-top: 38rpx;
@@ -319,6 +325,30 @@
 }
 .account-login-card .sub-tab {
   margin-top: 30rpx;
+}
+.reset-link-top {
+  margin: 12rpx 0 -6rpx;
+  padding: 0;
+  text-align: right;
+}
+.reset-link-top text {
+  font-size: 23rpx;
+}
+.guest-entry {
+  width: 100%;
+  margin: 28rpx 0 0;
+  padding: 12rpx 0;
+  background: transparent;
+  border: none;
+  color: #2C6EA3;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+.guest-entry::after {
+  border: none;
+}
+.guest-entry:active {
+  opacity: 0.65;
 }
 .wechat-login-card .login-heading,
 .wechat-login-card .login-desc {

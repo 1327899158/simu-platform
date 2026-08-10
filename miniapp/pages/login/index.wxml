@@ -22,7 +22,7 @@
     <text class="login-desc">未注册的手机号验证通过后将自动注册</text>
 
     <view class="phone-field">
-      <view class="country-code"><text>+86</text><text class="country-arrow">▼</text></view>
+      <view class="country-code"><text>+86</text><text class="country-arrow"> </text></view>
       <view class="field-divider"></view>
       <input class="phone-input" type="number" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhone" maxlength="11" />
     </view>
@@ -43,6 +43,7 @@
 
     <button class="btn btn-primary btn-block login-action" loading="{{smsSending}}" bindtap="proceedPhoneLogin">验证并登录</button>
     <text class="agreement-tip">点击验证并登录，即表示你同意平台服务规则与隐私保护说明</text>
+    <button class="guest-entry" bindtap="goGuestMarket">以游客身份浏览接单大厅</button>
   </view>
 
   <!-- 手机号登录：第二步输入验证码 -->
@@ -65,6 +66,7 @@
     <view class="back-link" bindtap="switchPhoneLogin">‹ 手机号验证码登录</view>
     <text class="login-heading">{{isRegister ? '创建账号' : '账号密码登录'}}</text>
     <text class="login-desc">{{isRegister ? '使用手机号验证完成账号注册' : '输入用户名和密码继续'}}</text>
+    <view class="switch-login reset-link-top" wx:if="{{!isRegister}}" bindtap="goResetPassword"><text>忘记密码？去重置 →</text></view>
 
     <view class="sub-tab">
       <view class="sub-tab-item {{!isRegister ? 'active' : ''}}" data-mode="login" bindtap="toggleRegister">登录</view>
@@ -104,7 +106,7 @@
 
     <button wx:if="{{!isRegister}}" class="btn btn-primary btn-block" loading="{{loading}}" bindtap="accountLogin">登 录</button>
     <button wx:else class="btn btn-primary btn-block" loading="{{loading}}" bindtap="accountRegister">注 册</button>
-    <view class="switch-login" wx:if="{{!isRegister}}" bindtap="goResetPassword"><text>忘记密码？去重置 →</text></view>
+    <button class="guest-entry" bindtap="goGuestMarket">以游客身份浏览接单大厅</button>
   </view>
 
   <!-- 微信登录：保留原有资料完善与身份选择流程。 -->

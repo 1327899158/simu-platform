@@ -256,6 +256,10 @@ Page({
     this.setData({ phoneStep: 'phone', isRegister: false, password: '', passwordConfirm: '', smsCode: '' });
   },
 
+  goGuestMarket() {
+    wx.navigateTo({ url: '/pages/guest-market/index' });
+  },
+
   async phoneLogin() {
     if (!this.data.phone) return wx.showToast({ title: '请输入手机号', icon: 'none' });
     if (!this.data.smsCode) return wx.showToast({ title: '请输入验证码', icon: 'none' });
