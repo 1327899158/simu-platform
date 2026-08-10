@@ -193,10 +193,12 @@
   background: #FAFAFA;  /* 浅灰输入框背景 */
   border-radius: 10rpx;
   border: 1rpx solid #E0E0E0;
-  transition: all 0.3s ease;
+  /* 只过渡视觉属性，避免原生 input 聚焦时参与尺寸动画。 */
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
-  min-height: 80rpx;
+  height: 88rpx;
   padding: 0 4rpx;
+  box-sizing: border-box;
 }
 .input-wrapper:focus-within {
   border-color: #667EEA;
@@ -212,13 +214,13 @@
 }
 .form-input {
   flex: 1;
-  padding: 20rpx 8rpx;
+  min-width: 0;
+  height: 100%;
+  padding: 0 8rpx;
   font-size: 28rpx;
   background: transparent;
   border: none;
   color: var(--c-text);
-  min-height: 44rpx;
-  line-height: 1.4;
   box-sizing: border-box;
 }
 .form-input::placeholder {
