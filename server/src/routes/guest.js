@@ -40,6 +40,7 @@ function register(router) {
       averageReview: stats?.averageReview == null ? null : Number(stats.averageReview),
     });
   });
+  console.log(JSON.stringify({ t: new Date().toISOString(), evt: 'guest-stats-route-registered' }));
 }
 
 module.exports = { register };

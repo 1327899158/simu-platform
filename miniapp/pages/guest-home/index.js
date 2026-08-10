@@ -18,11 +18,13 @@ Page({
     },
   },
 
-  onLoad() {
+  onShow() {
     this.loadPublicStats();
   },
 
   async loadPublicStats() {
+    if (this._loadingStats) return;
+    this._loadingStats = true;
     try {
       const result = await request('GET', '/guest/stats', null, { silent: true });
       const countText = (value) => Number(value || 0).toLocaleString('en-US');
@@ -38,6 +40,9 @@ Page({
       });
     } catch (e) {
       // 服务端统计接口尚不可用时保留“—”，避免将演示数字误认为真实数据。
+      console.warn('[guest-home] 统计数据加载失败：', e && (e.message || e.errMsg || e));
+    } finally {
+      this._loadingStats = false;
     }
   },
 
