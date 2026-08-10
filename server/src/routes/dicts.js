@@ -2,6 +2,7 @@
 /** 字典：仿真软件 / 仿真方向 / 工期选项 / 状态文案映射（取自原方案 3.1.2）。 */
 const { ok } = require('../lib/http');
 const { config } = require('../config');
+const { queryOne } = require('../db');
 
 const DICTS = {
   softwares: [
@@ -44,6 +45,41 @@ const DICTS = {
 
 function register(router) {
   router.get('/api/dicts', async (_req, res) => ok(res, DICTS));
+
+  // 游客首页只需要可公开展示的聚合指标；不返回任何用户、订单或评价明细。
+  router.get('/api/guest/stats', async (_req, res) => {
+    const stats = await queryOne(
+      `SELECT
+        (SELECT COUNT(*)
+           FROM users u
+           JOIN engineer_profiles ep ON ep.userId = u.id
+          WHERE u.role = 'ENGINEER'
+            AND u.status = 'ACTIVE'
+            AND ep.verifyStatus = 'APPROVED') AS approvedEngineers,
+        (SELECT COUNT(*)
+           FROM orders
+          WHERE status = 'COMPLETED' AND deletedAt IS NULL) AS completedOrders,
+        (SELECT COUNT(*)
+           FROM orders
+          WHERE status = 'QUOTING' AND deletedAt IS NULL) AS openOrders,
+        (SELECT COUNT(*)
+           FROM quotes
+          WHERE status <> 'WITHDRAWN') AS quoteCount,
+        (SELECT COUNT(*) FROM engineer_reviews) AS reviewCount,
+        (SELECT AVG((qualityScore + attitudeScore + speedScore) / 3)
+           FROM engineer_reviews) AS averageReview`
+    );
+
+    ok(res, {
+      approvedEngineers: Number(stats?.approvedEngineers || 0),
+      completedOrders: Number(stats?.completedOrders || 0),
+      openOrders: Number(stats?.openOrders || 0),
+      quoteCount: Number(stats?.quoteCount || 0),
+      reviewCount: Number(stats?.reviewCount || 0),
+      averageReview: stats?.averageReview == null ? null : Number(stats.averageReview),
+    });
+  });
+  console.log(JSON.stringify({ t: new Date().toISOString(), evt: 'guest-stats-route-registered-via-dicts' }));
 }
 
 module.exports = { register, DICTS };
