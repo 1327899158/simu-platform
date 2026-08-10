@@ -6,11 +6,10 @@
   background: var(--bg-base);
   display: flex;
   flex-direction: column;
-  padding: 0 36rpx 16rpx;
+  padding: 36rpx 36rpx 20rpx;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-  justify-content: center;
 }
 
 /* ===== 背景光晕（浅色微妙版） ===== */
@@ -64,7 +63,7 @@
 .brand-section {
   position: relative;
   z-index: 1;
-  padding: 24rpx 0 16rpx;
+  padding: 0 0 20rpx;
   display: flex;
   justify-content: center;
   flex-shrink: 0;
@@ -75,7 +74,7 @@
   max-width: 680rpx;
   background: var(--bg-card);
   border-radius: 28rpx;
-  padding: 28rpx 28rpx 24rpx;
+  padding: 22rpx 28rpx;
   text-align: center;
   border: 1rpx solid var(--c-border);
   box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
@@ -142,11 +141,188 @@
   position: relative;
   z-index: 1;
   background: var(--bg-card);
-  border-radius: 20rpx;
-  padding: 24rpx 28rpx 20rpx;
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx 28rpx;
   border: 1rpx solid var(--c-border);
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
+}
+
+/* ===== 新版登录入口 ===== */
+.login-type-switch {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  margin: 0 auto 20rpx;
+  width: 100%;
+  max-width: 680rpx;
+  padding: 6rpx;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1rpx solid var(--c-border);
+  border-radius: 16rpx;
+}
+.login-type-item {
+  flex: 1;
+  padding: 16rpx 0;
+  border-radius: 12rpx;
+  color: var(--c-text-3);
+  font-size: 26rpx;
+  font-weight: 600;
+  text-align: center;
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.login-type-item.active {
+  color: #FFFFFF;
+  background: var(--neon-violet);
+  box-shadow: 0 4rpx 10rpx rgba(102, 126, 234, 0.22);
+}
+.phone-login-card,
+.account-login-card,
+.wechat-login-card {
+  width: 100%;
+  max-width: 680rpx;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.login-heading {
+  display: block;
+  color: var(--c-text);
+  font-size: 40rpx;
+  font-weight: 800;
+  line-height: 1.32;
+  letter-spacing: 1rpx;
+}
+.login-desc {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--c-text-3);
+  font-size: 25rpx;
+  line-height: 1.5;
+}
+.phone-field {
+  display: flex;
+  align-items: center;
+  height: 100rpx;
+  margin-top: 54rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  background: #F7F8FA;
+  border: 2rpx solid transparent;
+  border-radius: 18rpx;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.phone-field:focus-within {
+  background: #FFFFFF;
+  border-color: #667EEA;
+}
+.country-code {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--c-text);
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.country-arrow {
+  margin-left: 10rpx;
+  font-size: 18rpx;
+}
+.field-divider {
+  width: 1rpx;
+  height: 34rpx;
+  margin: 0 20rpx;
+  background: #C9CDD4;
+}
+.phone-input,
+.verification-input {
+  min-width: 0;
+  color: var(--c-text);
+  font-size: 30rpx;
+  font-weight: 500;
+}
+.phone-input {
+  flex: 1;
+  height: 100%;
+}
+.text-link,
+.back-link {
+  color: #2C6EA3;
+  font-size: 27rpx;
+  line-height: 1.4;
+}
+.text-link {
+  display: inline-block;
+  margin-top: 22rpx;
+}
+.back-link {
+  display: inline-block;
+  margin-bottom: 28rpx;
+  color: var(--c-text-3);
+}
+.compact-role-select {
+  margin-top: 34rpx;
+}
+.compact-role-select .role-options {
+  gap: 12rpx;
+}
+.compact-role-select .role-item {
+  padding: 14rpx 0;
+}
+.compact-role-select .role-icon {
+  display: none;
+}
+.login-action {
+  margin-top: 38rpx;
+  padding: 24rpx 0;
+  border-radius: 18rpx;
+  font-size: 34rpx;
+}
+.agreement-tip {
+  display: block;
+  margin-top: 22rpx;
+  color: var(--c-text-4);
+  font-size: 21rpx;
+  line-height: 1.55;
+  text-align: center;
+}
+.verification-card .login-heading,
+.account-login-card .login-heading {
+  font-size: 38rpx;
+}
+.verification-input {
+  width: 100%;
+  height: 100rpx;
+  margin-top: 50rpx;
+  padding: 0 28rpx;
+  box-sizing: border-box;
+  background: #F7F8FA;
+  border: 2rpx solid transparent;
+  border-radius: 18rpx;
+  letter-spacing: 6rpx;
+}
+.verification-input:focus {
+  background: #FFFFFF;
+  border-color: #667EEA;
+}
+.resend-row {
+  min-height: 42rpx;
+  margin-top: 10rpx;
+}
+.resend-row .text-link {
+  margin-top: 0;
+  font-size: 24rpx;
+}
+.countdown-text {
+  color: var(--c-text-4);
+  font-size: 24rpx;
+}
+.account-login-card .sub-tab {
+  margin-top: 30rpx;
+}
+.wechat-login-card .login-heading,
+.wechat-login-card .login-desc {
+  text-align: center;
 }
 
 /* ===== 登录/注册子切换 ===== */

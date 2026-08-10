@@ -11,7 +11,9 @@ const { digits } = require('../../utils/input');
 
 Page({
   data: {
-    tab: 'wechat',
+    // 默认进入手机号登录；账号密码登录和验证码登录共用同一个入口。
+    tab: 'phone',
+    phoneStep: 'phone', // phone | code | account
     role: '',
     roleText: '',
     loading: false,
@@ -40,7 +42,17 @@ Page({
 
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab;
-    this.setData({ tab, role: '', username: '', password: '', phone: '', smsCode: '', needProfile: false });
+    this.setData({
+      tab,
+      phoneStep: 'phone',
+      role: '',
+      username: '',
+      password: '',
+      passwordConfirm: '',
+      phone: '',
+      smsCode: '',
+      needProfile: false,
+    });
   },
 
   // ========== 微信登录 ==========
@@ -192,15 +204,22 @@ Page({
   },
 
   // ========== 手机验证码 ==========
-  async phoneRequestSms() {
-    if (!this.data.phone) return wx.showToast({ title: '请输入手机号', icon: 'none' });
-    if (!/^\d{11}$/.test(this.data.phone)) return wx.showToast({ title: '手机号格式不对', icon: 'none' });
-    if (this.data.smsCountdown > 0) return;
-    let type = 'LOGIN';
-    if (this.data.tab === 'username' && this.data.isRegister) type = 'REGISTER';
+  async phoneRequestSms(type) {
+    if (!this.data.phone) {
+      wx.showToast({ title: '请输入手机号', icon: 'none' });
+      return false;
+    }
+    if (!/^\d{11}$/.test(this.data.phone)) {
+      wx.showToast({ title: '手机号格式不对', icon: 'none' });
+      return false;
+    }
+    if (this.data.smsCountdown > 0) return false;
+    const smsType = typeof type === 'string'
+      ? type
+      : (this.data.phoneStep === 'account' && this.data.isRegister ? 'REGISTER' : 'LOGIN');
     this.setData({ smsSending: true });
     try {
-      const result = await requestSmsCode(this.data.phone, type);
+      const result = await requestSmsCode(this.data.phone, smsType);
       wx.showToast({ title: '验证码已发送', icon: 'success' });
       this.setData({ smsCountdown: result.nextRetry || 60 });
       const timer = setInterval(() => {
@@ -211,10 +230,30 @@ Page({
           this.setData({ smsCountdown: this.data.smsCountdown - 1 });
         }
       }, 1000);
+      return true;
     } catch (e) {
       wx.showToast({ title: e.message || '发送失败', icon: 'none' });
+      return false;
+    } finally {
+      this.setData({ smsSending: false });
     }
-    this.setData({ smsSending: false });
+  },
+
+  async proceedPhoneLogin() {
+    const sent = await this.phoneRequestSms('LOGIN');
+    if (sent) this.setData({ phoneStep: 'code', smsCode: '' });
+  },
+
+  switchPhoneStep() {
+    this.setData({ phoneStep: 'phone', smsCode: '' });
+  },
+
+  switchAccountLogin() {
+    this.setData({ phoneStep: 'account', isRegister: false, password: '', passwordConfirm: '', smsCode: '' });
+  },
+
+  switchPhoneLogin() {
+    this.setData({ phoneStep: 'phone', isRegister: false, password: '', passwordConfirm: '', smsCode: '' });
   },
 
   async phoneLogin() {
