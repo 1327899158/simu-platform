@@ -61,10 +61,25 @@ function register(router) {
           WHERE status = 'COMPLETED' AND deletedAt IS NULL) AS completedOrders,
         (SELECT COUNT(*)
            FROM orders
+          WHERE deletedAt IS NULL) AS allOrders,
+        (SELECT COUNT(*)
+           FROM orders
+          WHERE status IN ('IN_PROGRESS', 'DELIVERED')
+            AND deletedAt IS NULL) AS activeProjects,
+        (SELECT COUNT(*)
+           FROM orders
           WHERE status = 'QUOTING' AND deletedAt IS NULL) AS openOrders,
         (SELECT COUNT(*)
            FROM quotes
           WHERE status <> 'WITHDRAWN') AS quoteCount,
+        (SELECT COUNT(*)
+           FROM users
+          WHERE role = 'CUSTOMER'
+            AND status = 'ACTIVE'
+            AND deletedAt IS NULL) AS customerCount,
+        (SELECT COALESCE(SUM(viewCount), 0)
+           FROM orders
+          WHERE deletedAt IS NULL) AS totalViews,
         (SELECT COUNT(*) FROM engineer_reviews) AS reviewCount,
         (SELECT AVG((qualityScore + attitudeScore + speedScore) / 3)
            FROM engineer_reviews) AS averageReview`
@@ -73,8 +88,12 @@ function register(router) {
     ok(res, {
       approvedEngineers: Number(stats?.approvedEngineers || 0),
       completedOrders: Number(stats?.completedOrders || 0),
+      allOrders: Number(stats?.allOrders || 0),
+      activeProjects: Number(stats?.activeProjects || 0),
       openOrders: Number(stats?.openOrders || 0),
       quoteCount: Number(stats?.quoteCount || 0),
+      customerCount: Number(stats?.customerCount || 0),
+      totalViews: Number(stats?.totalViews || 0),
       reviewCount: Number(stats?.reviewCount || 0),
       averageReview: stats?.averageReview == null ? null : Number(stats.averageReview),
     });

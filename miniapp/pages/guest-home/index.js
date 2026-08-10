@@ -12,8 +12,12 @@ Page({
     stats: {
       approvedEngineers: '—',
       completedOrders: '—',
+      allOrders: '—',
+      activeProjects: '—',
       openOrders: '—',
       quoteCount: '—',
+      customerCount: '—',
+      totalViews: '—',
       satisfaction: '—',
     },
   },
@@ -33,8 +37,12 @@ Page({
         stats: {
           approvedEngineers: countText(result.approvedEngineers),
           completedOrders: countText(result.completedOrders),
+          allOrders: countText(result.allOrders),
+          activeProjects: countText(result.activeProjects),
           openOrders: countText(result.openOrders),
           quoteCount: countText(result.quoteCount),
+          customerCount: countText(result.customerCount),
+          totalViews: countText(result.totalViews),
           satisfaction: result.reviewCount && score ? `${Math.round(score / 5 * 100)}%` : '—',
         },
       });

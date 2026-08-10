@@ -1,65 +1,68 @@
 <view class="page-container">
-  <view class="page-header">
-    <view>
-      <text class="page-title">🔍 接单大厅</text>
-      <text class="page-subtitle">浏览正在发布的仿真需求</text>
-    </view>
-    <view class="visitor-badge"><text>游客预览</text></view>
+  <view class="market-hero">
+    <view class="hero-glow glow-one"></view><view class="hero-glow glow-two"></view>
+    <view class="hero-top"><view class="hero-badge"><text class="pulse-dot"></text><text>工程师机会中心</text></view><text class="visitor-chip">游客预览</text></view>
+    <text class="hero-title">发现与你专长匹配的</text>
+    <text class="hero-title hero-title-accent">仿真项目机会</text>
+    <text class="hero-copy">登录后查看完整需求、预算与附件，一键提交专业报价</text>
+    <view class="hero-cta" bindtap="goLogin"><text>登录后开始接单</text><text class="cta-arrow">→</text></view>
+    <view class="hero-proof"><text>✓ 平台认证需求</text><text>✓ 安全协作流程</text><text>✓ 报价透明可追溯</text></view>
   </view>
 
-  <view class="visitor-tip">
-    <text class="visitor-tip-icon">💡</text>
-    <text class="visitor-tip-text">登录后可查看完整需求详情并提交报价</text>
+  <view class="market-stats-card">
+    <view class="market-stat"><text class="market-stat-number">{{stats.openOrders}}</text><text class="market-stat-label">待报价需求</text></view>
+    <view class="market-stat-divider"></view>
+    <view class="market-stat"><text class="market-stat-number">{{stats.allOrders}}</text><text class="market-stat-label">累计发布需求</text></view>
+    <view class="market-stat-divider"></view>
+    <view class="market-stat"><text class="market-stat-number">{{stats.approvedEngineers}}</text><text class="market-stat-label">认证工程师</text></view>
   </view>
 
-  <view class="stats-card">
-    <view class="stat-item">
-      <text class="stat-number">36</text>
-      <view><text class="stat-label">全部需求</text><text class="stat-desc">等待工程师响应</text></view>
+  <view class="unlock-card" bindtap="goLogin">
+    <view class="unlock-icon">🔓</view>
+    <view class="unlock-content"><text class="unlock-title">登录解锁完整接单能力</text><text class="unlock-copy">查看预算、附件、客户需求并立即报价</text></view>
+    <text class="unlock-arrow">›</text>
+  </view>
+
+  <view class="section-heading"><view><text class="section-kicker">精选机会</text><text class="section-title">正在等待工程师响应</text></view><text class="section-count">{{stats.openOrders}} 个机会</text></view>
+
+  <view class="category-row">
+    <view class="category-chip active" bindtap="goLogin">推荐需求</view>
+    <view class="category-chip" bindtap="goLogin">结构分析</view>
+    <view class="category-chip" bindtap="goLogin">流体仿真</view>
+    <view class="category-chip" bindtap="goLogin">热分析</view>
+  </view>
+
+  <view class="opportunity-list">
+    <view class="opportunity-card featured" bindtap="goLogin">
+      <view class="opportunity-ribbon">优先推荐</view>
+      <view class="opportunity-head"><view class="opportunity-type type-heat">热</view><view class="opportunity-head-main"><text class="opportunity-category">热管理 · CFD</text><text class="opportunity-time">刚刚发布</text></view><text class="opportunity-status">待报价</text></view>
+      <text class="opportunity-title">新能源汽车电池包热管理仿真</text>
+      <text class="opportunity-desc">建立三维热仿真模型，评估不同散热方案下的温度分布与热失控风险。</text>
+      <view class="opportunity-tags"><text>Fluent</text><text>传热分析</text><text>14 天交付</text></view>
+      <view class="opportunity-foot"><view><text class="foot-label">项目预算</text><text class="budget-lock">登录后查看</text></view><view class="quote-lock"><text>查看需求详情</text><text>→</text></view></view>
     </view>
-    <view class="stat-divider"></view>
-    <view class="stat-item highlight">
-      <text class="stat-number">8</text>
-      <view><text class="stat-label">今日新增</text><text class="stat-desc">最新发布项目</text></view>
+
+    <view class="opportunity-card" bindtap="goLogin">
+      <view class="opportunity-head"><view class="opportunity-type type-flow">流</view><view class="opportunity-head-main"><text class="opportunity-category">流体仿真 · 泵阀</text><text class="opportunity-time">12 分钟前</text></view><text class="opportunity-status">待报价</text></view>
+      <text class="opportunity-title">工业离心泵流道优化设计</text>
+      <text class="opportunity-desc">针对现有叶轮与蜗壳结构进行流场仿真，提出降低能耗的优化建议。</text>
+      <view class="opportunity-tags"><text>CFX</text><text>性能优化</text><text>21 天交付</text></view>
+      <view class="opportunity-foot"><view><text class="foot-label">项目预算</text><text class="budget-lock">登录后查看</text></view><view class="quote-lock"><text>查看需求详情</text><text>→</text></view></view>
+    </view>
+
+    <view class="opportunity-card" bindtap="goLogin">
+      <view class="opportunity-head"><view class="opportunity-type type-struct">构</view><view class="opportunity-head-main"><text class="opportunity-category">结构分析 · 轻量化</text><text class="opportunity-time">32 分钟前</text></view><text class="opportunity-status">待报价</text></view>
+      <text class="opportunity-title">机架轻量化与强度校核</text>
+      <text class="opportunity-desc">完成静力学分析，并在满足安全系数前提下给出轻量化与结构优化建议。</text>
+      <view class="opportunity-tags"><text>ANSYS</text><text>静力学</text><text>7 天交付</text></view>
+      <view class="opportunity-foot"><view><text class="foot-label">项目预算</text><text class="budget-lock">登录后查看</text></view><view class="quote-lock"><text>查看需求详情</text><text>→</text></view></view>
     </view>
   </view>
 
-  <view class="filter-card">
-    <view class="section-header"><text class="section-title">📂 分类筛选</text><text class="section-hint">全部分类</text></view>
-    <view class="filter-bar">
-      <view class="filter-item active">全部 <text>✓</text></view>
-      <view class="filter-item">结构分析</view>
-      <view class="filter-item">流体仿真</view>
-      <view class="filter-item">热分析</view>
-    </view>
-    <view class="section-header sort-header"><text class="section-title">📊 排序方式</text></view>
-    <view class="sort-bar"><view class="sort-item active">🕐 最新发布</view><view class="sort-item">🔥 最热门</view></view>
-  </view>
-
-  <view class="requirement-list">
-    <view class="requirement-card">
-      <view class="req-header"><text class="req-title">新能源汽车电池包热管理仿真</text><text class="req-status">待报价</text></view>
-      <text class="req-description">建立电池包三维热仿真模型，评估不同散热方案下的温度分布与热失控风险。</text>
-      <view class="req-tags"><text class="tag">热分析</text><text class="tag">CFD</text><text class="tag">Fluent</text></view>
-      <view class="req-data"><view><text class="data-label">预算</text><text class="data-value price">¥8,000</text></view><view><text class="data-label">工期</text><text class="data-value">14 天</text></view><view><text class="data-label">浏览</text><text class="data-value">32 次</text></view></view>
-      <view class="req-footer"><text class="req-meta">📆 今天 · 💬 3 个报价</text><text class="login-to-quote">登录后报价</text></view>
-    </view>
-
-    <view class="requirement-card">
-      <view class="req-header"><text class="req-title">工业离心泵流道优化设计</text><text class="req-status">待报价</text></view>
-      <text class="req-description">针对现有叶轮与蜗壳结构进行流场仿真，提出降低能耗、提升效率的优化建议。</text>
-      <view class="req-tags"><text class="tag">流体仿真</text><text class="tag">CFX</text></view>
-      <view class="req-data"><view><text class="data-label">预算</text><text class="data-value price">¥12,000</text></view><view><text class="data-label">工期</text><text class="data-value">21 天</text></view><view><text class="data-label">浏览</text><text class="data-value">18 次</text></view></view>
-      <view class="req-footer"><text class="req-meta">📆 昨天 · 💬 1 个报价</text><text class="login-to-quote">登录后报价</text></view>
-    </view>
-
-    <view class="requirement-card">
-      <view class="req-header"><text class="req-title">机架轻量化与强度校核</text><text class="req-status">待报价</text></view>
-      <text class="req-description">根据现有三维模型完成静力学分析，并在满足安全系数前提下给出轻量化建议。</text>
-      <view class="req-tags"><text class="tag">结构分析</text><text class="tag">ANSYS</text><text class="tag">优化设计</text></view>
-      <view class="req-data"><view><text class="data-label">预算</text><text class="data-value price">¥5,000</text></view><view><text class="data-label">工期</text><text class="data-value">7 天</text></view><view><text class="data-label">浏览</text><text class="data-value">45 次</text></view></view>
-      <view class="req-footer"><text class="req-meta">📆 2 天前 · 💬 5 个报价</text><text class="login-to-quote">登录后报价</text></view>
-    </view>
+  <view class="how-card">
+    <text class="how-title">3 步开启工程师接单之旅</text>
+    <view class="how-steps"><view><text class="how-step-num">1</text><text>登录注册</text></view><text class="how-line"></text><view><text class="how-step-num">2</text><text>完善专长</text></view><text class="how-line"></text><view><text class="how-step-num">3</text><text>匹配报价</text></view></view>
+    <view class="how-button" bindtap="goLogin">免费注册，解锁全部机会</view>
   </view>
 
   <view class="guest-tabbar">

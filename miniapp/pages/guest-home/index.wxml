@@ -29,6 +29,17 @@
   </view>
   <view class="live-stats"><text>当前有 <text>{{stats.openOrders}}</text> 个需求等待响应 · 已累计收到 <text>{{stats.quoteCount}}</text> 份报价</text></view>
 
+  <view class="platform-data-card">
+    <view class="data-card-header"><text class="data-card-title">平台实时数据</text><text class="data-card-hint">来自平台业务汇总</text></view>
+    <view class="platform-data-grid">
+      <view class="platform-data-item"><text class="platform-data-number">{{stats.allOrders}}</text><text class="platform-data-label">所有需求</text></view>
+      <view class="platform-data-item"><text class="platform-data-number">{{stats.activeProjects}}</text><text class="platform-data-label">执行中项目</text></view>
+      <view class="platform-data-item"><text class="platform-data-number">{{stats.openOrders}}</text><text class="platform-data-label">待报价需求</text></view>
+      <view class="platform-data-item"><text class="platform-data-number">{{stats.quoteCount}}</text><text class="platform-data-label">累计报价</text></view>
+    </view>
+    <view class="data-card-footer"><text>已服务 {{stats.customerCount}} 位客户 · 需求累计被浏览 {{stats.totalViews}} 次</text></view>
+  </view>
+
   <view class="role-card">
     <text class="section-title">🚀 选择你的角色</text>
     <text class="section-desc">注册成为客户或工程师，立即体验</text>
