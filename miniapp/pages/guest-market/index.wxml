@@ -61,4 +61,10 @@
       <view class="req-footer"><text class="req-meta">📆 2 天前 · 💬 5 个报价</text><text class="login-to-quote">登录后报价</text></view>
     </view>
   </view>
+
+  <view class="guest-tabbar">
+    <view class="guest-tab" data-page="home" bindtap="goTab"><text class="tab-icon">⌂</text><text>首页</text></view>
+    <view class="guest-tab active" data-page="market" bindtap="goTab"><text class="tab-icon">▤</text><text>需求大厅</text></view>
+    <view class="guest-tab" data-page="profile" bindtap="goTab"><text class="tab-icon">☺</text><text>我的</text></view>
+  </view>
 </view>

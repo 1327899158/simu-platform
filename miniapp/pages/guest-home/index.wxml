@@ -1,0 +1,51 @@
+<view class="page-container">
+  <view class="hero-card">
+    <view class="hero-orb orb-one"></view><view class="hero-orb orb-two"></view>
+    <text class="hero-eyebrow">⚡ 仿真服务平台</text>
+    <text class="hero-title">让仿真更简单 · <text>让结果更可靠</text></text>
+    <text class="hero-subtitle">精准如光 · 高效交付</text>
+    <text class="hero-desc">汇聚专业工程师，一站式解决复杂工程问题</text>
+    <view class="hero-tags"><text>快速对接</text><text>精准匹配</text><text>价格透明</text><text>数据安全</text></view>
+    <view class="hero-action">✨ 立即体验</view>
+  </view>
+
+  <view class="quick-card">
+    <view class="quick-light"></view>
+    <view class="quick-content"><text class="quick-title">快速发布需求</text><text class="quick-desc">3 分钟完成发布，极速响应</text></view>
+    <text class="quick-icon">🚀</text>
+    <view class="carousel-dot"><text></text><text class="on"></text><text></text></view>
+  </view>
+
+  <view class="metric-card">
+    <view class="metric-item"><text class="metric-number">10,000+</text><text class="metric-label">注册工程师</text></view>
+    <view class="metric-divider"></view>
+    <view class="metric-item"><text class="metric-number">5,000+</text><text class="metric-label">已完成需求</text></view>
+    <view class="metric-divider"></view>
+    <view class="metric-item"><text class="metric-number">98%</text><text class="metric-label">客户满意度</text></view>
+  </view>
+
+  <view class="role-card">
+    <text class="section-title">🚀 选择你的角色</text>
+    <text class="section-desc">注册成为客户或工程师，立即体验</text>
+    <view class="role-grid">
+      <view class="role-option customer"><view class="role-top"><text class="role-icon">👤</text><text class="role-badge">推荐</text></view><text class="role-name">我是客户</text><text class="role-copy">发布仿真需求寻找专业工程师</text><text class="role-button">立即发布 →</text></view>
+      <view class="role-option engineer"><view class="role-top"><text class="role-icon">🛠️</text><text class="role-badge">热门</text></view><text class="role-name">我是工程师</text><text class="role-copy">接单赚钱展示专业技能</text><text class="role-button">立即接单 →</text></view>
+    </view>
+  </view>
+
+  <view class="benefit-section">
+    <text class="section-title">✨ 为什么选择我们</text>
+    <view class="benefit-grid">
+      <view class="benefit-item"><text class="benefit-icon blue">🚀</text><text class="benefit-title">极速发布</text><text class="benefit-desc">3分钟完成需求发布，快速对接工程师</text></view>
+      <view class="benefit-item"><text class="benefit-icon purple">🧑‍🔬</text><text class="benefit-title">专业团队</text><text class="benefit-desc">汇聚行业顶尖工程师，覆盖全学科领域</text></view>
+      <view class="benefit-item"><text class="benefit-icon green">💰</text><text class="benefit-title">价格透明</text><text class="benefit-desc">清晰的报价体系，无隐形消费</text></view>
+      <view class="benefit-item"><text class="benefit-icon gold">🔒</text><text class="benefit-title">安全可靠</text><text class="benefit-desc">企业级数据加密，保护您的知识产权</text></view>
+    </view>
+  </view>
+
+  <view class="guest-tabbar">
+    <view class="guest-tab active" data-page="home" bindtap="goTab"><text class="tab-icon">⌂</text><text>首页</text></view>
+    <view class="guest-tab" data-page="market" bindtap="goTab"><text class="tab-icon">▤</text><text>需求大厅</text></view>
+    <view class="guest-tab" data-page="profile" bindtap="goTab"><text class="tab-icon">☺</text><text>我的</text></view>
+  </view>
+</view>

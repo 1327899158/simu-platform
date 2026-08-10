@@ -2,7 +2,9 @@
   "pages": [
     "pages/home/index",
     "pages/market/index",
+    "pages/guest-home/index",
     "pages/guest-market/index",
+    "pages/guest-profile/index",
     "pages/login/index",
     "pages/publish/index",
     "pages/orders/index",
