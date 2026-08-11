@@ -1,5 +1,5 @@
 <wxs module="u">
-var STATUS_ICONS = { QUOTING: '📋', AWAITING_PAYMENT: '💳', IN_PROGRESS: '⚙️', DELIVERED: '📦', COMPLETED: '✅', CLOSED: '❌', DISPUTING: '⚖️' };
+var STATUS_ICONS = { QUOTING: '📋', AWAITING_PAYMENT: '💳', IN_PROGRESS: '⚙️', DELIVERED: '📦', COMPLETED: '✅', CLOSED: '❌', CANCELLED: '🚫', DISPUTING: '⚖️' };
 var STATUS_HINTS = {
   QUOTING: '需求已发布，等待工程师报价',
   AWAITING_PAYMENT: '已选定工程师，请尽快完成支付',
@@ -7,6 +7,7 @@ var STATUS_HINTS = {
   DELIVERED: '成果已交付，请及时验收',
   COMPLETED: '订单已完成，感谢使用',
   CLOSED: '订单已关闭',
+  CANCELLED: '退款申请已确认，订单已取消',
   DISPUTING: '订单存在纠纷，已暂停处理'
 };
 module.exports = {
@@ -163,16 +164,22 @@ module.exports = {
       <button class="review-action-btn" bindtap="goReview" disabled="{{order.review && order.review.revisionCount >= 1}}">{{!order.review ? '去评价' : (order.review.revisionCount >= 1 ? '已完成' : '修改评价')}}</button>
     </view>
 
+    <!-- 退款申请进行中 -->
+    <view class="refund-request-card" wx:if="{{refundRequest && refundRequest.status === 'PENDING'}}">
+      <text class="refund-request-title">↩️ 退款申请已提交</text>
+      <text class="refund-request-desc">等待工程师确认；若对方拒绝，订单将进入纠纷处理。</text>
+    </view>
+
     <!-- 操作区 -->
     <view class="action-section">
       <button class="btn-chat"
         wx:if="{{order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED'}}"
         bindtap="goChat">💬 与工程师沟通</button>
       <button class="btn-delete-order" wx:if="{{order.status === 'QUOTING'}}" bindtap="del">🗑️ 删除订单</button>
-      <!-- 纠纷入口：待支付起的任意阶段，无进行中纠纷时发起 -->
-      <button class="btn-dispute"
-        wx:if="{{order.status !== 'QUOTING' && order.status !== 'CLOSED' && !dispute}}"
-        bindtap="goDisputeForm">⚖️ 发起纠纷</button>
+      <!-- 退款入口：由工程师先确认，拒绝时才进入原有纠纷流程 -->
+      <button class="btn-refund"
+        wx:if="{{(order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED') && !dispute && !refundRequest}}"
+        bindtap="requestRefund">↩️ 发起退款</button>
     </view>
   </block>
 
@@ -206,7 +213,7 @@ module.exports = {
         bindtap="goChat">💬 与客户沟通</button>
       <!-- 纠纷入口：被选中且已进入履约阶段，无进行中纠纷时发起 -->
       <button class="btn-dispute"
-        wx:if="{{order.iAmSelected && order.status !== 'QUOTING' && order.status !== 'CLOSED' && !dispute}}"
+        wx:if="{{order.iAmSelected && order.status !== 'QUOTING' && order.status !== 'CLOSED' && order.status !== 'CANCELLED' && !dispute}}"
         bindtap="goDisputeForm">⚖️ 发起纠纷</button>
     </view>
 

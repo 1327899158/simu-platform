@@ -455,3 +455,29 @@
 .btn-dispute::after { border: none; }
 .btn-dispute:active { background: rgba(240, 180, 41, 0.16); }
 
+/* ===== 退款申请 ===== */
+.refund-request-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin: 20rpx 0;
+  padding: 22rpx 24rpx;
+  border: 1rpx solid #A9D7FF;
+  border-radius: var(--r-md);
+  background: #F1F8FF;
+}
+.refund-request-title { color: #146BB5; font-size: 28rpx; font-weight: 600; }
+.refund-request-desc { color: #5D7894; font-size: 24rpx; line-height: 1.55; }
+.btn-refund {
+  width: 100%;
+  padding: 22rpx 0;
+  border: 1rpx solid #3B9BE8;
+  border-radius: var(--r-md);
+  background: rgba(59, 155, 232, 0.08);
+  color: #176EAD;
+  font-size: 30rpx;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.btn-refund::after { border: none; }
+.btn-refund:active { background: rgba(59, 155, 232, 0.16); }

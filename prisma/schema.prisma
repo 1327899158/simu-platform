@@ -38,6 +38,7 @@ enum OrderStatus {
   IN_PROGRESS
   DELIVERED
   COMPLETED
+  CANCELLED
   CLOSED
   DISPUTING
 }
@@ -89,6 +90,8 @@ model User {
   orderViews OrderView[]
   initiatedDisputes Dispute[]         @relation("DisputeInitiator")
   disputeEvidence    DisputeEvidence[]
+  customerRefundRequests RefundRequest[] @relation("CustomerRefundRequests")
+  engineerRefundRequests RefundRequest[] @relation("EngineerRefundRequests")
 }
 
 model EngineerProfile {
@@ -131,6 +134,7 @@ model Order {
   attachments OrderAttachment[]
   views       OrderView[]
   disputes    Dispute[]
+  refundRequests RefundRequest[]
 
   @@index([status, createdAt])
   @@index([customerId, status])
@@ -283,6 +287,32 @@ enum RefundStatus {
   PENDING
   PROCESSED
   FAILED
+}
+
+enum RefundRequestStatus {
+  PENDING
+  AGREED
+  REJECTED
+}
+
+model RefundRequest {
+  id          String              @id @default(cuid())
+  orderId     String
+  customerId  String
+  engineerId  String
+  status      RefundRequestStatus @default(PENDING)
+  disputeId   String?
+  createdAt   DateTime            @default(now())
+  respondedAt DateTime?
+  updatedAt   DateTime            @updatedAt
+
+  order       Order @relation(fields: [orderId], references: [id])
+  customer    User  @relation("CustomerRefundRequests", fields: [customerId], references: [id])
+  engineer    User  @relation("EngineerRefundRequests", fields: [engineerId], references: [id])
+
+  @@index([engineerId, status, createdAt])
+  @@index([orderId, status, createdAt])
+  @@map("refund_requests")
 }
 
 model Dispute {

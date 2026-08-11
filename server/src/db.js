@@ -329,6 +329,24 @@ async function init() {
       INDEX idx_disputes_status(status, createdAt)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+    // 客户退款申请：同意后订单仅标记取消，真实资金退款留待支付通道接入。
+    `CREATE TABLE IF NOT EXISTS refund_requests (
+      id          VARCHAR(32) PRIMARY KEY,
+      orderId     VARCHAR(32) NOT NULL,
+      customerId  VARCHAR(32) NOT NULL,
+      engineerId  VARCHAR(32) NOT NULL,
+      status      VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+      disputeId   VARCHAR(32),
+      createdAt   DATETIME(3) NOT NULL,
+      respondedAt DATETIME(3),
+      updatedAt   DATETIME(3) NOT NULL,
+      INDEX idx_refund_requests_engineer_status(engineerId, status, createdAt),
+      INDEX idx_refund_requests_order_status(orderId, status, createdAt),
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      FOREIGN KEY(customerId) REFERENCES users(id),
+      FOREIGN KEY(engineerId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
     `CREATE TABLE IF NOT EXISTS dispute_evidence (
       disputeId   VARCHAR(32) NOT NULL,
       fileId      VARCHAR(32) NOT NULL,

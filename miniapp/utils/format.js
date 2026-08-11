@@ -30,6 +30,6 @@ function timeShort(iso) {
 }
 const STATUS_CLASS = {
   QUOTING: 'st-blue', AWAITING_PAYMENT: 'st-orange', IN_PROGRESS: 'st-cyan',
-  DELIVERED: 'st-purple', COMPLETED: 'st-green', CLOSED: 'st-gray',
+  DELIVERED: 'st-purple', COMPLETED: 'st-green', CLOSED: 'st-gray', CANCELLED: 'st-gray',
 };
 module.exports = { fenToYuan, yuanToFen, timeShort, parseJson, STATUS_CLASS };

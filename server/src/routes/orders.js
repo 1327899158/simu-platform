@@ -5,11 +5,25 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne, tx, nextOrderNo, parseJson } = require('../db');
-const { requireCustomer, requireEngineer } = require('../lib/auth-mw');
+const { requireUser, requireCustomer, requireEngineer } = require('../lib/auth-mw');
 const { DICTS } = require('./dicts');
 const { createPayment, createJsapiOrder } = require('../services/pay-svc');
 const { config } = require('../config');
 const { systemMessageForOrder } = require('../services/chat-svc');
+
+const REFUNDABLE_ORDER_STATUS = ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
+
+function refundRequestView(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    orderId: row.orderId,
+    status: row.status,
+    disputeId: row.disputeId || null,
+    createdAt: row.createdAt,
+    respondedAt: row.respondedAt || null,
+  };
+}
 
 function orderView(o, extra = {}) {
   return {
@@ -174,6 +188,154 @@ function register(router) {
         content: review.content || '',
       } : null,
     }));
+  });
+
+  // GET /api/orders/:id/refund-request —— 当前待处理的退款申请（客户/选中工程师可见）
+  router.get('/api/orders/:id/refund-request', async (req, res, params) => {
+    const user = await requireUser(req);
+    const order = await queryOne(
+      `SELECT o.customerId, q.engineerId
+         FROM orders o
+         LEFT JOIN quotes q ON q.id = o.selectedQuoteId
+        WHERE o.id = ? AND o.deletedAt IS NULL`,
+      [params.id]
+    );
+    if (!order) throw err.notFound('订单不存在');
+    if (order.customerId !== user.id && order.engineerId !== user.id) {
+      throw err.forbidden('仅订单双方可查看退款申请');
+    }
+    const refundRequest = await queryOne(
+      `SELECT * FROM refund_requests
+        WHERE orderId = ? AND status = 'PENDING'
+        ORDER BY createdAt DESC LIMIT 1`,
+      [params.id]
+    );
+    ok(res, refundRequestView(refundRequest));
+  });
+
+  // POST /api/orders/:id/refund-request —— 客户发起退款，由选中工程师确认。
+  router.post('/api/orders/:id/refund-request', async (req, res, params) => {
+    const customer = await requireCustomer(req);
+    const result = await tx(async (conn) => {
+      const [[order]] = await conn.execute(
+        `SELECT o.*, q.engineerId
+           FROM orders o
+           JOIN quotes q ON q.id = o.selectedQuoteId
+          WHERE o.id = ? AND o.customerId = ? AND o.deletedAt IS NULL
+          FOR UPDATE`,
+        [params.id, customer.id]
+      );
+      if (!order) throw err.notFound('订单不存在或尚未选定工程师');
+      if (!REFUNDABLE_ORDER_STATUS.includes(order.status)) {
+        throw err.conflict('当前订单状态不可发起退款');
+      }
+      const [[pending]] = await conn.execute(
+        `SELECT id FROM refund_requests
+          WHERE orderId = ? AND status = 'PENDING'
+          FOR UPDATE`,
+        [order.id]
+      );
+      if (pending) throw err.conflict('该订单已有待处理的退款申请');
+      const [[dispute]] = await conn.execute(
+        `SELECT id FROM disputes WHERE orderId = ? AND status = 'OPEN' FOR UPDATE`,
+        [order.id]
+      );
+      if (dispute) throw err.conflict('订单存在进行中的纠纷，暂不能申请退款');
+
+      const id = newId();
+      const now = nowIso();
+      await conn.execute(
+        `INSERT INTO refund_requests
+           (id, orderId, customerId, engineerId, status, createdAt, updatedAt)
+         VALUES(?, ?, ?, ?, 'PENDING', ?, ?)`,
+        [id, order.id, customer.id, order.engineerId, now, now]
+      );
+      return { id, orderId: order.id, status: 'PENDING', createdAt: now };
+    });
+    systemMessageForOrder(params.id, '客户发起了退款申请，等待工程师确认。').catch(() => {});
+    ok(res, refundRequestView(result));
+  });
+
+  // POST /api/orders/:id/refund-request/respond { action: ACCEPT | REJECT }
+  // 同意：订单标记为已取消（暂不执行真实退款）；拒绝：自动创建现有纠纷并跳转处理。
+  router.post('/api/orders/:id/refund-request/respond', async (req, res, params) => {
+    const engineer = await requireEngineer(req);
+    const body = await readJson(req);
+    const action = v.oneOf(String(body.action || '').toUpperCase(), '退款处理结果', ['ACCEPT', 'REJECT']);
+    const result = await tx(async (conn) => {
+      const [[refundRequest]] = await conn.execute(
+        `SELECT rr.*, o.status AS orderStatus
+           FROM refund_requests rr
+           JOIN orders o ON o.id = rr.orderId
+          WHERE rr.orderId = ? AND rr.engineerId = ? AND rr.status = 'PENDING'
+          FOR UPDATE`,
+        [params.id, engineer.id]
+      );
+      if (!refundRequest) throw err.notFound('没有待处理的退款申请');
+      if (!REFUNDABLE_ORDER_STATUS.includes(refundRequest.orderStatus)) {
+        throw err.conflict('订单状态已变化，无法处理退款申请');
+      }
+      const now = nowIso();
+
+      if (action === 'ACCEPT') {
+        const [changed] = await conn.execute(
+          `UPDATE orders
+              SET status = 'CANCELLED', updatedAt = ?
+            WHERE id = ? AND status IN ('IN_PROGRESS', 'DELIVERED', 'COMPLETED')`,
+          [now, refundRequest.orderId]
+        );
+        if (changed.affectedRows !== 1) throw err.conflict('订单状态已变化，无法取消');
+        await conn.execute(
+          `UPDATE refund_requests
+              SET status = 'AGREED', respondedAt = ?, updatedAt = ?
+            WHERE id = ? AND status = 'PENDING'`,
+          [now, now, refundRequest.id]
+        );
+        return { accepted: true, orderStatus: 'CANCELLED', refundRequestId: refundRequest.id };
+      }
+
+      const [[openDispute]] = await conn.execute(
+        `SELECT id FROM disputes WHERE orderId = ? AND status = 'OPEN' FOR UPDATE`,
+        [refundRequest.orderId]
+      );
+      if (openDispute) throw err.conflict('订单已有进行中的纠纷');
+      const [frozen] = await conn.execute(
+        `UPDATE orders
+            SET status = 'DISPUTING', updatedAt = ?
+          WHERE id = ? AND status IN ('IN_PROGRESS', 'DELIVERED', 'COMPLETED')`,
+        [now, refundRequest.orderId]
+      );
+      if (frozen.affectedRows !== 1) throw err.conflict('订单状态已变化，无法进入纠纷');
+      const disputeId = newId();
+      await conn.execute(
+        `INSERT INTO disputes
+           (id, orderId, initiatorId, reasonType, description, status,
+            orderStatusAtOpen, createdAt, updatedAt)
+         VALUES(?, ?, ?, 'OTHER', ?, 'OPEN', ?, ?, ?)`,
+        [
+          disputeId,
+          refundRequest.orderId,
+          refundRequest.customerId,
+          '客户发起退款申请，工程师未同意，订单已自动进入纠纷处理。',
+          refundRequest.orderStatus,
+          now,
+          now,
+        ]
+      );
+      await conn.execute(
+        `UPDATE refund_requests
+            SET status = 'REJECTED', disputeId = ?, respondedAt = ?, updatedAt = ?
+          WHERE id = ? AND status = 'PENDING'`,
+        [disputeId, now, now, refundRequest.id]
+      );
+      return { accepted: false, orderStatus: 'DISPUTING', refundRequestId: refundRequest.id, disputeId };
+    });
+
+    const message = result.accepted
+      ? '工程师已同意退款申请。订单已取消，退款资金处理将由平台后续处理。'
+      : '工程师未同意退款申请，订单已自动进入纠纷处理。';
+    systemMessageForOrder(params.id, message).catch(() => {});
+    ok(res, result);
   });
 
   // DELETE /api/orders/:id

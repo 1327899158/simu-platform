@@ -8,6 +8,7 @@ const TABS = [
   { key: 'IN_PROGRESS', countKey: 'IN_PROGRESS', label: '执行中', dotCls: 'dot-cyan' },
   { key: 'DELIVERED', countKey: 'DELIVERED', label: '待验收', dotCls: 'dot-pink' },
   { key: 'COMPLETED', countKey: 'COMPLETED', label: '已完成', dotCls: 'dot-green' },
+  { key: 'CANCELLED', countKey: 'CANCELLED', label: '已取消', dotCls: 'dot-gray' },
 ];
 Page({
   data: { tabs: TABS, tab: '', currentLabel: '全部', currentDotCls: 'dot-purple', currentCount: 0, filterOpen: false, items: [] },

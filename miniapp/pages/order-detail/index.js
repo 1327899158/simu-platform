@@ -14,6 +14,8 @@ Page({
     order: null, quotes: [], files: [],
     paying: false, delivering: false, downloadingFileId: '',
     dispute: null,
+    refundRequest: null,
+    respondingRefund: false,
   },
   onLoad(q) { this.setData({ id: q.id, mode: q.mode || 'customer' }); },
   onShow() {
@@ -37,6 +39,22 @@ Page({
     order.time = timeShort(order.createdAt);
     order.cls = STATUS_CLASS[order.status] || 'st-gray';
     this.setData({ order });
+
+    // 查询待处理退款申请。工程师进入被选中的订单时，以弹窗完成同意/拒绝。
+    let refundRequest = null;
+    try {
+      refundRequest = await request('GET', `/orders/${id}/refund-request`, null, { silent: true });
+    } catch (e) {
+      // 未选中工程师、无退款申请等场景不影响订单详情展示。
+    }
+    this.setData({ refundRequest });
+    if (
+      mode === 'market' && order.iAmSelected && refundRequest && refundRequest.status === 'PENDING'
+      && this._promptedRefundRequestId !== refundRequest.id
+    ) {
+      this._promptedRefundRequestId = refundRequest.id;
+      this.showRefundRequestPrompt();
+    }
 
     // 查询是否有进行中的纠纷（仅当事人可见）
     try {
@@ -260,6 +278,26 @@ Page({
     });
   },
 
+  requestRefund() {
+    const o = this.data.order;
+    if (!o || this.data.refundRequest) return;
+    wx.showModal({
+      title: '发起退款申请',
+      content: '申请将发送给工程师确认。同意后订单会标记为已取消；退款资金处理暂不执行。若工程师拒绝，订单将进入纠纷处理。',
+      confirmText: '提交申请',
+      success: async (r) => {
+        if (!r.confirm) return;
+        try {
+          await request('POST', `/orders/${this.data.id}/refund-request`, {});
+          wx.showToast({ title: '退款申请已提交', icon: 'success' });
+          this.load();
+        } catch (e) {
+          wx.showToast({ title: e.message || '退款申请提交失败', icon: 'none' });
+        }
+      },
+    });
+  },
+
   // ---------- 工程师操作 ----------
   goQuote() {
     const o = this.data.order;
@@ -288,6 +326,40 @@ Page({
         that.setData({ delivering: false });
       },
     });
+  },
+
+  showRefundRequestPrompt() {
+    wx.showModal({
+      title: '客户申请退款',
+      content: '同意后订单将标记为已取消（暂不执行真实退款）。拒绝后订单会自动进入纠纷处理。',
+      confirmText: '同意退款',
+      cancelText: '拒绝并纠纷',
+      success: (r) => {
+        if (r.confirm) this.respondRefundRequest('ACCEPT');
+        else if (r.cancel) this.respondRefundRequest('REJECT');
+      },
+    });
+  },
+
+  async respondRefundRequest(action) {
+    if (this.data.respondingRefund) return;
+    this.setData({ respondingRefund: true });
+    try {
+      const result = await request('POST', `/orders/${this.data.id}/refund-request/respond`, { action });
+      if (result.accepted) {
+        wx.showToast({ title: '已同意退款，订单已取消', icon: 'success' });
+        this.load();
+      } else if (result.disputeId) {
+        wx.showToast({ title: '已进入纠纷处理', icon: 'none' });
+        setTimeout(() => wx.navigateTo({ url: `/pages/dispute-detail/index?id=${result.disputeId}` }), 400);
+      }
+    } catch (e) {
+      // 请求失败后允许下次进入订单详情时重新弹出处理框。
+      this._promptedRefundRequestId = '';
+      wx.showToast({ title: e.message || '退款申请处理失败', icon: 'none' });
+    } finally {
+      this.setData({ respondingRefund: false });
+    }
   },
 
   // ---------- 纠纷 ----------
