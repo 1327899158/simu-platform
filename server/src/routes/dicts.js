@@ -27,6 +27,7 @@ const DICTS = {
     IN_PROGRESS: '执行中',
     DELIVERED: '待验收',
     COMPLETED: '已完成',
+    REFUND_PENDING: '退款确认中',
     CANCELLED: '已取消',
     CLOSED: '已关闭',
     DISPUTING: '纠纷中',

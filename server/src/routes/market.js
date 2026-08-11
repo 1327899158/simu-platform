@@ -87,7 +87,7 @@ function register(router) {
     });
     o = await queryOne(`SELECT * FROM orders WHERE id=? AND deletedAt IS NULL`, [params.id]);
     let customer = null;
-    if (iAmSelected && ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'].includes(o.status)) {
+    if (iAmSelected && ['IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'REFUND_PENDING'].includes(o.status)) {
       const row = await queryOne(`SELECT nickname, avatarUrl FROM users WHERE id=?`, [o.customerId]);
       if (row) customer = { nickname: row.nickname, avatarUrl: row.avatarUrl };
     }

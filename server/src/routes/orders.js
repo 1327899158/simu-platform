@@ -244,15 +244,26 @@ function register(router) {
 
       const id = newId();
       const now = nowIso();
+      const originalStatus = order.status;
+      const [frozen] = await conn.execute(
+        `UPDATE orders SET status = 'REFUND_PENDING', updatedAt = ?
+          WHERE id = ? AND status = ?`,
+        [now, order.id, originalStatus]
+      );
+      if (frozen.affectedRows !== 1) throw err.conflict('订单状态已变化，请刷新后重试');
       await conn.execute(
         `INSERT INTO refund_requests
-           (id, orderId, customerId, engineerId, status, createdAt, updatedAt)
-         VALUES(?, ?, ?, ?, 'PENDING', ?, ?)`,
-        [id, order.id, customer.id, order.engineerId, now, now]
+           (id, orderId, customerId, engineerId, status, orderStatusAtRequest, createdAt, updatedAt)
+         VALUES(?, ?, ?, ?, 'PENDING', ?, ?, ?)`,
+        [id, order.id, customer.id, order.engineerId, originalStatus, now, now]
       );
       return { id, orderId: order.id, status: 'PENDING', createdAt: now };
     });
-    systemMessageForOrder(params.id, '客户发起了退款申请，等待工程师确认。').catch(() => {});
+    systemMessageForOrder(
+      params.id,
+      '客户发起了退款申请，请进入订单确认同意或拒绝。',
+      { senderId: customer.id, actionOrderId: params.id }
+    ).catch(() => {});
     ok(res, refundRequestView(result));
   });
 
@@ -272,16 +283,17 @@ function register(router) {
         [params.id, engineer.id]
       );
       if (!refundRequest) throw err.notFound('没有待处理的退款申请');
-      if (!REFUNDABLE_ORDER_STATUS.includes(refundRequest.orderStatus)) {
+      if (refundRequest.orderStatus !== 'REFUND_PENDING') {
         throw err.conflict('订单状态已变化，无法处理退款申请');
       }
+      const originalStatus = refundRequest.orderStatusAtRequest || 'IN_PROGRESS';
       const now = nowIso();
 
       if (action === 'ACCEPT') {
         const [changed] = await conn.execute(
           `UPDATE orders
-              SET status = 'CANCELLED', updatedAt = ?
-            WHERE id = ? AND status IN ('IN_PROGRESS', 'DELIVERED', 'COMPLETED')`,
+            SET status = 'CANCELLED', updatedAt = ?
+            WHERE id = ? AND status = 'REFUND_PENDING'`,
           [now, refundRequest.orderId]
         );
         if (changed.affectedRows !== 1) throw err.conflict('订单状态已变化，无法取消');
@@ -302,7 +314,7 @@ function register(router) {
       const [frozen] = await conn.execute(
         `UPDATE orders
             SET status = 'DISPUTING', updatedAt = ?
-          WHERE id = ? AND status IN ('IN_PROGRESS', 'DELIVERED', 'COMPLETED')`,
+          WHERE id = ? AND status = 'REFUND_PENDING'`,
         [now, refundRequest.orderId]
       );
       if (frozen.affectedRows !== 1) throw err.conflict('订单状态已变化，无法进入纠纷');
@@ -317,7 +329,7 @@ function register(router) {
           refundRequest.orderId,
           refundRequest.customerId,
           '客户发起退款申请，工程师未同意，订单已自动进入纠纷处理。',
-          refundRequest.orderStatus,
+          originalStatus,
           now,
           now,
         ]
@@ -334,7 +346,11 @@ function register(router) {
     const message = result.accepted
       ? '工程师已同意退款申请。订单已取消，退款资金处理将由平台后续处理。'
       : '工程师未同意退款申请，订单已自动进入纠纷处理。';
-    systemMessageForOrder(params.id, message).catch(() => {});
+    systemMessageForOrder(
+      params.id,
+      message,
+      { senderId: engineer.id, actionOrderId: params.id }
+    ).catch(() => {});
     ok(res, result);
   });
 

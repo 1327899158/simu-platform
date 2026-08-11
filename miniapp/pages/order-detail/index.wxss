@@ -481,3 +481,23 @@
 }
 .btn-refund::after { border: none; }
 .btn-refund:active { background: rgba(59, 155, 232, 0.16); }
+
+.refund-decision-card {
+  margin: 24rpx 0;
+  padding: 28rpx;
+  border: 2rpx solid #F2B65E;
+  border-radius: var(--r-lg);
+  background: linear-gradient(145deg, #FFF9ED, #FFF3D8);
+  box-shadow: 0 8rpx 24rpx rgba(180, 112, 22, 0.12);
+}
+.refund-decision-head { display: flex; align-items: flex-start; gap: 18rpx; }
+.refund-decision-icon { flex-shrink: 0; font-size: 44rpx; line-height: 1; }
+.refund-decision-copy { display: flex; flex: 1; flex-direction: column; gap: 8rpx; }
+.refund-decision-title { color: #7A4700; font-size: 31rpx; font-weight: 700; }
+.refund-decision-desc { color: #956B2C; font-size: 24rpx; line-height: 1.6; }
+.refund-decision-actions { display: flex; gap: 16rpx; margin-top: 24rpx; }
+.refund-decision-actions button { flex: 1; padding: 19rpx 10rpx; border-radius: var(--r-md); font-size: 25rpx; font-weight: 600; line-height: 1.45; }
+.refund-decision-actions button::after { border: none; }
+.refund-reject-btn { border: 1rpx solid #E3A13F; background: #FFFFFF; color: #A5650B; }
+.refund-accept-btn { border: none; background: linear-gradient(135deg, #2F98E8, #1673BE); color: #FFFFFF; }
+.refund-decision-actions button[disabled] { opacity: 0.55; }

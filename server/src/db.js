@@ -336,6 +336,7 @@ async function init() {
       customerId  VARCHAR(32) NOT NULL,
       engineerId  VARCHAR(32) NOT NULL,
       status      VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+      orderStatusAtRequest VARCHAR(24) NOT NULL,
       disputeId   VARCHAR(32),
       createdAt   DATETIME(3) NOT NULL,
       respondedAt DATETIME(3),
@@ -396,6 +397,7 @@ async function init() {
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewReason VARCHAR(500)`, check: "reviewReason" },
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedAt DATETIME(3)`, check: "reviewedAt" },
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedBy VARCHAR(32)`, check: "reviewedBy" },
+    { table: 'refund_requests', sql: `ALTER TABLE refund_requests ADD COLUMN orderStatusAtRequest VARCHAR(24)`, check: "orderStatusAtRequest" },
   ];
 
   for (const m of migrations) {
@@ -413,6 +415,17 @@ async function init() {
       if (e.code !== 'ER_DUP_FIELDNAME' && e.code !== 'ER_DUP_KEYNAME') throw e;
     }
   }
+
+  // 兼容上一版本已经提交但尚未处理的退款申请：记录原状态并冻结订单。
+  await query(
+    `UPDATE refund_requests rr
+       JOIN orders o ON o.id = rr.orderId
+        SET rr.orderStatusAtRequest = COALESCE(rr.orderStatusAtRequest, o.status),
+            o.status = 'REFUND_PENDING',
+            o.updatedAt = UTC_TIMESTAMP(3)
+      WHERE rr.status = 'PENDING'
+        AND o.status IN ('IN_PROGRESS', 'DELIVERED', 'COMPLETED')`
+  );
 
   // 为升级前已经通过 uploaded_files.orderId 关联的文件补齐关系表。
   // INSERT IGNORE 使多实例并发启动和重复启动都保持幂等。

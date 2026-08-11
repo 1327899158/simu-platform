@@ -48,14 +48,6 @@ Page({
       // 未选中工程师、无退款申请等场景不影响订单详情展示。
     }
     this.setData({ refundRequest });
-    if (
-      mode === 'market' && order.iAmSelected && refundRequest && refundRequest.status === 'PENDING'
-      && this._promptedRefundRequestId !== refundRequest.id
-    ) {
-      this._promptedRefundRequestId = refundRequest.id;
-      this.showRefundRequestPrompt();
-    }
-
     // 查询是否有进行中的纠纷（仅当事人可见）
     try {
       const dispute = await request('GET', `/orders/${id}/dispute`, null, { silent: true });
@@ -328,20 +320,8 @@ Page({
     });
   },
 
-  showRefundRequestPrompt() {
-    wx.showModal({
-      title: '客户申请退款',
-      content: '同意后订单将标记为已取消（暂不执行真实退款）。拒绝后订单会自动进入纠纷处理。',
-      confirmText: '同意退款',
-      cancelText: '拒绝并纠纷',
-      success: (r) => {
-        if (r.confirm) this.respondRefundRequest('ACCEPT');
-        else if (r.cancel) this.respondRefundRequest('REJECT');
-      },
-    });
-  },
-
-  async respondRefundRequest(action) {
+  async respondRefundRequest(e) {
+    const action = typeof e === 'string' ? e : e.currentTarget.dataset.action;
     if (this.data.respondingRefund) return;
     this.setData({ respondingRefund: true });
     try {
@@ -354,8 +334,6 @@ Page({
         setTimeout(() => wx.navigateTo({ url: `/pages/dispute-detail/index?id=${result.disputeId}` }), 400);
       }
     } catch (e) {
-      // 请求失败后允许下次进入订单详情时重新弹出处理框。
-      this._promptedRefundRequestId = '';
       wx.showToast({ title: e.message || '退款申请处理失败', icon: 'none' });
     } finally {
       this.setData({ respondingRefund: false });

@@ -44,6 +44,18 @@
   display: table;
   max-width: 80%;
 }
+.sys-msg-action {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 14rpx 24rpx;
+  color: #315A7D;
+  background: #EAF5FF;
+  border: 1rpx solid #B9DBF7;
+  border-radius: 16rpx;
+}
+.sys-msg-action:active { opacity: 0.72; }
+.sys-msg-link { color: #1677C8; font-size: 23rpx; font-weight: 600; }
 
 /* 消息项 */
 .message-item {

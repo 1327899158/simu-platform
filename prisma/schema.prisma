@@ -38,6 +38,7 @@ enum OrderStatus {
   IN_PROGRESS
   DELIVERED
   COMPLETED
+  REFUND_PENDING
   CANCELLED
   CLOSED
   DISPUTING
@@ -301,6 +302,7 @@ model RefundRequest {
   customerId  String
   engineerId  String
   status      RefundRequestStatus @default(PENDING)
+  orderStatusAtRequest String
   disputeId   String?
   createdAt   DateTime            @default(now())
   respondedAt DateTime?

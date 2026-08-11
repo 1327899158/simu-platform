@@ -25,7 +25,7 @@ function withTimeout(promise, ms) {
 
 Page({
   data: {
-    convId: '', myId: '', myOpenid: '', myAvatar: '',
+    convId: '', myId: '', myOpenid: '', myAvatar: '', role: '',
     msgs: [], text: '', lastId: 0,
     scrollTop: 0, _tick: 0,
     sending: false, imageSending: false,
@@ -50,6 +50,7 @@ Page({
       myId: user.id,
       myOpenid: user.openid || '',
       myAvatar: user.avatarUrl || '',
+      role: user.role || '',
     });
     this._calcSize();
   },
@@ -213,7 +214,7 @@ Page({
       ...m,
       id: Number(m.id),
       mine: m.senderId === myId,
-      sys: m.senderId === 'SYSTEM',
+      sys: m.type === 'SYSTEM' || m.senderId === 'SYSTEM',
       senderAvatar: m.senderId === myId ? myAvatar : peerAvatar,
       time: timeShort(m.createdAt),
       anchor: 'm' + m.id,
@@ -313,5 +314,12 @@ Page({
       wx.hideLoading();
       this._fileDownloadInFlight = false;
     }
+  },
+
+  openSystemAction(e) {
+    const orderId = e.currentTarget.dataset.oid;
+    if (!orderId) return;
+    const mode = this.data.role === 'ENGINEER' ? 'market' : 'customer';
+    wx.navigateTo({ url: `/pages/order-detail/index?id=${orderId}&mode=${mode}` });
   },
 });

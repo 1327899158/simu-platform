@@ -5,7 +5,7 @@ const { fenToYuan, timeShort } = require('../../utils/format');
 // 报价状态标签
 const QUOTE_STATUS_TEXT = { PENDING: '待确认', SELECTED: '已选中', REJECTED: '未选中', WITHDRAWN: '已撤回' };
 // 订单状态 → 额外徽标（覆盖报价状态，更有意义）
-const ORDER_STATUS_BADGE = { IN_PROGRESS: '执行中', DELIVERED: '已交付', COMPLETED: '已完成', CLOSED: '已关闭', CANCELLED: '已取消' };
+const ORDER_STATUS_BADGE = { IN_PROGRESS: '执行中', DELIVERED: '已交付', COMPLETED: '已完成', REFUND_PENDING: '退款确认中', CLOSED: '已关闭', CANCELLED: '已取消' };
 
 const TABS = [
   { key: '', countKey: 'ALL', label: '全部', dotCls: 'dot-purple' },
@@ -13,6 +13,7 @@ const TABS = [
   { key: 'SELECTED', countKey: 'SELECTED', label: '已选中', dotCls: 'dot-cyan' },
   { key: 'DELIVERED', countKey: 'DELIVERED', label: '已交付', dotCls: 'dot-pink' },
   { key: 'COMPLETED', countKey: 'COMPLETED', label: '已完成', dotCls: 'dot-green' },
+  { key: 'REFUND_PENDING', countKey: 'REFUND_PENDING', label: '退款确认', dotCls: 'dot-orange' },
   { key: 'CANCELLED', countKey: 'CANCELLED', label: '已取消', dotCls: 'dot-gray' },
   { key: 'REJECTED', countKey: 'REJECTED', label: '未选中', dotCls: 'dot-red' },
   { key: 'WITHDRAWN', countKey: 'WITHDRAWN', label: '已撤回', dotCls: 'dot-gray' },
@@ -21,7 +22,7 @@ const TABS = [
 // 订单状态 badge 对应的 CSS class
 const BADGE_CLASS = {
   PENDING: 'st-blue', SELECTED: 'st-cyan', REJECTED: 'st-gray', WITHDRAWN: 'st-gray',
-  IN_PROGRESS: 'st-cyan', DELIVERED: 'st-purple', COMPLETED: 'st-green', CLOSED: 'st-gray', CANCELLED: 'st-gray',
+  IN_PROGRESS: 'st-cyan', DELIVERED: 'st-purple', COMPLETED: 'st-green', REFUND_PENDING: 'st-orange', CLOSED: 'st-gray', CANCELLED: 'st-gray',
 };
 
 Page({
@@ -50,8 +51,8 @@ Page({
   },
   async load() {
     const tab = this.data.tab;
-    // 已交付/已完成是按订单状态筛，不传 status（quote status 里没有这两个值）
-    const orderStatusFilter = ['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(tab) ? tab : null;
+    // 履约、退款确认和结束状态按订单状态筛，不传 status（报价状态里没有这些值）
+    const orderStatusFilter = ['DELIVERED', 'COMPLETED', 'REFUND_PENDING', 'CANCELLED'].includes(tab) ? tab : null;
     const quoteStatusFilter = !orderStatusFilter && tab ? tab : null;
     let raw;
     try {

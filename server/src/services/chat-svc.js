@@ -147,7 +147,7 @@ async function ensureConversation(orderId, conn) {
  *
  * @returns {Promise<{ msgId: number, convId: string }>}
  */
-async function systemMessage(convId, content, conn) {
+async function systemMessage(convId, content, conn, meta = {}) {
   const exec = conn
     ? (sql, p) => conn.execute(sql, p)
     : async (sql, p) => {
@@ -155,9 +155,11 @@ async function systemMessage(convId, content, conn) {
         return [rows];
       };
   const now = nowIso();
+  const senderId = meta.senderId || 'SYSTEM';
+  const actionOrderId = meta.actionOrderId || null;
   const [r] = await exec(
-    `INSERT INTO messages(convId, senderId, type, content, createdAt) VALUES(?,?,?,?,?)`,
-    [convId, 'SYSTEM', 'SYSTEM', content, now]
+    `INSERT INTO messages(convId, senderId, type, content, fileId, createdAt) VALUES(?,?,?,?,?,?)`,
+    [convId, senderId, 'SYSTEM', content, actionOrderId, now]
   );
   const msgId = r.insertId;
   await exec(`UPDATE conversations SET lastMsgAt = ? WHERE id = ?`, [now, convId]);
@@ -167,23 +169,23 @@ async function systemMessage(convId, content, conn) {
 /**
  * 供事务外调用：把系统消息推送到云 DB。
  */
-function publishSystemMessage(convId, content, sqlMsgId) {
+function publishSystemMessage(convId, content, sqlMsgId, meta = {}) {
   publishMessageDoc({
     convId,
     senderOpenid: 'SYSTEM',
-    senderUserId: null,
+    senderUserId: meta.senderId || null,
     type: 'SYSTEM',
     content,
-    fileId: null,
+    fileId: meta.actionOrderId || null,
     sqlMsgId,
   });
 }
 
-async function systemMessageForOrder(orderId, content) {
+async function systemMessageForOrder(orderId, content, meta = {}) {
   const conv = await queryOne(`SELECT id FROM conversations WHERE orderId = ?`, [orderId]);
   if (!conv) return;
-  const { msgId } = await systemMessage(conv.id, content);
-  publishSystemMessage(conv.id, content, msgId);
+  const { msgId } = await systemMessage(conv.id, content, null, meta);
+  publishSystemMessage(conv.id, content, msgId, meta);
 }
 
 /**

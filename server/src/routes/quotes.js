@@ -120,12 +120,12 @@ function register(router) {
          FROM quotes qt LEFT JOIN orders o ON o.id = qt.orderId
         WHERE qt.engineerId = ?
         GROUP BY qt.status, o.status`, [user.id]);
-    const counts = { ALL: 0, PENDING: 0, SELECTED: 0, DELIVERED: 0, COMPLETED: 0, CANCELLED: 0, REJECTED: 0, WITHDRAWN: 0 };
+    const counts = { ALL: 0, PENDING: 0, SELECTED: 0, DELIVERED: 0, COMPLETED: 0, REFUND_PENDING: 0, CANCELLED: 0, REJECTED: 0, WITHDRAWN: 0 };
     for (const row of countRows) {
       const count = Number(row.c);
       counts.ALL += count;
       if (Object.prototype.hasOwnProperty.call(counts, row.quoteStatus)) counts[row.quoteStatus] += count;
-      if (row.quoteStatus === 'SELECTED' && ['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(row.orderStatus)) {
+      if (row.quoteStatus === 'SELECTED' && ['DELIVERED', 'COMPLETED', 'REFUND_PENDING', 'CANCELLED'].includes(row.orderStatus)) {
         counts[row.orderStatus] += count;
       }
     }

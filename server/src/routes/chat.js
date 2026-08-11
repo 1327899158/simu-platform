@@ -35,7 +35,7 @@ function register(router) {
       const peerRow = await queryOne(`SELECT nickname, avatarUrl FROM users WHERE id = ?`, [peerId]);
       const peer = peerRow ? { nickname: peerRow.nickname, avatarUrl: peerRow.avatarUrl || '' } : null;
       const last = await queryOne(
-        `SELECT type, content, createdAt FROM messages WHERE convId = ? ORDER BY id DESC LIMIT 1`, [c.id]);
+        `SELECT type, content, fileId, createdAt FROM messages WHERE convId = ? ORDER BY id DESC LIMIT 1`, [c.id]);
       const unreadRow = await queryOne(
         `SELECT COUNT(*) AS c FROM messages
          WHERE convId = ? AND senderId != ? AND senderId != 'SYSTEM' AND readAt IS NULL`,
@@ -46,7 +46,7 @@ function register(router) {
         order: o,
         peer,
         lastMessage: last || null,
-        unread: unreadRow ? unreadRow.c : 0,
+        unread: Number(unreadRow?.c || 0),
         lastMsgAt: c.lastMsgAt,
       };
     }));
@@ -107,6 +107,7 @@ function register(router) {
         type: m.type,
         content: m.content,
         fileId: m.fileId,
+        actionOrderId: m.type === 'SYSTEM' && m.fileId ? m.fileId : null,
         imgUrl: m.type === 'IMAGE' && m.fileId ? (imageUrlMap[m.fileId] || '') : '',
         createdAt: m.createdAt,
       })),
