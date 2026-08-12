@@ -41,6 +41,7 @@ Page({
           orderStatusText: item.order ? item.order.status : '',
           orderName: item.order ? item.order.projectName : '订单',
           orderNo: item.order ? item.order.orderNo : '',
+          stageText: item.status === 'OPEN' ? (item.evidenceOpen ? '举证中' : '待仲裁') : item.statusText,
         })),
       });
     } catch (error) {

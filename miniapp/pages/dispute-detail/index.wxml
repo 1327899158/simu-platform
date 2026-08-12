@@ -1,87 +1,61 @@
 <view class="page-container" wx:if="{{dispute}}">
-
-  <!-- 状态卡片 -->
   <view class="hero">
     <view class="hero-top">
-      <text class="hero-title">⚠️ 订单纠纷</text>
+      <text class="hero-title">⚖️ 订单纠纷</text>
       <text class="status {{dispute.statusCls}}">{{dispute.statusText}}</text>
     </view>
     <text class="hero-desc">{{dispute.order ? dispute.order.projectName : '纠纷'}}<text wx:if="{{dispute.order}}"> · {{dispute.order.orderNo}}</text></text>
   </view>
 
-  <!-- 纠纷信息 -->
+  <view class="evidence-timer {{dispute.evidenceOpen ? 'active' : 'ended'}}">
+    <view class="timer-icon">{{dispute.evidenceOpen ? '⏳' : '🔒'}}</view>
+    <view class="timer-copy">
+      <text class="timer-title">{{dispute.evidenceOpen ? '48小时举证进行中' : '举证通道已关闭'}}</text>
+      <text class="timer-value">{{evidenceCountdown}}</text>
+      <text class="timer-desc">截止时间：{{dispute.deadlineText}}</text>
+    </view>
+  </view>
+
   <view class="card">
     <text class="card-title">纠纷信息</text>
     <view class="info-row"><text class="info-label">纠纷类型</text><text class="info-value">{{dispute.reasonText}}</text></view>
-    <view class="info-row"><text class="info-label">发起人</text><text class="info-value">{{dispute.customer && dispute.initiatorId === dispute.customer.id ? '买家' : (dispute.engineer && dispute.initiatorId === dispute.engineer.id ? '工程师' : '—')}}<text wx:if="{{dispute.myRole}}" class="role-inline {{dispute.myRole === 'INITIATOR' ? 'mine' : 'other'}}">{{dispute.myRole === 'INITIATOR' ? '（我提出）' : '（对方提出）'}}</text></text></view>
+    <view class="info-row"><text class="info-label">发起人</text><text class="info-value">{{dispute.customer && dispute.initiatorId === dispute.customer.id ? '客户' : (dispute.engineer && dispute.initiatorId === dispute.engineer.id ? '工程师' : '—')}}<text wx:if="{{dispute.myRole}}" class="role-inline {{dispute.myRole === 'INITIATOR' ? 'mine' : 'other'}}">{{dispute.myRole === 'INITIATOR' ? '（我提出）' : '（对方提出）'}}</text></text></view>
     <view class="info-row"><text class="info-label">发起时间</text><text class="info-value">{{dispute.createdText}}</text></view>
-    <view class="info-row" wx:if="{{dispute.order}}"><text class="info-label">订单状态</text><text class="info-value">{{dispute.order.statusText || dispute.order.status}}</text></view>
     <view class="info-row" wx:if="{{dispute.resolutionNote}}"><text class="info-label">仲裁说明</text><text class="info-value">{{dispute.resolutionNote}}</text></view>
     <view class="info-row" wx:if="{{dispute.verdictText && dispute.verdict !== 'NONE'}}"><text class="info-label">仲裁结论</text><text class="info-value">{{dispute.verdictText}} · {{dispute.orderActionText}}</text></view>
     <view class="info-row" wx:if="{{dispute.refundAmountFen != null}}"><text class="info-label">应退金额</text><text class="info-value budget">¥{{dispute.refundY}}（{{dispute.refundStatusText}}）</text></view>
     <view class="desc-text" wx:if="{{dispute.description}}">{{dispute.description}}</view>
   </view>
 
-  <!-- 当事人 -->
-  <view class="card">
-    <text class="card-title">当事人</text>
-    <view class="party-row" wx:if="{{dispute.customer}}">
-      <view class="party-avatar">{{dispute.customer.nickname[0]}}</view>
-      <view class="party-info">
-        <text class="party-name">👤 {{dispute.customer.nickname}}（买家）</text>
-        <text class="party-phone">{{dispute.customer.phoneMasked || '未绑定手机'}}</text>
+  <view class="card evidence-card">
+    <view class="evidence-header">
+      <view>
+        <text class="card-title compact">📎 双方证据（{{dispute.evidence.length}}）</text>
+        <text class="evidence-subtitle">我已提交 {{dispute.myEvidenceCount}} / 20 份</text>
       </view>
+      <button class="upload-button" wx:if="{{dispute.evidenceOpen}}" bindtap="addEvidence" disabled="{{uploading}}">
+        {{uploading ? '上传中…' : '＋ 补充证据'}}
+      </button>
     </view>
-    <view class="party-row" wx:if="{{dispute.engineer}}">
-      <view class="party-avatar eng">{{dispute.engineer.nickname[0]}}</view>
-      <view class="party-info">
-        <text class="party-name">🛠️ {{dispute.engineer.nickname}}（工程师）</text>
-        <text class="party-phone">{{dispute.engineer.phoneMasked || '未绑定手机'}}</text>
-      </view>
-    </view>
-  </view>
 
-  <!-- 证据材料 -->
-  <view class="card" wx:if="{{dispute.evidence.length}}">
-    <text class="card-title">📎 证据材料（{{dispute.evidence.length}}）</text>
+    <view class="evidence-notice">
+      仅支持上传文件作为证据，双方不能在纠纷页对话。举证截止后不可再补充，平台管理员将依据全部材料进行仲裁。
+    </view>
+
     <view class="evid-item" wx:for="{{dispute.evidence}}" wx:key="fileId"
       data-index="{{index}}" bindtap="openEvidence">
-      <text class="evid-name">{{item.name}}</text>
-      <text class="evid-size">{{item.sizeText}}</text>
+      <view class="evid-icon">{{item.kind === 'IMAGE' ? '图' : '文'}}</view>
+      <view class="evid-copy">
+        <text class="evid-name">{{item.name}}</text>
+        <text class="evid-meta">{{item.uploaderText}} · {{item.timeText}} · {{item.sizeText}}</text>
+      </view>
       <text class="evid-arrow">›</text>
     </view>
-  </view>
+    <view class="empty-evidence" wx:if="{{!dispute.evidence.length}}">暂未提交证据材料</view>
 
-  <!-- 沟通线程 -->
-  <view class="card">
-    <text class="card-title">💬 纠纷沟通</text>
-    <view class="msg-list">
-      <block wx:for="{{dispute.msgs}}" wx:key="id">
-        <view class="sys-msg" wx:if="{{item.sys}}">{{item.content}}</view>
-        <view class="msg-item {{item.mine ? 'mine' : 'other'}}" wx:elif="{{item.senderKind !== 'system'}}">
-          <view class="msg-bubble">
-            <text class="msg-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</text>
-            <text class="msg-content" wx:if="{{item.type === 'TEXT'}}">{{item.content}}</text>
-            <text class="msg-content" wx:elif="{{item.type === 'IMAGE'}}">[图片] {{item.content}}</text>
-            <text class="msg-content" wx:else>📎 {{item.content}}</text>
-            <text class="msg-time">{{item.time}}</text>
-          </view>
-        </view>
-      </block>
-      <view class="empty-msg" wx:if="{{!dispute.msgs.length}}">暂无沟通记录</view>
+    <view class="closed-tip" wx:if="{{!dispute.evidenceOpen}}">
+      {{dispute.status === 'OPEN' ? '举证已结束，等待平台管理员仲裁' : '该纠纷已' + dispute.statusText}}
     </view>
-
-    <!-- 输入区 -->
-    <block wx:if="{{dispute.status === 'OPEN'}}">
-      <view class="input-area">
-        <button class="img-btn {{uploading ? 'disabled' : ''}}" bindtap="sendImage" disabled="{{uploading}}">{{uploading ? '…' : '🖼️'}}</button>
-        <input class="chat-input" placeholder="输入消息…" value="{{text}}" bindinput="onInput"
-          confirm-type="send" bindconfirm="send" maxlength="2000" />
-        <button class="send-btn {{sending ? 'dim' : ''}}" bindtap="send" disabled="{{!text}}">发送</button>
-      </view>
-    </block>
-    <text class="closed-tip" wx:else>该纠纷已{{dispute.statusText}}，沟通已关闭</text>
   </view>
-
 </view>
 <view class="loading" wx:if="{{!dispute}}">正在加载纠纷详情…</view>

@@ -87,7 +87,7 @@ Page({
       wx.hideLoading();
       wx.showModal({
         title: '纠纷已发起',
-        content: '订单已暂停处理，等待平台仲裁。可在纠纷详情中补充证据。',
+        content: '订单已暂停处理。双方可在48小时内进入纠纷详情补充证据，举证结束后由平台仲裁。',
         showCancel: false,
         success: () => wx.navigateBack(),
       });

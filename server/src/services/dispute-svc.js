@@ -21,6 +21,12 @@ const DISPUTABLE_ORDER_STATUS = ['AWAITING_PAYMENT', 'IN_PROGRESS', 'DELIVERED',
 const REASON_TYPES = ['QUALITY', 'DELAY', 'MISSING', 'PAYMENT', 'COMMUNICATION', 'OTHER'];
 const VERDICTS = ['NONE', 'CUSTOMER_FAVOR', 'ENGINEER_FAVOR', 'PARTIAL'];
 const ORDER_ACTIONS = ['KEEP', 'FORCE_COMPLETE', 'REOPEN', 'CLOSE'];
+const EVIDENCE_WINDOW_HOURS = 48;
+
+function evidenceDeadlineIso(baseMs = Date.now()) {
+  return new Date(baseMs + EVIDENCE_WINDOW_HOURS * 60 * 60 * 1000)
+    .toISOString().slice(0, 19).replace('T', ' ');
+}
 
 /** 解析行内返回的 message 类型字段，兼容 mysql2 返回的 [rows, fields] 或直接的行数组 */
 function asRow(result) {
@@ -138,15 +144,16 @@ async function createDispute(user, { orderId, reasonType, description, fileIds }
 
   const id = newId();
   const now = nowIso();
+  const evidenceDeadlineAt = evidenceDeadlineIso();
   const result = await tx(async (conn) => {
     const frozen = await freezeOrder(conn, orderId, o.status);
     if (!frozen) throw err.conflict('订单状态已变化，请刷新后重试');
     await conn.execute(
       `INSERT INTO disputes
          (id, orderId, initiatorId, reasonType, description, status,
-          orderStatusAtOpen, createdAt, updatedAt)
-       VALUES(?, ?, ?, ?, ?, 'OPEN', ?, ?, ?)`,
-      [id, orderId, user.id, reasonType, description, o.status, now, now]
+          orderStatusAtOpen, evidenceDeadlineAt, createdAt, updatedAt)
+       VALUES(?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`,
+      [id, orderId, user.id, reasonType, description, o.status, evidenceDeadlineAt, now, now]
     );
     for (const f of evidenceFiles) {
       await conn.execute(
@@ -161,7 +168,7 @@ async function createDispute(user, { orderId, reasonType, description, fileIds }
 
   // 事务提交后给订单会话发系统消息（fire-and-forget）
   const { systemMessageForOrder } = require('./chat-svc');
-  systemMessageForOrder(orderId, '买家发起了纠纷，订单已暂停处理，等待双方举证与平台仲裁。')
+  systemMessageForOrder(orderId, '买家发起了纠纷，订单已暂停处理。请双方在48小时内上传证据，举证结束后由平台仲裁。')
     .catch(() => {});
   return result;
 }
@@ -277,6 +284,8 @@ module.exports = {
   REASON_TYPES,
   VERDICTS,
   ORDER_ACTIONS,
+  EVIDENCE_WINDOW_HOURS,
+  evidenceDeadlineIso,
   getOrderParties,
   isOrderParty,
   findOpenDispute,

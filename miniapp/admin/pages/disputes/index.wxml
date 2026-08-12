@@ -42,7 +42,7 @@
     </view>
     <view class="admin-divider"></view>
     <view class="admin-between">
-      <text class="admin-small">订单状态：{{item.orderStatusText}} · {{item.orderActionText}}</text>
+      <text class="admin-small">阶段：{{item.stageText}} · 证据{{item.evidenceOpen ? '收集中' : '已截止'}}</text>
       <text class="admin-small">查看 ›</text>
     </view>
   </view>

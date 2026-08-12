@@ -17,14 +17,14 @@
  *   POST /api/admin/disputes/:id/refund    退款登记状态更新
  */
 const { readJson, ok, err } = require('../lib/http');
-const { v, maskPhone } = require('../lib/util');
-const { query, queryOne } = require('../db');
+const { v, maskPhone, nowIso, parseDbDate } = require('../lib/util');
+const { query, queryOne, tx } = require('../db');
 const { requireUser } = require('../lib/auth-mw');
 const { requireAdmin, writeAdminAudit } = require('../lib/admin-mw');
 const {
   REASON_TYPES, VERDICTS, ORDER_ACTIONS,
   findOpenDispute, isOrderParty,
-  createDispute, cancelDispute, sendDisputeMessage, resolveDispute, updateRefund,
+  createDispute, cancelDispute, resolveDispute, updateRefund,
 } = require('../services/dispute-svc');
 
 const REASON_TEXT = {
@@ -39,6 +39,21 @@ const REFUND_TEXT = { NONE: '无', PENDING: '待退款', PROCESSED: '已退款',
 const ACTION_TEXT = {
   KEEP: '恢复原状', FORCE_COMPLETE: '强制完成', REOPEN: '重新执行', CLOSE: '关闭订单',
 };
+const MAX_EVIDENCE_PER_PARTY = 20;
+
+function evidenceWindow(d) {
+  const createdMs = parseDbDate(d.createdAt).getTime();
+  const fallbackMs = createdMs + 48 * 60 * 60 * 1000;
+  const parsedDeadline = d.evidenceDeadlineAt ? parseDbDate(d.evidenceDeadlineAt).getTime() : fallbackMs;
+  const deadlineMs = Number.isFinite(parsedDeadline) ? parsedDeadline : fallbackMs;
+  const remainingSeconds = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+  return {
+    evidenceDeadlineAt: new Date(deadlineMs).toISOString(),
+    evidenceOpen: d.status === 'OPEN' && remainingSeconds > 0,
+    evidenceRemainingSeconds: d.status === 'OPEN' ? remainingSeconds : 0,
+    arbitrationReady: d.status === 'OPEN' && remainingSeconds === 0,
+  };
+}
 
 function disputeView(d, extra = {}) {
   return {
@@ -64,6 +79,7 @@ function disputeView(d, extra = {}) {
     resolvedAt: d.resolvedAt || null,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
+    ...evidenceWindow(d),
     ...extra,
   };
 }
@@ -85,8 +101,11 @@ async function disputeDetail(d) {
     }
   }
   const evidence = await query(
-    `SELECT f.id, f.fileID, f.name, f.kind, f.mime, f.sizeBytes, ev.uploaderId, ev.createdAt
-       FROM dispute_evidence ev JOIN uploaded_files f ON f.id = ev.fileId
+    `SELECT f.id, f.fileID, f.name, f.kind, f.mime, f.sizeBytes,
+            ev.uploaderId, ev.createdAt, u.nickname AS uploaderName, u.role AS uploaderRole
+       FROM dispute_evidence ev
+       JOIN uploaded_files f ON f.id = ev.fileId
+       JOIN users u ON u.id = ev.uploaderId
       WHERE ev.disputeId = ? ORDER BY ev.createdAt ASC`, [d.id]
   );
   const messages = await query(
@@ -124,6 +143,8 @@ async function disputeDetail(d) {
     evidence: evidence.map((f) => ({
       id: f.id, fileId: f.id, fileID: f.fileID, name: f.name, kind: f.kind,
       mime: f.mime || '', sizeBytes: Number(f.sizeBytes || 0), uploaderId: f.uploaderId, createdAt: f.createdAt,
+      uploaderName: f.uploaderName || (f.uploaderRole === 'ENGINEER' ? '工程师' : '客户'),
+      uploaderRole: f.uploaderRole,
     })),
     messages: messages.map((m) => ({
       id: Number(m.id),
@@ -213,32 +234,59 @@ function register(router) {
     ok(res, { ...detail, myRole: d.initiatorId === user.id ? 'INITIATOR' : 'OPPOSITE' });
   });
 
-  // POST /api/disputes/:id/messages { type, content?, fileId? }
-  router.post('/api/disputes/:id/messages', async (req, res, params) => {
+  // POST /api/disputes/:id/evidence { fileIds } —— 48 小时内补充证据。
+  router.post('/api/disputes/:id/evidence', async (req, res, params) => {
     const user = await requireUser(req);
-    const d = await queryOne(`SELECT * FROM disputes WHERE id = ?`, [params.id]);
-    if (!d) throw err.notFound('纠纷不存在');
-    if (!(await isOrderParty(d.orderId, user.id))) throw err.forbidden('仅当事人可发言');
     const b = await readJson(req);
-    const type = v.oneOf(b.type || 'TEXT', '消息类型', ['TEXT', 'IMAGE', 'FILE']);
-    let content = null;
-    let fileId = null;
-    if (type === 'TEXT') {
-      content = v.str(b.content, '消息内容', { min: 1, max: 2000 });
-    } else {
-      fileId = v.str(b.fileId, 'fileId', { min: 1 });
-      const f = await queryOne(`SELECT id, uploaderId, name FROM uploaded_files WHERE id = ?`, [fileId]);
-      if (!f || f.uploaderId !== user.id) throw err.bad('文件不存在或不属于你');
-      // 关联为证据文件
-      await query(
-        `INSERT IGNORE INTO dispute_evidence(disputeId, fileId, uploaderId, createdAt)
-         VALUES(?, ?, ?, UTC_TIMESTAMP(3))`,
-        [d.id, fileId, user.id]
+    const fileIds = v.arr(b.fileIds, '证据文件', { minLen: 1, maxLen: 5 })
+      .map((id) => v.str(id, '文件ID', { min: 1, max: 32 }));
+    if (new Set(fileIds).size !== fileIds.length) throw err.bad('证据文件不能重复');
+
+    const current = await queryOne(`SELECT orderId FROM disputes WHERE id = ?`, [params.id]);
+    if (!current) throw err.notFound('纠纷不存在');
+    if (!(await isOrderParty(current.orderId, user.id))) throw err.forbidden('仅纠纷当事人可补充证据');
+
+    const result = await tx(async (conn) => {
+      const [[d]] = await conn.execute(`SELECT * FROM disputes WHERE id = ? FOR UPDATE`, [params.id]);
+      if (!d) throw err.notFound('纠纷不存在');
+      if (d.status !== 'OPEN') throw err.conflict('纠纷已结束，不能继续补充证据');
+      if (!evidenceWindow(d).evidenceOpen) throw err.conflict('48小时举证期已结束，不能继续上传');
+
+      const [[countRow]] = await conn.execute(
+        `SELECT COUNT(*) AS c FROM dispute_evidence WHERE disputeId = ? AND uploaderId = ?`,
+        [d.id, user.id]
       );
-      content = f.name;
-    }
-    const r = await sendDisputeMessage(user.id, d.id, { type, content, fileId });
-    ok(res, { id: r.msgId, senderId: user.id, type, content, fileId, createdAt: r.createdAt });
+      if (Number(countRow?.c || 0) + fileIds.length > MAX_EVIDENCE_PER_PARTY) {
+        throw err.conflict(`每位当事人最多提交 ${MAX_EVIDENCE_PER_PARTY} 份证据`);
+      }
+      const [files] = await conn.execute(
+        `SELECT id, uploaderId FROM uploaded_files WHERE id IN (${fileIds.map(() => '?').join(',')})`,
+        fileIds
+      );
+      if (files.length !== fileIds.length || files.some((f) => f.uploaderId !== user.id)) {
+        throw err.bad('部分文件不存在或不属于你');
+      }
+      const now = nowIso();
+      let added = 0;
+      for (const fileId of fileIds) {
+        const [inserted] = await conn.execute(
+          `INSERT IGNORE INTO dispute_evidence(disputeId, fileId, uploaderId, createdAt)
+           VALUES(?, ?, ?, ?)`,
+          [d.id, fileId, user.id, now]
+        );
+        added += Number(inserted.affectedRows || 0);
+      }
+      if (!added) throw err.conflict('所选文件已经提交过');
+      await conn.execute(`UPDATE disputes SET updatedAt = ? WHERE id = ?`, [now, d.id]);
+      return { added, evidenceDeadlineAt: evidenceWindow(d).evidenceDeadlineAt };
+    });
+    ok(res, result);
+  });
+
+  // 旧版纠纷对话接口已关闭，避免客户端绕过“仅上传证据”的页面限制。
+  router.post('/api/disputes/:id/messages', async (req, res) => {
+    await requireUser(req);
+    throw err.conflict('纠纷对话已关闭，请在48小时举证期内上传证据文件');
   });
 
   // POST /api/disputes/:id/cancel —— 发起人取消
@@ -251,23 +299,8 @@ function register(router) {
 
   // POST /api/admin/disputes/:id/messages —— 管理员在纠纷线程发言
   router.post('/api/admin/disputes/:id/messages', async (req, res, params) => {
-    const { admin } = await requireAdmin(req, 'DISPUTE_READ');
-    const d = await queryOne(`SELECT * FROM disputes WHERE id = ?`, [params.id]);
-    if (!d) throw err.notFound('纠纷不存在');
-    const b = await readJson(req);
-    const type = v.oneOf(b.type || 'TEXT', '消息类型', ['TEXT', 'IMAGE', 'FILE']);
-    let content = null;
-    let fileId = null;
-    if (type === 'TEXT') {
-      content = v.str(b.content, '消息内容', { min: 1, max: 2000 });
-    } else {
-      fileId = v.str(b.fileId, 'fileId', { min: 1 });
-      const f = await queryOne(`SELECT id, name FROM uploaded_files WHERE id = ?`, [fileId]);
-      if (!f) throw err.bad('文件不存在');
-      content = f.name;
-    }
-    const r = await sendDisputeMessage(admin.id, d.id, { type, content, fileId });
-    ok(res, { id: r.msgId, senderId: admin.id, type, content, fileId, createdAt: r.createdAt });
+    await requireAdmin(req, 'DISPUTE_READ');
+    throw err.conflict('纠纷沟通功能已关闭，管理员请依据双方提交的证据进行仲裁');
   });
 
   // GET /api/admin/disputes?status=&limit=&offset=
@@ -323,6 +356,7 @@ function register(router) {
 
     const d = await queryOne(`SELECT * FROM disputes WHERE id = ?`, [params.id]);
     if (!d) throw err.notFound('纠纷不存在');
+    if (evidenceWindow(d).evidenceOpen) throw err.conflict('举证期尚未结束，请在48小时举证期结束后再仲裁');
 
     const result = await resolveDispute(admin, params.id, { verdict, orderAction, note, refundAmountFen });
 

@@ -325,6 +325,7 @@ model Dispute {
   description     String      @db.Text
   status          DisputeStatus @default(OPEN)
   orderStatusAtOpen String   // 冻结前的订单状态快照，结案/取消时用于恢复
+  evidenceDeadlineAt DateTime?
   refundAmountFen Int?
   refundStatus    RefundStatus @default(NONE)
   refundTransactionId String?

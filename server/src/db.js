@@ -312,6 +312,7 @@ async function init() {
       description         TEXT NOT NULL,
       status              VARCHAR(16) NOT NULL DEFAULT 'OPEN',
       orderStatusAtOpen   VARCHAR(24) NOT NULL,
+      evidenceDeadlineAt  DATETIME(3),
       refundAmountFen     BIGINT,
       refundStatus        VARCHAR(16) NOT NULL DEFAULT 'NONE',
       refundTransactionId VARCHAR(64),
@@ -398,6 +399,7 @@ async function init() {
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedAt DATETIME(3)`, check: "reviewedAt" },
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedBy VARCHAR(32)`, check: "reviewedBy" },
     { table: 'refund_requests', sql: `ALTER TABLE refund_requests ADD COLUMN orderStatusAtRequest VARCHAR(24)`, check: "orderStatusAtRequest" },
+    { table: 'disputes', sql: `ALTER TABLE disputes ADD COLUMN evidenceDeadlineAt DATETIME(3)`, check: "evidenceDeadlineAt" },
   ];
 
   for (const m of migrations) {
@@ -425,6 +427,13 @@ async function init() {
             o.updatedAt = UTC_TIMESTAMP(3)
       WHERE rr.status = 'PENDING'
         AND o.status IN ('IN_PROGRESS', 'DELIVERED', 'COMPLETED')`
+  );
+
+  // 老纠纷按发起时间补齐 48 小时举证截止时间。
+  await query(
+    `UPDATE disputes
+        SET evidenceDeadlineAt = DATE_ADD(createdAt, INTERVAL 48 HOUR)
+      WHERE evidenceDeadlineAt IS NULL`
   );
 
   // 为升级前已经通过 uploaded_files.orderId 关联的文件补齐关系表。

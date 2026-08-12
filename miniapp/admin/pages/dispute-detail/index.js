@@ -46,6 +46,7 @@ Page({
           badgeClass: badge,
           createdText: timeShort(d.createdAt),
           resolvedText: timeShort(d.resolvedAt),
+          deadlineText: this.dateTimeText(d.evidenceDeadlineAt),
           refundY: d.refundAmountFen == null ? null : fenToYuan(d.refundAmountFen),
           msgs: (d.messages || []).map((m) => ({
             ...m,
@@ -54,7 +55,12 @@ Page({
             senderKind: m.sender ? m.sender.kind : 'user',
             time: timeShort(m.createdAt),
           })),
-          evidence: (d.evidence || []).map((f) => ({ ...f, sizeText: this.sizeText(f.sizeBytes) })),
+          evidence: (d.evidence || []).map((f) => ({
+            ...f,
+            sizeText: this.sizeText(f.sizeBytes),
+            submittedText: timeShort(f.createdAt),
+            uploaderText: f.uploaderRole === 'ENGINEER' ? '工程师' : '客户',
+          })),
         },
       });
     } catch (error) {
@@ -67,6 +73,12 @@ Page({
     if (!size) return '大小未知';
     if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))}KB`;
     return `${(size / 1024 / 1024).toFixed(2)}MB`;
+  },
+  dateTimeText(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   },
   pickVerdict(e) { this.setData({ verdict: e.currentTarget.dataset.key }); },
   pickAction(e) { this.setData({ orderAction: e.currentTarget.dataset.key }); },

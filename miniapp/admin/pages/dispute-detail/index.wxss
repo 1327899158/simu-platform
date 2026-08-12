@@ -9,6 +9,10 @@
   flex-shrink: 0;
 }
 .review-card { border-color: #F5D98E; background: #FFFDF5; }
+.waiting-card { border-color:#DCE2EC; background:#F8FAFC; }
+.evidence-stage { margin-top:14rpx; padding:16rpx 18rpx; border-radius:12rpx; font-size:23rpx; line-height:1.55; }
+.evidence-stage.collecting { color:#94610A; background:#FFF5D9; }
+.evidence-stage.ready { color:#247A43; background:#E8F6ED; }
 .detail-line {
   display: flex;
   padding: 10rpx 0;

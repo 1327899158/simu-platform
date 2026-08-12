@@ -14,6 +14,10 @@
     <text class="admin-card-title">纠纷信息</text>
     <view class="detail-line"><text>纠纷类型</text><text>{{dispute.reasonText}}</text></view>
     <view class="detail-line"><text>发起时间</text><text>{{dispute.createdText}}</text></view>
+    <view class="detail-line"><text>举证截止</text><text>{{dispute.deadlineText}}</text></view>
+    <view class="evidence-stage {{dispute.evidenceOpen ? 'collecting' : 'ready'}}">
+      {{dispute.evidenceOpen ? '双方正在举证，管理员可实时查看材料；倒计时结束后开放仲裁。' : (dispute.status === 'OPEN' ? '举证已结束，可以开始仲裁。' : '本纠纷举证及处理已结束。')}}
+    </view>
     <view class="detail-line"><text>订单状态</text><text>{{dispute.orderStatusAtOpen}} → {{dispute.order ? dispute.order.status : '—'}}</text></view>
     <view class="detail-line" wx:if="{{dispute.verdict !== 'NONE'}}"><text>仲裁结论</text><text>{{dispute.verdictText}} · {{dispute.orderActionText}}</text></view>
     <view class="detail-line" wx:if="{{dispute.resolvedAt}}"><text>结案时间</text><text>{{dispute.resolvedText}}</text></view>
@@ -38,29 +42,15 @@
       <text class="file-icon">{{item.kind === 'IMAGE' ? '图' : '文'}}</text>
       <view class="admin-grow">
         <text class="file-name">{{item.name}}</text>
-        <text class="admin-small">{{item.sizeText}}</text>
+        <text class="admin-small">{{item.uploaderText}}提交 · {{item.uploaderName}} · {{item.submittedText}} · {{item.sizeText}}</text>
       </view>
       <text class="file-arrow">›</text>
     </view>
     <view class="admin-empty small-empty" wx:if="{{!dispute.evidence.length}}">无证据材料</view>
   </view>
 
-  <!-- 沟通记录 -->
-  <view class="admin-card">
-    <text class="admin-card-title">沟通记录</text>
-    <block wx:for="{{dispute.msgs}}" wx:key="id">
-      <view class="sys-msg" wx:if="{{item.sys}}">{{item.content}}</view>
-      <view class="conv-line" wx:elif="{{!item.sys}}">
-        <view class="conv-sender">{{item.senderKind === 'admin' ? '👮 ' + item.senderName : item.senderName}}</view>
-        <view class="conv-content">{{item.content}}</view>
-        <view class="conv-time">{{item.time}}</view>
-      </view>
-    </block>
-    <view class="admin-muted" wx:if="{{!dispute.msgs.length}}">暂无沟通记录</view>
-  </view>
-
   <!-- 仲裁表单 -->
-  <view class="admin-card review-card" wx:if="{{canResolve && dispute.status === 'OPEN'}}">
+  <view class="admin-card review-card" wx:if="{{canResolve && dispute.status === 'OPEN' && !dispute.evidenceOpen}}">
     <text class="admin-card-title">仲裁处理</text>
     <text class="admin-card-subtitle">仲裁结案会改变订单状态并登记退款诉求，操作写入审计日志。</text>
 
@@ -89,6 +79,10 @@
     <button class="admin-button danger" bindtap="resolve" disabled="{{submitting}}">
       {{submitting ? '提交中…' : '提交仲裁并结案'}}
     </button>
+  </view>
+  <view class="admin-card waiting-card" wx:if="{{canResolve && dispute.status === 'OPEN' && dispute.evidenceOpen}}">
+    <text class="admin-card-title">等待举证结束</text>
+    <text class="admin-muted">仲裁表单将在 {{dispute.deadlineText}} 后开放。期间可查看双方新上传的证据材料。</text>
   </view>
   <view class="admin-card" wx:if="{{dispute.status !== 'OPEN'}}">
     <text class="admin-muted">该纠纷已{{dispute.statusText}}，不可再次仲裁。</text>

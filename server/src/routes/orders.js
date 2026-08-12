@@ -10,6 +10,7 @@ const { DICTS } = require('./dicts');
 const { createPayment, createJsapiOrder } = require('../services/pay-svc');
 const { config } = require('../config');
 const { systemMessageForOrder } = require('../services/chat-svc');
+const { evidenceDeadlineIso } = require('../services/dispute-svc');
 
 const REFUNDABLE_ORDER_STATUS = ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
 
@@ -319,17 +320,19 @@ function register(router) {
       );
       if (frozen.affectedRows !== 1) throw err.conflict('订单状态已变化，无法进入纠纷');
       const disputeId = newId();
+      const evidenceDeadlineAt = evidenceDeadlineIso();
       await conn.execute(
         `INSERT INTO disputes
            (id, orderId, initiatorId, reasonType, description, status,
-            orderStatusAtOpen, createdAt, updatedAt)
-         VALUES(?, ?, ?, 'OTHER', ?, 'OPEN', ?, ?, ?)`,
+            orderStatusAtOpen, evidenceDeadlineAt, createdAt, updatedAt)
+         VALUES(?, ?, ?, 'OTHER', ?, 'OPEN', ?, ?, ?, ?)`,
         [
           disputeId,
           refundRequest.orderId,
           refundRequest.customerId,
           '客户发起退款申请，工程师未同意，订单已自动进入纠纷处理。',
           originalStatus,
+          evidenceDeadlineAt,
           now,
           now,
         ]
@@ -345,7 +348,7 @@ function register(router) {
 
     const message = result.accepted
       ? '工程师已同意退款申请。订单已取消，退款资金处理将由平台后续处理。'
-      : '工程师未同意退款申请，订单已自动进入纠纷处理。';
+      : '工程师未同意退款申请，订单已自动进入纠纷处理。请双方在48小时内上传证据。';
     systemMessageForOrder(
       params.id,
       message,
