@@ -1,0 +1,165 @@
+miniapp/pages/invoices/index.json
+  s_83d4d73338ab33::t_703cd6ff6c118a 1
+miniapp/pages/my-quotes/index.js
+  s_83d4d73338ab33::t_38c51e97cccc3c 29
+server/src/main.js
+  s_83d4d73338ab33::t_d3b094a5eb927b 27
+miniapp/admin/pages/engineers/index.js
+  s_83d4d73338ab33::t_f0f7db1ad8864c 6
+server/src/routes/identity.js
+  s_83d4d73338ab33::t_b9974e26709e78 31,38-46,83-87
+server/src/routes/invoices.js
+  s_83d4d73338ab33::t_d3b094a5eb927b 1-151
+miniapp/admin/pages/orders/index.wxml
+  s_83d4d73338ab33::t_4b48a8f94a1952 4-5
+miniapp/admin/pages/dashboard/index.js
+  s_83d4d73338ab33::t_ccb241b23c001b 17
+miniapp/admin/pages/invoices/index.json
+  s_83d4d73338ab33::t_ccb241b23c001b 1
+miniapp/pages/orders/index.wxml
+  s_83d4d73338ab33::t_ed98bbb622c9c1 9,11
+server/src/routes/auth.js
+  s_83d4d73338ab33::t_e9144069f5e73b 30
+miniapp/pages/order-detail/index.wxss
+  s_83d4d73338ab33::t_96304889ac6637 325-328
+  s_83d4d73338ab33::t_38c51e97cccc3c 475-479
+miniapp/pages/engineer-qualification/index.js
+  s_83d4d73338ab33::t_b9974e26709e78 89-91
+miniapp/admin/pages/engineers/index.wxml
+  s_83d4d73338ab33::t_4b48a8f94a1952 4-5
+miniapp/pages/invoice-request/index.wxml
+  s_83d4d73338ab33::t_96304889ac6637 1-8,10-16
+  s_83d4d73338ab33::t_a3470d2fce9d95 9
+miniapp/pages/my-quotes/index.wxml
+  s_83d4d73338ab33::t_38c51e97cccc3c 9,11,62
+miniapp/pages/me/index.js
+  s_83d4d73338ab33::t_83f79d1f13e0a2 69-70,72-76
+  s_83d4d73338ab33::t_5f21c177502d0f 71
+  s_83d4d73338ab33::t_703cd6ff6c118a 57-59
+server/src/db.js
+  s_83d4d73338ab33::t_8b9733031e01a3 217-224
+  s_83d4d73338ab33::t_d3b094a5eb927b 295-319
+miniapp/app.json
+  s_83d4d73338ab33::t_ccb241b23c001b 46-47
+  s_83d4d73338ab33::t_83f79d1f13e0a2 23-25
+miniapp/pages/disputes/index.wxss
+  s_83d4d73338ab33::t_38c51e97cccc3c 16,19-20,24
+miniapp/pages/account-security/index.wxss
+  s_83d4d73338ab33::t_d3e6b13c008fcb 1-9
+miniapp/pages/invoices/index.wxss
+  s_83d4d73338ab33::t_703cd6ff6c118a 1
+miniapp/pages/invoice-request/index.js
+  s_83d4d73338ab33::t_96304889ac6637 1-31
+server/src/routes/orders.js
+  s_83d4d73338ab33::t_613d5d9acf5223 35-36
+  s_83d4d73338ab33::t_8b9733031e01a3 23,30-33,49-51,59,150,152-162,164,166-169,171-175,180-194,199,204-213,230,232,323,341-342,362,364,366,368,371,373,375,380,389-395,401-429
+  s_83d4d73338ab33::t_c55054e88df153 261
+  s_83d4d73338ab33::t_6dcbae0d389dc5 286,290,396-400
+miniapp/utils/auth.js
+  s_83d4d73338ab33::t_e9144069f5e73b 168-174,186
+miniapp/pages/account-security/index.wxml
+  s_83d4d73338ab33::t_d3e6b13c008fcb 1-15
+server/src/routes/dicts.js
+  s_83d4d73338ab33::t_613d5d9acf5223 25
+miniapp/admin/pages/users/index.wxml
+  s_83d4d73338ab33::t_4b48a8f94a1952 4-5
+server/src/routes/auth-multi.js
+  s_83d4d73338ab33::t_e9144069f5e73b 104-105,231-232,241-270
+  s_83d4d73338ab33::t_83f79d1f13e0a2 11
+miniapp/pages/home/index.wxss
+  s_83d4d73338ab33::t_34cafce5e7e76e 85,106-125,170,173,190
+miniapp/pages/invoices/index.js
+  s_83d4d73338ab33::t_703cd6ff6c118a 1-28
+miniapp/admin/pages/disputes/index.js
+  s_83d4d73338ab33::t_f0f7db1ad8864c 12
+miniapp/pages/me/index.wxml
+  s_83d4d73338ab33::t_83f79d1f13e0a2 65
+  s_83d4d73338ab33::t_703cd6ff6c118a 68-72
+  s_83d4d73338ab33::t_5f21c177502d0f 67
+miniapp/admin/pages/invoices/index.wxml
+  s_83d4d73338ab33::t_ccb241b23c001b 1-14
+miniapp/admin/pages/invoices/index.wxss
+  s_83d4d73338ab33::t_ccb241b23c001b 1-2
+miniapp/admin/pages/orders/index.js
+  s_83d4d73338ab33::t_48cda4a21d3350 19
+  s_83d4d73338ab33::t_f0f7db1ad8864c 6
+server/src/lib/admin-mw.js
+  s_83d4d73338ab33::t_d3b094a5eb927b 14,16
+miniapp/admin/pages/invoices/index.js
+  s_83d4d73338ab33::t_ccb241b23c001b 1-25
+miniapp/pages/account-security/index.json
+  s_83d4d73338ab33::t_d3e6b13c008fcb 1-3
+miniapp/pages/invoice-request/index.json
+  s_83d4d73338ab33::t_96304889ac6637 1
+miniapp/pages/order-detail/index.js
+  s_83d4d73338ab33::t_34cafce5e7e76e 284,300-318,359-361
+  s_83d4d73338ab33::t_96304889ac6637 18,52-56,298-299
+  s_83d4d73338ab33::t_613d5d9acf5223 152
+miniapp/admin/pages/dashboard/index.wxml
+  s_83d4d73338ab33::t_ccb241b23c001b 21
+miniapp/pages/orders/index.wxss
+  s_83d4d73338ab33::t_ed98bbb622c9c1 29,45-48,50,64,66-69,77,79
+miniapp/pages/order-detail/index.wxml
+  s_83d4d73338ab33::t_c55054e88df153 182
+  s_83d4d73338ab33::t_8dc8b179d19bad 194
+  s_83d4d73338ab33::t_34cafce5e7e76e 171-172,183-185,230,235
+  s_83d4d73338ab33::t_96304889ac6637 173-181,218-222
+miniapp/admin/pages/users/index.js
+  s_83d4d73338ab33::t_f0f7db1ad8864c 6
+miniapp/admin/pages/disputes/index.wxml
+  s_83d4d73338ab33::t_4b48a8f94a1952 13,16,21
+miniapp/pages/home/index.wxml
+  s_83d4d73338ab33::t_34cafce5e7e76e 22,44-49
+server/src/routes/quotes.js
+  s_83d4d73338ab33::t_8b9733031e01a3 50,60,86,97-106
+miniapp/pages/invoice-request/index.wxss
+  s_83d4d73338ab33::t_96304889ac6637 1
+miniapp/pages/guest-home/index.wxml
+  s_624bf4f29e8f77::t_8ac2990176f87e 5-6,10
+  s_624bf4f29e8f77::t_6c6bd720a69e5d 69
+  s_624bf4f29e8f77::t_4f16351362e36f 7-9
+miniapp/pages/account-security/index.js
+  s_83d4d73338ab33::t_d3e6b13c008fcb 1-34
+miniapp/pages/home/index.js
+  s_83d4d73338ab33::t_34cafce5e7e76e 14-15,51,54,66,68-71
+miniapp/pages/orders/index.js
+  s_83d4d73338ab33::t_ed98bbb622c9c1 6-7,16,60-61
+miniapp/pages/disputes/index.wxml
+  s_83d4d73338ab33::t_38c51e97cccc3c 7,9
+miniapp/admin/admin.wxss
+  s_83d4d73338ab33::t_48cda4a21d3350 84
+  s_83d4d73338ab33::t_f0f7db1ad8864c 80,82-83,85,87,92
+miniapp/pages/guest-home/index.wxss
+  s_624bf4f29e8f77::t_8ac2990176f87e 6,8-9
+  s_624bf4f29e8f77::t_4f16351362e36f 10,13-14
+miniapp/pages/disputes/index.js
+  s_83d4d73338ab33::t_38c51e97cccc3c 23
+miniapp/pages/my-quotes/index.wxss
+  s_83d4d73338ab33::t_38c51e97cccc3c 29,35,41-44,46,60,62-65,73,75
+miniapp/pages/invoices/index.wxml
+  s_83d4d73338ab33::t_703cd6ff6c118a 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "7f83434f36bff95106894583d01b1e8c86b39d11",
+  "prompts": {},
+  "sessions": {
+    "s_624bf4f29e8f77": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa63-2fad-7a93-a587-007bc15e3778",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Yuyang Jiang （蒋宇阳） <jyuyang@trip.com>"
+    },
+    "s_83d4d73338ab33": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb6a0-cd17-7120-9cd9-8cf281faa2f5",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Yuyang Jiang （蒋宇阳） <jyuyang@trip.com>"
+    }
+  }
+}
