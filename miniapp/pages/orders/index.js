@@ -3,7 +3,8 @@ const { request } = require('../../utils/request');
 const { fenToYuan, timeShort, STATUS_CLASS } = require('../../utils/format');
 const TABS = [
   { key: '', countKey: 'ALL', label: '全部', dotCls: 'dot-purple' },
-  { key: 'QUOTING', countKey: 'QUOTING', label: '待报价', dotCls: 'dot-blue' },
+  { key: 'UNQUOTED', countKey: 'UNQUOTED', label: '未报价', dotCls: 'dot-blue' },
+  { key: 'AWAITING_CONFIRMATION', countKey: 'AWAITING_CONFIRMATION', label: '待确认', dotCls: 'dot-pink' },
   { key: 'AWAITING_PAYMENT', countKey: 'AWAITING_PAYMENT', label: '待支付', dotCls: 'dot-orange' },
   { key: 'IN_PROGRESS', countKey: 'IN_PROGRESS', label: '执行中', dotCls: 'dot-cyan' },
   { key: 'DELIVERED', countKey: 'DELIVERED', label: '待验收', dotCls: 'dot-pink' },
@@ -12,7 +13,7 @@ const TABS = [
   { key: 'CANCELLED', countKey: 'CANCELLED', label: '已取消', dotCls: 'dot-gray' },
 ];
 Page({
-  data: { tabs: TABS, tab: '', currentLabel: '全部', currentDotCls: 'dot-purple', currentCount: 0, filterOpen: false, items: [] },
+  data: { tabs: TABS, tab: '', currentLabel: '全部', currentDotCls: 'dot-purple', currentCount: 0, items: [] },
   onShow() {
     const user = ensureLogin();
     if (!user) return;
@@ -24,7 +25,6 @@ Page({
     this.load();
   },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
-  toggleFilter() { this.setData({ filterOpen: !this.data.filterOpen }); },
   pickTab(e) {
     const key = e.currentTarget.dataset.key;
     const t = this.data.tabs.find((x) => x.key === key);
@@ -33,7 +33,6 @@ Page({
       currentLabel: t ? t.label : '全部',
       currentDotCls: t ? t.dotCls : 'dot-purple',
       currentCount: t ? Number(t.count || 0) : 0,
-      filterOpen: false,
     }, () => this.load());
   },
   async load() {
@@ -58,6 +57,8 @@ Page({
         directionText: (o.directionTags || []).join('、'),
       })),
     });
+    // 直接进入此页也视为已查看订单变更，避免红点只在首页入口才能消除。
+    request('POST', '/orders/mine/mark-read', null, { silent: true }).catch(() => {});
   },
   open(e) { wx.navigateTo({ url: `/pages/order-detail/index?id=${e.currentTarget.dataset.id}&mode=customer` }); },
   gotoPublish() { wx.navigateTo({ url: '/pages/publish/index' }); },

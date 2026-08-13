@@ -214,6 +214,14 @@ async function init() {
       FOREIGN KEY(fileId) REFERENCES uploaded_files(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+    // 客户查看“我的订单”的阅读位置。首页据此提示工程师报价、交付等新的订单变更；
+    // 只记录最后阅读时间，不保存敏感通知内容。
+    `CREATE TABLE IF NOT EXISTS customer_order_reads (
+      customerId  VARCHAR(32) PRIMARY KEY,
+      lastReadAt  DATETIME(3) NOT NULL,
+      FOREIGN KEY(customerId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
     `CREATE TABLE IF NOT EXISTS identity_verification_files (
       userId      VARCHAR(32) NOT NULL,
       fileId      VARCHAR(32) NOT NULL,
@@ -282,6 +290,32 @@ async function init() {
       createdAt     DATETIME(3) NOT NULL,
       FOREIGN KEY(orderId) REFERENCES orders(id),
       INDEX idx_payments_order(orderId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    // 发票仅记录申请与处理状态；不保存或调用任何第三方开票/支付凭据。
+    `CREATE TABLE IF NOT EXISTS invoice_requests (
+      id                VARCHAR(32) PRIMARY KEY,
+      orderId           VARCHAR(32) NOT NULL,
+      customerId        VARCHAR(32) NOT NULL,
+      engineerId        VARCHAR(32) NOT NULL,
+      invoiceTitle      VARCHAR(120) NOT NULL,
+      taxNumber         VARCHAR(50),
+      email             VARCHAR(120),
+      customerNote      VARCHAR(500),
+      engineerNote      VARCHAR(500),
+      status            VARCHAR(24) NOT NULL DEFAULT 'REQUESTED',
+      handlingMode      VARCHAR(24),
+      platformFeeFen    BIGINT,
+      requestedAt       DATETIME(3) NOT NULL,
+      handledAt         DATETIME(3),
+      createdAt         DATETIME(3) NOT NULL,
+      updatedAt         DATETIME(3) NOT NULL,
+      UNIQUE KEY uq_invoice_request_order(orderId),
+      INDEX idx_invoice_engineer_status(engineerId, status, updatedAt),
+      INDEX idx_invoice_customer_status(customerId, status, updatedAt),
+      FOREIGN KEY(orderId) REFERENCES orders(id),
+      FOREIGN KEY(customerId) REFERENCES users(id),
+      FOREIGN KEY(engineerId) REFERENCES users(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS sms_codes (

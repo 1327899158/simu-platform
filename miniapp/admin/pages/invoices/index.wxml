@@ -1,0 +1,14 @@
+<view class="admin-page">
+  <view class="admin-hero"><text class="admin-hero-title">发票管理</text><text class="admin-hero-desc">当前仅作业务状态预览；真实开票、平台服务费收取尚未接入。</text></view>
+  <view class="admin-chips"><view class="admin-chip {{status === item.key ? 'active' : ''}}" wx:for="{{filters}}" wx:key="key" data-status="{{item.key}}" bindtap="select">{{item.text}}</view></view>
+  <view class="admin-empty" wx:if="{{!loading && !items.length}}">暂无发票申请</view>
+  <view class="admin-card" wx:for="{{items}}" wx:key="id">
+    <view class="admin-between"><text class="admin-card-title">{{item.invoiceTitle}}</text><text class="admin-badge badge-purple">{{item.statusText}}</text></view>
+    <text class="admin-card-subtitle">订单：{{item.orderNo}} · {{item.projectName}}</text>
+    <view class="admin-divider"></view>
+    <text class="admin-muted">客户：{{item.customerName}}　工程师：{{item.engineerName}}</text>
+    <text class="admin-small" wx:if="{{item.taxNumber}}">税号：{{item.taxNumber}}</text><text class="admin-small" wx:if="{{item.email}}">邮箱：{{item.email}}</text>
+    <text class="admin-small" wx:if="{{item.customerNote}}">客户备注：{{item.customerNote}}</text><text class="admin-small" wx:if="{{item.engineerNote}}">工程师说明：{{item.engineerNote}}</text>
+  </view>
+  <view class="admin-loading" wx:if="{{loading}}">正在加载发票申请…</view>
+</view>

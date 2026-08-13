@@ -15,6 +15,7 @@ Page({
     paying: false, delivering: false, downloadingFileId: '',
     dispute: null,
     refundRequest: null,
+    invoiceRequest: null,
     respondingRefund: false,
   },
   onLoad(q) { this.setData({ id: q.id, mode: q.mode || 'customer' }); },
@@ -48,6 +49,11 @@ Page({
       // 未选中工程师、无退款申请等场景不影响订单详情展示。
     }
     this.setData({ refundRequest });
+    // 发票信息仅订单双方可读取；不存在申请时返回 null，不影响订单详情。
+    try {
+      const invoiceRequest = await request('GET', `/orders/${id}/invoice-request`, null, { silent: true });
+      this.setData({ invoiceRequest });
+    } catch (e) { this.setData({ invoiceRequest: null }); }
     // 查询是否有进行中的纠纷（仅当事人可见）
     try {
       const dispute = await request('GET', `/orders/${id}/dispute`, null, { silent: true });
@@ -143,7 +149,7 @@ Page({
   // ---------- 客户操作 ----------
   del() {
     wx.showModal({
-      title: '删除订单', content: '仅待报价状态可删除，删除后不可恢复',
+      title: '删除订单', content: '仅报价阶段的订单可删除，删除后不可恢复',
       success: async (r) => {
         if (!r.confirm) return;
         try {
@@ -275,7 +281,7 @@ Page({
     if (!o || this.data.refundRequest) return;
     wx.showModal({
       title: '发起退款申请',
-      content: '申请将发送给工程师确认。同意后订单会标记为已取消；退款资金处理暂不执行。若工程师拒绝，订单将进入纠纷处理。',
+      content: '申请将发送给工程师确认。同意后订单会标记为已取消；若工程师拒绝，你可自行决定是否申请客服介入。',
       confirmText: '提交申请',
       success: async (r) => {
         if (!r.confirm) return;
@@ -286,6 +292,27 @@ Page({
         } catch (e) {
           wx.showToast({ title: e.message || '退款申请提交失败', icon: 'none' });
         }
+      },
+    });
+  },
+  goInvoiceRequest() {
+    wx.navigateTo({ url: `/pages/invoice-request/index?orderId=${this.data.id}` });
+  },
+
+  escalateRefund() {
+    const refund = this.data.refundRequest;
+    if (!refund || refund.status !== 'REJECTED') return;
+    wx.showModal({
+      title: '申请客服介入',
+      content: '工程师已拒绝退款申请。申请后订单将进入纠纷处理，双方可在48小时内上传证据。',
+      confirmText: '申请介入',
+      success: async (result) => {
+        if (!result.confirm) return;
+        try {
+          const data = await request('POST', `/orders/${this.data.id}/refund-request/escalate`, {});
+          wx.showToast({ title: '已申请客服介入', icon: 'success' });
+          setTimeout(() => wx.navigateTo({ url: `/pages/dispute-detail/index?id=${data.disputeId}` }), 350);
+        } catch (error) { wx.showToast({ title: error.message || '申请客服介入失败', icon: 'none' }); }
       },
     });
   },
@@ -329,9 +356,9 @@ Page({
       if (result.accepted) {
         wx.showToast({ title: '已同意退款，订单已取消', icon: 'success' });
         this.load();
-      } else if (result.disputeId) {
-        wx.showToast({ title: '已进入纠纷处理', icon: 'none' });
-        setTimeout(() => wx.navigateTo({ url: `/pages/dispute-detail/index?id=${result.disputeId}` }), 400);
+      } else if (result.rejected) {
+        wx.showToast({ title: '已拒绝退款申请', icon: 'none' });
+        this.load();
       }
     } catch (e) {
       wx.showToast({ title: e.message || '退款申请处理失败', icon: 'none' });

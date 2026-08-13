@@ -9,17 +9,16 @@
       <text class="admin-filter-label">当前筛选</text>
       <text class="admin-filter-value">{{filterText}}</text>
     </view>
-    <button class="admin-filter-button" bindtap="toggleFilters">{{filterOpen ? '收起' : '展开'}}</button>
   </view>
-  <view class="admin-filter-panel" wx:if="{{filterOpen}}">
+  <view class="admin-filter-panel">
     <view class="admin-filter-section">
       <text class="admin-filter-section-title">纠纷状态</text>
-      <scroll-view scroll-x class="admin-chips">
+      <view class="admin-chips">
         <view class="admin-chip {{status === '' ? 'active' : ''}}" data-value="" bindtap="setStatus">全部</view>
         <view class="admin-chip {{status === 'OPEN' ? 'active' : ''}}" data-value="OPEN" bindtap="setStatus">进行中</view>
         <view class="admin-chip {{status === 'RESOLVED' ? 'active' : ''}}" data-value="RESOLVED" bindtap="setStatus">已结案</view>
         <view class="admin-chip {{status === 'CANCELLED' ? 'active' : ''}}" data-value="CANCELLED" bindtap="setStatus">已取消</view>
-      </scroll-view>
+      </view>
     </view>
   </view>
 

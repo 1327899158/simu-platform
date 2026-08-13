@@ -62,9 +62,14 @@
       <text class="title">我的纠纷</text>
       <text class="arrow">›</text>
     </view>
-    <view class="menu-item" bindtap="goResetPassword">
+    <view class="menu-item" bindtap="goAccountSecurity">
       <text class="icon">🔑</text>
-      <text class="title">重置密码</text>
+      <text class="title">{{user.username ? '重置密码' : '设置账号和密码'}}</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goInvoices">
+      <text class="icon">🧾</text>
+      <text class="title">发票处理</text>
       <text class="arrow">›</text>
     </view>
     <view class="menu-item" bindtap="switchRole">

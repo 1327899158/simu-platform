@@ -52,8 +52,6 @@ page {
 .admin-filter-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .admin-filter-label { font-size: 20rpx; line-height: 28rpx; color: #8A8A8A; }
 .admin-filter-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 25rpx; line-height: 36rpx; color: #4B5563; }
-.admin-filter-button { min-width: 112rpx; min-height: 64rpx; margin: 0; padding: 0 18rpx; display: flex; align-items: center; justify-content: center; border-radius: 14rpx; background: #EEF2FF; color: #596CD4; font-size: 24rpx; }
-.admin-filter-button::after { border: none; }
 .admin-filter-panel { margin-top: 12rpx; padding: 6rpx 18rpx 18rpx; border-radius: 16rpx; background: #FFFFFF; border: 1rpx solid #E4E7EE; }
 .admin-filter-section { margin-top: 14rpx; }
 .admin-filter-section-title { display: block; margin-bottom: 8rpx; color: #767676; font-size: 22rpx; }
@@ -79,18 +77,19 @@ page {
 .admin-button.ghost { background: #F5F6FA; color: #4B5563; }
 .admin-button.small { min-height: 72rpx; padding: 0 22rpx; font-size: 24rpx; }
 
-.admin-chips { display: flex; gap: 12rpx; overflow-x: auto; margin-top: 16rpx; white-space: nowrap; }
+.admin-chips { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 16rpx; }
 .admin-chip {
-  flex-shrink: 0;
-  min-height: 72rpx;
-  padding: 0 24rpx;
+  flex: 0 0 calc(25% - 9rpx);
+  min-width: 0;
+  min-height: 88rpx;
+  padding: 0 8rpx;
   display: flex;
-  align-items: center;
+  align-items: center; justify-content: center;
   border-radius: 38rpx;
   background: #FFFFFF;
   border: 2rpx solid #DDE1EA;
   color: #4B5563;
-  font-size: 24rpx;
+  font-size: 21rpx;
 }
 .admin-chip.active { border-color: #667EEA; background: #EEF2FF; color: #596CD4; font-weight: 600; }
 

@@ -11,7 +11,8 @@ Page({
     canTakeOrders: false,
     // 客户
     recent: [],
-    counts: { QUOTING: 0, AWAITING_PAYMENT: 0, IN_PROGRESS: 0, DELIVERED: 0 },
+    counts: { UNQUOTED: 0, AWAITING_CONFIRMATION: 0, AWAITING_PAYMENT: 0, IN_PROGRESS: 0, DELIVERED: 0 },
+    unreadOrderCount: 0,
     // 工程师
     hall: [],
   },
@@ -47,10 +48,10 @@ Page({
     let data;
     try { data = await request('GET', '/orders/mine', { limit: 20 }); }
     catch (e) { wx.showToast({ title: e.message || '订单加载失败', icon: 'none' }); return; }
-    const counts = { QUOTING: 0, AWAITING_PAYMENT: 0, IN_PROGRESS: 0, DELIVERED: 0 };
-    data.items.forEach((o) => { if (counts[o.status] !== undefined) counts[o.status] += 1; });
+    const counts = { UNQUOTED: 0, AWAITING_CONFIRMATION: 0, AWAITING_PAYMENT: 0, IN_PROGRESS: 0, DELIVERED: 0, ...(data.counts || {}) };
     this.setData({
       counts,
+      unreadOrderCount: Number(data.unreadCount || 0),
       recent: data.items.slice(0, 5).map((o) => ({
         ...o, budgetY: fenToYuan(o.budgetFen), time: timeShort(o.createdAt),
         cls: STATUS_CLASS[o.status] || 'st-gray',
@@ -62,8 +63,12 @@ Page({
     if (!isApproved(this.data.user)) return promptIdentity('发布需求');
     wx.navigateTo({ url: '/pages/publish/index' });
   },
-  goOrders() {
+  async goOrders() {
     if (this.data.role !== 'CUSTOMER') return wx.showToast({ title: '仅客户可以查看我的订单', icon: 'none' });
+    if (this.data.unreadOrderCount) {
+      this.setData({ unreadOrderCount: 0 });
+      request('POST', '/orders/mine/mark-read', null, { silent: true }).catch(() => {});
+    }
     wx.navigateTo({ url: '/pages/orders/index' });
   },
   goMessages() { wx.switchTab({ url: '/pages/chat-list/index' }); },

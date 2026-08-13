@@ -168,7 +168,21 @@ module.exports = {
     <!-- 退款申请进行中 -->
     <view class="refund-request-card" wx:if="{{refundRequest && refundRequest.status === 'PENDING'}}">
       <text class="refund-request-title">↩️ 退款申请已提交</text>
-      <text class="refund-request-desc">等待工程师确认；若对方拒绝，订单将进入纠纷处理。</text>
+      <text class="refund-request-desc">等待工程师确认；若对方拒绝，你可自行决定是否申请客服介入。</text>
+    </view>
+
+    <view class="invoice-action-card" wx:if="{{order.status === 'COMPLETED'}}">
+      <view class="review-action-copy">
+        <text class="review-action-title">{{invoiceRequest ? '发票申请' : '需要发票？'}}</text>
+        <text class="review-action-desc" wx:if="{{invoiceRequest}}">{{invoiceRequest.statusText}} · {{invoiceRequest.invoiceTitle}}</text>
+        <text class="review-action-desc" wx:else>向工程师提交发票抬头和接收信息</text>
+      </view>
+      <button class="invoice-action-btn" bindtap="goInvoiceRequest">{{invoiceRequest ? '查看详情' : '申请发票'}}</button>
+    </view>
+    <view class="refund-request-card rejected" wx:if="{{refundRequest && refundRequest.status === 'REJECTED' && !dispute}}">
+      <text class="refund-request-title">退款申请已被拒绝</text>
+      <text class="refund-request-desc">工程师拒绝了你的退款请求。你可以继续沟通，或申请客服介入处理。</text>
+      <button class="btn-refund-escalate" bindtap="escalateRefund">申请客服介入</button>
     </view>
 
     <!-- 操作区 -->
@@ -177,7 +191,7 @@ module.exports = {
         wx:if="{{order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED'}}"
         bindtap="goChat">💬 与工程师沟通</button>
       <button class="btn-delete-order" wx:if="{{order.status === 'QUOTING'}}" bindtap="del">🗑️ 删除订单</button>
-      <!-- 退款入口：由工程师先确认，拒绝时才进入原有纠纷流程 -->
+      <!-- 退款入口：工程师拒绝后由客户自主决定是否申请客服介入。 -->
       <button class="btn-refund"
         wx:if="{{(order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED') && !dispute && !refundRequest}}"
         bindtap="requestRefund">↩️ 发起退款</button>
@@ -201,18 +215,24 @@ module.exports = {
       </view>
     </view>
 
+    <view class="invoice-engineer-card" wx:if="{{order.iAmSelected && order.status === 'COMPLETED'}}">
+      <text class="review-action-title">🧾 发票处理</text>
+      <text class="review-action-desc">{{invoiceRequest ? ('客户申请：' + invoiceRequest.statusText) : '客户暂未申请发票'}}</text>
+      <button class="invoice-action-btn" wx:if="{{invoiceRequest}}" bindtap="goInvoiceRequest">前往处理</button>
+    </view>
+
     <!-- 退款确认：待处理期间工程师只能同意或拒绝 -->
     <view class="refund-decision-card" wx:if="{{refundRequest && refundRequest.status === 'PENDING'}}">
       <view class="refund-decision-head">
         <text class="refund-decision-icon">↩️</text>
         <view class="refund-decision-copy">
           <text class="refund-decision-title">客户申请退款</text>
-          <text class="refund-decision-desc">订单履约已暂停，请确认是否同意退款。拒绝后将自动进入原有纠纷处理流程。</text>
+          <text class="refund-decision-desc">订单履约已暂停，请确认是否同意退款。拒绝后将恢复原订单状态，客户可自行申请客服介入。</text>
         </view>
       </view>
       <view class="refund-decision-actions">
         <button class="refund-reject-btn" bindtap="respondRefundRequest" data-action="REJECT"
-          disabled="{{respondingRefund}}">拒绝并进入纠纷</button>
+          disabled="{{respondingRefund}}">拒绝退款</button>
         <button class="refund-accept-btn" bindtap="respondRefundRequest" data-action="ACCEPT"
           disabled="{{respondingRefund}}">{{respondingRefund ? '处理中…' : '同意退款'}}</button>
       </view>

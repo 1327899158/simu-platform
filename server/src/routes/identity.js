@@ -28,11 +28,20 @@ async function ownedFiles(conn, userId, ids) {
   if (!ids.length) return [];
   const marks = ids.map(() => '?').join(',');
   const [rows] = await conn.execute(
-    `SELECT id, uploaderId, orderId FROM uploaded_files WHERE id IN (${marks}) FOR UPDATE`, ids);
+    `SELECT id, uploaderId, orderId, kind, mime, name FROM uploaded_files WHERE id IN (${marks}) FOR UPDATE`, ids);
   if (rows.length !== ids.length || rows.some((file) => file.uploaderId !== userId || file.orderId)) {
     throw err.forbidden('只能提交本人上传的非订单文件');
   }
   return rows;
+}
+
+function isImageFile(file) {
+  const mime = String(file?.mime || '').toLowerCase();
+  const name = String(file?.name || '').toLowerCase();
+  // 身份证照片必须是图片：前端选择器限制为 image，服务端再次检查已提交的文件元数据。
+  // 云存储文件由小程序直传，后端不会为此下载私密证件文件作内容嗅探。
+  return file?.kind === 'IMAGE'
+    && (mime.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|bmp|heic|heif)$/i.test(name));
 }
 
 function register(router) {
@@ -71,7 +80,11 @@ function register(router) {
     if (new Set(allIds).size !== allIds.length) throw err.bad('认证材料不能重复');
     try {
       await tx(async (conn) => {
-        await ownedFiles(conn, user.id, allIds);
+        const uploaded = await ownedFiles(conn, user.id, allIds);
+        const byId = new Map(uploaded.map((file) => [file.id, file]));
+        if (!isImageFile(byId.get(idFrontFileId)) || !isImageFile(byId.get(idBackFileId))) {
+          throw err.bad('身份证正反面只能上传 JPG、PNG、WEBP、HEIC 等图片文件');
+        }
         const [duplicate] = await conn.execute(
           `SELECT userId FROM identity_verifications WHERE idCardHash=? AND userId<>? FOR UPDATE`,
           [idCardHash(fields.idCardNumber), user.id]);

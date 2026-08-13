@@ -1,0 +1,9 @@
+.page-container { min-height: 100vh; box-sizing: border-box; padding: 28rpx 24rpx; background: var(--bg-base); }
+.hero { padding: 30rpx 28rpx; border-radius: var(--r-lg); background: var(--grad-violet-pink); box-shadow: var(--glow-primary); color: #fff; }
+.hero-title { display:block; font-size: 36rpx; font-weight:700; }
+.hero-desc { display:block; margin-top:12rpx; font-size:24rpx; line-height:1.6; color:rgba(255,255,255,.86); }
+.form-card { margin-top:22rpx; padding:28rpx; border-radius:var(--r-lg); background:#fff; box-shadow:var(--shadow-card); }
+.label { display:block; margin:12rpx 0; font-size:26rpx; color:var(--c-text); font-weight:600; }
+.input { height:88rpx; padding:0 22rpx; box-sizing:border-box; border-radius:var(--r-md); background:#F5F6FB; color:var(--c-text); font-size:28rpx; }
+.submit { margin-top:34rpx; border:0; border-radius:var(--r-md); background:var(--grad-violet-pink); color:#fff; font-size:30rpx; font-weight:600; }
+.submit::after { border:none; }

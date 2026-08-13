@@ -1,0 +1,16 @@
+<view class="page-container" wx:if="{{!loading}}">
+  <view class="hero"><text class="hero-title">{{user.role === 'CUSTOMER' ? '申请发票' : '发票申请详情'}}</text><text class="hero-desc">真实开票由工程师或平台后续处理；本页不涉及支付和开票接口。</text></view>
+  <view class="card" wx:if="{{invoice}}">
+    <text class="status">{{invoice.statusText}}</text><text class="title">{{invoice.invoiceTitle}}</text>
+    <text class="item" wx:if="{{invoice.taxNumber}}">税号：{{invoice.taxNumber}}</text><text class="item" wx:if="{{invoice.email}}">邮箱：{{invoice.email}}</text>
+    <text class="item" wx:if="{{invoice.customerNote}}">客户备注：{{invoice.customerNote}}</text><text class="item" wx:if="{{invoice.engineerNote}}">工程师说明：{{invoice.engineerNote}}</text>
+    <button wx:if="{{user.role === 'ENGINEER'}}" class="primary" bindtap="goInvoices">前往发票处理</button>
+  </view>
+  <view class="card" wx:elif="{{user.role === 'CUSTOMER'}}">
+    <text class="label">发票抬头（必填）</text><input class="input" data-field="invoiceTitle" bindinput="onField" maxlength="120" placeholder="个人姓名或单位名称" />
+    <text class="label">纳税人识别号（选填）</text><input class="input" data-field="taxNumber" bindinput="onField" maxlength="50" placeholder="单位开票时填写" />
+    <text class="label">接收邮箱（选填）</text><input class="input" data-field="email" bindinput="onField" maxlength="120" placeholder="电子发票接收邮箱" />
+    <text class="label">备注（选填）</text><textarea class="textarea" data-field="customerNote" bindinput="onField" maxlength="500" placeholder="开票要求或其他说明" />
+    <button class="primary" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">提交发票申请</button>
+  </view>
+</view>

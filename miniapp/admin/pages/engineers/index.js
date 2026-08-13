@@ -3,7 +3,7 @@ const { getAdmin, hasPermission, denyAndExit } = require('../../utils/admin');
 const { timeShort } = require('../../../utils/format');
 
 Page({
-  data: { items: [], total: 0, loading: true, status: 'PENDING', search: '', canReview: false, showFilters: false, filterText: '待审核' },
+  data: { items: [], total: 0, loading: true, status: 'PENDING', search: '', canReview: false, filterText: '待审核' },
   onLoad() {
     const admin = getAdmin();
     if (!admin) { denyAndExit('管理员会话不存在，请重新扫码进入。'); return; }
@@ -13,7 +13,6 @@ Page({
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   onSearchInput(e) { this.setData({ search: e.detail.value }); },
   search() { this.load(); },
-  toggleFilters() { this.setData({ showFilters: !this.data.showFilters }); },
   setStatus(e) {
     const value = e.currentTarget.dataset.value;
     this.setData({ status: this.data.status === value ? '' : value }, () => { this.syncFilterText(); this.load(); });

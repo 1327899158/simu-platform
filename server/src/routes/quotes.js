@@ -47,6 +47,7 @@ function register(router) {
         await conn.execute(
           `UPDATE quotes SET amountFen=?, days=?, solution=?, status='PENDING', updatedAt=? WHERE id=?`,
           [amountFen, days, solution, nowIso(), exist.id]);
+        await conn.execute(`UPDATE orders SET updatedAt=? WHERE id=?`, [nowIso(), params.id]);
         const [[r]] = await conn.execute(`SELECT * FROM quotes WHERE id=?`, [exist.id]);
         return r;
       }
@@ -56,6 +57,7 @@ function register(router) {
         `INSERT INTO quotes(id, orderId, engineerId, amountFen, days, solution, createdAt, updatedAt)
          VALUES(?,?,?,?,?,?,?,?)`,
         [id, params.id, user.id, amountFen, days, solution, now, now]);
+      await conn.execute(`UPDATE orders SET updatedAt=? WHERE id=?`, [now, params.id]);
       const [[r]] = await conn.execute(`SELECT * FROM quotes WHERE id=?`, [id]);
       return r;
     });
@@ -81,6 +83,7 @@ function register(router) {
          v.int(b.days, '工期', { min: 1, max: 90, optional: true }) ?? null,
          v.str(b.solution, '技术方案', { min: 10, max: 3000, optional: true }) ?? null,
          nowIso(), qt.id]);
+      await conn.execute(`UPDATE orders SET updatedAt=? WHERE id=?`, [nowIso(), qt.orderId]);
       const [[r]] = await conn.execute(`SELECT * FROM quotes WHERE id=?`, [qt.id]);
       return r;
     });
@@ -91,10 +94,16 @@ function register(router) {
   router.del('/api/quotes/:id', async (req, res, params) => {
     const user = await requireEngineer(req);
     // query() 已经返回 mysql2 的 OkPacket；不能再按 [rows] 解构。
-    const r = await query(
-      `UPDATE quotes SET status='WITHDRAWN', updatedAt=? WHERE id=? AND engineerId=? AND status='PENDING'`,
-      [nowIso(), params.id, user.id]);
-    if (!r.affectedRows) throw err.conflict('仅待确认的报价可撤回');
+    const quote = await queryOne(`SELECT orderId FROM quotes WHERE id=? AND engineerId=? AND status='PENDING'`, [params.id, user.id]);
+    if (!quote) throw err.conflict('仅待确认的报价可撤回');
+    const now = nowIso();
+    await tx(async (conn) => {
+      const [r] = await conn.execute(
+        `UPDATE quotes SET status='WITHDRAWN', updatedAt=? WHERE id=? AND engineerId=? AND status='PENDING'`,
+        [now, params.id, user.id]);
+      if (!r.affectedRows) throw err.conflict('仅待确认的报价可撤回');
+      await conn.execute(`UPDATE orders SET updatedAt=? WHERE id=?`, [now, quote.orderId]);
+    });
     ok(res, { withdrawn: true });
   });
 

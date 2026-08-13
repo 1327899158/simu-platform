@@ -8,7 +8,7 @@
  */
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, maskPhone, v, hashPassword, verifyPassword, genSessionToken, sessionExpiry } = require('../lib/util');
-const { query, queryOne } = require('../db');
+const { query, queryOne, tx } = require('../db');
 const { getOrCreateUser, findUserByUsername, findUserByPhone, getOrCreateUserByPhone, requireUser } = require('../lib/auth-mw');
 const { sendSmsCode, verifySmsCode } = require('../services/sms-svc');
 const {
@@ -101,11 +101,8 @@ function register(router) {
       if (existing) throw err.conflict('该手机号已注册');
     }
 
-    // LOGIN 类型：检查手机号是否已存在
-    if (type === 'LOGIN') {
-      const existing = await findUserByPhone(phone);
-      if (!existing) throw err.notFound('该手机号未注册，请先注册');
-    }
+    // LOGIN 不检查账号是否已存在：验证码校验成功后，phone-login 会为新手机号
+    // 创建仅含手机号的账号。这样不会因为“是否已注册”的差异泄露账号状态。
 
     const rateKey = req.socket && req.socket.remoteAddress ? req.socket.remoteAddress : '';
     const result = await sendSmsCode(phone, type, rateKey);
@@ -231,13 +228,45 @@ function register(router) {
     // 验证短信码
     await verifySmsCode(phone, smsCode, 'LOGIN');
 
-    // 获取或创建用户
+    // 获取或创建用户。新用户暂不设置 username/passwordHash，后续由本人
+    // 在“我的 - 账户与密码”中一次性设置账号密码。
     const user = await getOrCreateUserByPhone(phone, roleHint);
 
     if (user.status !== 'ACTIVE') throw err.forbidden('账号不可用');
 
     const session = await issueSession(user);
     ok(res, session);
+  });
+
+  // POST /api/auth/set-account-password
+  // 手机验证码登录后首次设置账号和密码；账号只能设置一次，已有密码请走忘记密码流程。
+  router.post('/api/auth/set-account-password', async (req, res) => {
+    const user = await requireUser(req);
+    const b = await readJson(req);
+    const username = v.str(b.username, '账号', { min: 6, max: 12 });
+    const password = v.str(b.password, '密码', { min: 6, max: 50 });
+    if (!/^\d+$/.test(username)) throw err.bad('账号只能为6-12位数字');
+
+    await tx(async (conn) => {
+      const [[current]] = await conn.execute(
+        `SELECT id, username, passwordHash FROM users WHERE id = ? FOR UPDATE`, [user.id]
+      );
+      if (!current) throw err.unauth('登录状态已失效');
+      if (current.username || current.passwordHash) {
+        throw err.conflict('账号和密码已设置，请通过忘记密码重置密码');
+      }
+      const [[occupied]] = await conn.execute(
+        `SELECT id FROM users WHERE username = ? LIMIT 1 FOR UPDATE`, [username]
+      );
+      if (occupied) throw err.conflict('该账号已被使用');
+      const passwordHash = await hashPassword(password);
+      await conn.execute(
+        `UPDATE users SET username = ?, passwordHash = ?, updatedAt = ?
+          WHERE id = ? AND username IS NULL AND passwordHash IS NULL`,
+        [username, passwordHash, nowIso(), user.id]
+      );
+    });
+    ok(res, { user: await loadUserView(user.id), message: '账号和密码已设置' });
   });
 
   // ========== 忘记密码 ==========

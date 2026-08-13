@@ -26,47 +26,28 @@
   border-radius: 20rpx;
 }
 
-/* ===== 可折叠状态筛选 ===== */
+/* ===== 常驻状态筛选 ===== */
 .filter-wrap {
   background: #FFFFFF;
   padding: 16rpx 24rpx;
   border-bottom: 1rpx solid var(--c-divider);
 }
-.filter-trigger {
-  width: 100%;
-  min-height: 88rpx;
-  margin: 0;
-  padding: 0 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #F7F8FF;
-  border: 1rpx solid #DDE4FF;
-  border-radius: var(--r-md);
-  color: var(--c-text);
-  font-size: 28rpx;
-  line-height: 1.4;
-}
-.filter-trigger::after, .filter-item::after { border: none; }
-.filter-current { display: flex; align-items: center; gap: 16rpx; font-weight: 600; }
-.filter-arrow { color: var(--neon-violet); transition: transform .2s ease; }
-.filter-arrow.open { transform: rotate(180deg); }
 .filter-panel {
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
-  padding-top: 16rpx;
 }
 .filter-item {
   min-height: 88rpx;
   margin: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex: 1 0 42%;
-  padding: 0 22rpx;
+  justify-content: center;
+  flex: 0 0 calc(25% - 9rpx);
+  min-width: 0;
+  padding: 0 8rpx;
   border-radius: var(--r-md);
-  font-size: 24rpx;
+  font-size: 21rpx;
   color: var(--c-text-2);
   background: #FAFAFA;
   border: 1rpx solid var(--c-border);
@@ -80,12 +61,12 @@
   color: #596CD4;
   font-weight: 600;
 }
-.filter-label { margin-left: 12rpx; }
+.filter-label { margin-left: 6rpx; white-space: nowrap; }
 .filter-count {
-  min-width: 34rpx;
-  height: 34rpx;
-  margin-left: 12rpx;
-  padding: 0 8rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  margin-left: 5rpx;
+  padding: 0 5rpx;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -93,9 +74,9 @@
   border-radius: var(--r-pill);
   background: rgba(124, 58, 237, .10);
   color: #667EEA;
-  font-size: 20rpx;
+  font-size: 18rpx;
 }
-.status-dot { width: 14rpx; height: 14rpx; border-radius: 50%; flex-shrink: 0; }
+.filter-item::after { border: none; }.status-dot { width: 12rpx; height: 12rpx; border-radius: 50%; flex-shrink: 0; }
 .dot-purple { background: #667EEA; }
 .dot-blue { background: #3B82F6; }
 .dot-orange { background: #F59E0B; }

@@ -20,13 +20,20 @@ function refundRequestView(row) {
     id: row.id,
     orderId: row.orderId,
     status: row.status,
+    statusText: row.status === 'PENDING' ? '待工程师确认' : row.status === 'REJECTED' ? '工程师已拒绝' : row.status,
     disputeId: row.disputeId || null,
     createdAt: row.createdAt,
     respondedAt: row.respondedAt || null,
   };
 }
 
+function customerQuotingText(quoteCount) {
+  return Number(quoteCount || 0) > 0 ? '待确认' : '未报价';
+}
+
 function orderView(o, extra = {}) {
+  const { customerQuoteStage = false, ...rest } = extra;
+  const quoteCount = rest.quoteCount;
   return {
     id: o.id,
     orderNo: o.orderNo,
@@ -39,7 +46,9 @@ function orderView(o, extra = {}) {
     deliveryDays: o.deliveryDays,
     specialNote: o.specialNote,
     status: o.status,
-    statusText: DICTS.orderStatus[o.status] || o.status,
+    statusText: customerQuoteStage && o.status === 'QUOTING'
+      ? customerQuotingText(quoteCount)
+      : (DICTS.orderStatus[o.status] || o.status),
     finalAmountFen: o.finalAmountFen ? Number(o.finalAmountFen) : null,
     selectedQuoteId: o.selectedQuoteId,
     createdAt: o.createdAt,
@@ -47,7 +56,7 @@ function orderView(o, extra = {}) {
     deliveredAt: o.deliveredAt,
     completedAt: o.completedAt,
     viewCount: Number(o.viewCount || 0),
-    ...extra,
+    ...rest,
   };
 }
 
@@ -138,27 +147,68 @@ function register(router) {
     const status = q_.get('status');
     const limit = q_.get('limit') ? v.int(q_.get('limit'), 'limit', { min: 1, max: 50 }) : 20;
     const cursor = q_.get('cursor');
-    const cond = ['customerId = ?', 'deletedAt IS NULL'];
+    const cond = ['o.customerId = ?', 'o.deletedAt IS NULL'];
     const args = [user.id];
-    if (status && status.trim()) { cond.push('status = ?'); args.push(status); }
-    if (cursor && cursor.trim()) { cond.push('createdAt < ?'); args.push(cursor); }
+    const quoteExists = `EXISTS (SELECT 1 FROM quotes q WHERE q.orderId=o.id AND q.status != 'WITHDRAWN')`;
+    if (status && status.trim()) {
+      const requested = String(status).trim().toUpperCase();
+      if (requested === 'UNQUOTED') cond.push(`o.status = 'QUOTING' AND NOT ${quoteExists}`);
+      else if (requested === 'AWAITING_CONFIRMATION') cond.push(`o.status = 'QUOTING' AND ${quoteExists}`);
+      else {
+        v.oneOf(requested, '订单状态', Object.keys(DICTS.orderStatus));
+        cond.push('o.status = ?'); args.push(requested);
+      }
+    }
+    if (cursor && cursor.trim()) { cond.push('o.createdAt < ?'); args.push(cursor); }
     const rows = await query(
-      `SELECT * FROM orders WHERE ${cond.join(' AND ')} ORDER BY createdAt DESC LIMIT ${limit}`,
+      `SELECT o.* FROM orders o WHERE ${cond.join(' AND ')} ORDER BY o.createdAt DESC LIMIT ${limit}`,
       args);
-    const items = await Promise.all(rows.map(async (o) => orderView(o, { quoteCount: await quoteCountOf(o.id) })));
+    const items = await Promise.all(rows.map(async (o) => {
+      const quoteCount = await quoteCountOf(o.id);
+      return orderView(o, { quoteCount, customerQuoteStage: true });
+    }));
     const countRows = await query(
-      `SELECT status, COUNT(*) AS c FROM orders
-       WHERE customerId = ? AND deletedAt IS NULL GROUP BY status`, [user.id]);
+      `SELECT o.status, COUNT(*) AS c,
+              SUM(CASE WHEN o.status='QUOTING' AND ${quoteExists} THEN 1 ELSE 0 END) AS awaitingConfirmation
+         FROM orders o
+        WHERE o.customerId = ? AND o.deletedAt IS NULL
+        GROUP BY o.status`, [user.id]);
     const counts = { ALL: 0 };
     for (const row of countRows) {
       counts[row.status] = Number(row.c);
       counts.ALL += Number(row.c);
+      if (row.status === 'QUOTING') {
+        counts.AWAITING_CONFIRMATION = Number(row.awaitingConfirmation || 0);
+        counts.UNQUOTED = Number(row.c) - counts.AWAITING_CONFIRMATION;
+      }
+    }
+    const readState = await queryOne(`SELECT lastReadAt FROM customer_order_reads WHERE customerId=?`, [user.id]);
+    let unreadCount = 0;
+    if (readState?.lastReadAt) {
+      const unread = await queryOne(
+        `SELECT COUNT(*) AS c FROM orders
+          WHERE customerId=? AND deletedAt IS NULL AND updatedAt > ?`, [user.id, readState.lastReadAt]);
+      unreadCount = Number(unread?.c || 0);
+    } else {
+      // 第一次打开新版本时建立阅读基线，避免历史订单全部被误认为新提醒。
+      await query(`INSERT IGNORE INTO customer_order_reads(customerId, lastReadAt) VALUES(?, ?)`, [user.id, nowIso()]);
     }
     ok(res, {
       items,
       counts,
+      unreadCount,
       nextCursor: rows.length === limit ? rows[rows.length - 1].createdAt : null,
     });
+  });
+
+  // 客户点击“我的订单”后确认已查看变更，首页红点随即消除。
+  router.post('/api/orders/mine/mark-read', async (req, res) => {
+    const user = await requireCustomer(req);
+    const now = nowIso();
+    await query(
+      `INSERT INTO customer_order_reads(customerId, lastReadAt) VALUES(?, ?)
+       ON DUPLICATE KEY UPDATE lastReadAt=VALUES(lastReadAt)`, [user.id, now]);
+    ok(res, { readAt: now });
   });
 
   // GET /api/orders/:id
@@ -177,8 +227,9 @@ function register(router) {
     const review = await queryOne(
       `SELECT id, qualityScore, attitudeScore, speedScore, content, revisionCount, createdAt, updatedAt
          FROM engineer_reviews WHERE orderId=? AND customerId=?`, [o.id, user.id]);
+    const quoteCount = await quoteCountOf(o.id);
     ok(res, orderView(o, {
-      quoteCount: await quoteCountOf(o.id),
+      quoteCount, customerQuoteStage: true,
       engineer,
       review: review ? {
         ...review,
@@ -207,7 +258,7 @@ function register(router) {
     }
     const refundRequest = await queryOne(
       `SELECT * FROM refund_requests
-        WHERE orderId = ? AND status = 'PENDING'
+        WHERE orderId = ? AND (status = 'PENDING' OR (status = 'REJECTED' AND disputeId IS NULL))
         ORDER BY createdAt DESC LIMIT 1`,
       [params.id]
     );
@@ -232,11 +283,11 @@ function register(router) {
       }
       const [[pending]] = await conn.execute(
         `SELECT id FROM refund_requests
-          WHERE orderId = ? AND status = 'PENDING'
+          WHERE orderId = ? AND status IN ('PENDING', 'REJECTED')
           FOR UPDATE`,
         [order.id]
       );
-      if (pending) throw err.conflict('该订单已有待处理的退款申请');
+      if (pending) throw err.conflict('该订单已有退款申请；若已被拒绝，请申请客服介入处理');
       const [[dispute]] = await conn.execute(
         `SELECT id FROM disputes WHERE orderId = ? AND status = 'OPEN' FOR UPDATE`,
         [order.id]
@@ -269,7 +320,7 @@ function register(router) {
   });
 
   // POST /api/orders/:id/refund-request/respond { action: ACCEPT | REJECT }
-  // 同意：订单标记为已取消（暂不执行真实退款）；拒绝：自动创建现有纠纷并跳转处理。
+  // 同意：订单标记为已取消（暂不执行真实退款）；拒绝：恢复订单，客户可自行决定是否申请客服介入。
   router.post('/api/orders/:id/refund-request/respond', async (req, res, params) => {
     const engineer = await requireEngineer(req);
     const body = await readJson(req);
@@ -287,7 +338,8 @@ function register(router) {
       if (refundRequest.orderStatus !== 'REFUND_PENDING') {
         throw err.conflict('订单状态已变化，无法处理退款申请');
       }
-      const originalStatus = refundRequest.orderStatusAtRequest || 'IN_PROGRESS';
+      const originalStatus = REFUNDABLE_ORDER_STATUS.includes(refundRequest.orderStatusAtRequest)
+        ? refundRequest.orderStatusAtRequest : 'IN_PROGRESS';
       const now = nowIso();
 
       if (action === 'ACCEPT') {
@@ -307,53 +359,72 @@ function register(router) {
         return { accepted: true, orderStatus: 'CANCELLED', refundRequestId: refundRequest.id };
       }
 
-      const [[openDispute]] = await conn.execute(
-        `SELECT id FROM disputes WHERE orderId = ? AND status = 'OPEN' FOR UPDATE`,
-        [refundRequest.orderId]
-      );
-      if (openDispute) throw err.conflict('订单已有进行中的纠纷');
-      const [frozen] = await conn.execute(
+      const [restored] = await conn.execute(
         `UPDATE orders
-            SET status = 'DISPUTING', updatedAt = ?
+            SET status = ?, updatedAt = ?
           WHERE id = ? AND status = 'REFUND_PENDING'`,
-        [now, refundRequest.orderId]
+        [originalStatus, now, refundRequest.orderId]
       );
-      if (frozen.affectedRows !== 1) throw err.conflict('订单状态已变化，无法进入纠纷');
-      const disputeId = newId();
-      const evidenceDeadlineAt = evidenceDeadlineIso();
-      await conn.execute(
-        `INSERT INTO disputes
-           (id, orderId, initiatorId, reasonType, description, status,
-            orderStatusAtOpen, evidenceDeadlineAt, createdAt, updatedAt)
-         VALUES(?, ?, ?, 'OTHER', ?, 'OPEN', ?, ?, ?, ?)`,
-        [
-          disputeId,
-          refundRequest.orderId,
-          refundRequest.customerId,
-          '客户发起退款申请，工程师未同意，订单已自动进入纠纷处理。',
-          originalStatus,
-          evidenceDeadlineAt,
-          now,
-          now,
-        ]
-      );
+      if (restored.affectedRows !== 1) throw err.conflict('订单状态已变化，无法拒绝退款申请');
       await conn.execute(
         `UPDATE refund_requests
-            SET status = 'REJECTED', disputeId = ?, respondedAt = ?, updatedAt = ?
+            SET status = 'REJECTED', disputeId = NULL, respondedAt = ?, updatedAt = ?
           WHERE id = ? AND status = 'PENDING'`,
-        [disputeId, now, now, refundRequest.id]
+        [now, now, refundRequest.id]
       );
-      return { accepted: false, orderStatus: 'DISPUTING', refundRequestId: refundRequest.id, disputeId };
+      return { accepted: false, rejected: true, orderStatus: originalStatus, refundRequestId: refundRequest.id };
     });
 
     const message = result.accepted
       ? '工程师已同意退款申请。订单已取消，退款资金处理将由平台后续处理。'
-      : '工程师未同意退款申请，订单已自动进入纠纷处理。请双方在48小时内上传证据。';
+      : '工程师已拒绝退款申请。客户可在订单详情中选择“申请客服介入”。';
     systemMessageForOrder(
       params.id,
       message,
       { senderId: engineer.id, actionOrderId: params.id }
     ).catch(() => {});
+    ok(res, result);
+  });
+
+  // POST /api/orders/:id/refund-request/escalate —— 客户在退款被拒后主动申请客服介入。
+  router.post('/api/orders/:id/refund-request/escalate', async (req, res, params) => {
+    const customer = await requireCustomer(req);
+    const result = await tx(async (conn) => {
+      const [[refundRequest]] = await conn.execute(
+        `SELECT rr.*, o.status AS orderStatus
+           FROM refund_requests rr JOIN orders o ON o.id=rr.orderId
+          WHERE rr.orderId=? AND rr.customerId=?
+          ORDER BY rr.createdAt DESC LIMIT 1 FOR UPDATE`, [params.id, customer.id]);
+      if (!refundRequest || refundRequest.status !== 'REJECTED') {
+        throw err.conflict('没有可申请客服介入的退款拒绝记录');
+      }
+      const originalStatus = REFUNDABLE_ORDER_STATUS.includes(refundRequest.orderStatusAtRequest)
+        ? refundRequest.orderStatusAtRequest : 'IN_PROGRESS';
+      if (refundRequest.orderStatus !== originalStatus) throw err.conflict('订单状态已变化，暂不能申请客服介入');
+      const [[openDispute]] = await conn.execute(
+        `SELECT id FROM disputes WHERE orderId=? AND status='OPEN' FOR UPDATE`, [refundRequest.orderId]);
+      if (openDispute) throw err.conflict('订单已有进行中的纠纷');
+      const now = nowIso();
+      const disputeId = newId();
+      const [frozen] = await conn.execute(
+        `UPDATE orders SET status='DISPUTING', updatedAt=? WHERE id=? AND status=?`,
+        [now, refundRequest.orderId, originalStatus]);
+      if (frozen.affectedRows !== 1) throw err.conflict('订单状态已变化，请刷新后重试');
+      await conn.execute(
+        `INSERT INTO disputes
+           (id, orderId, initiatorId, reasonType, description, status, orderStatusAtOpen, evidenceDeadlineAt, createdAt, updatedAt)
+         VALUES(?, ?, ?, 'OTHER', ?, 'OPEN', ?, ?, ?, ?)`,
+        [disputeId, refundRequest.orderId, customer.id,
+          '客户退款申请被工程师拒绝，现申请客服介入处理。', originalStatus, evidenceDeadlineIso(), now, now]
+      );
+      await conn.execute(
+        `UPDATE refund_requests SET status='ESCALATED', disputeId=?, updatedAt=? WHERE id=? AND status='REJECTED'`,
+        [disputeId, now, refundRequest.id]);
+      return { disputeId, refundRequestId: refundRequest.id };
+    });
+    systemMessageForOrder(params.id, '客户已申请客服介入，订单进入纠纷处理，请双方在48小时内上传证据。', {
+      senderId: customer.id, actionOrderId: params.id,
+    }).catch(() => {});
     ok(res, result);
   });
 

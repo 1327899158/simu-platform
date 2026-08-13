@@ -322,6 +322,10 @@
 .review-action-btn { flex-shrink: 0; min-width: 136rpx; min-height: 72rpx; line-height: 72rpx; margin: 0; padding: 0 16rpx; border: 0; border-radius: var(--r-pill); background: var(--grad-violet-pink); color: #fff; font-size: 24rpx; }
 .review-action-btn::after { border: none; }
 .review-action-btn[disabled] { background: #C8CCD8; color: #fff; }
+.invoice-action-card, .invoice-engineer-card { display:flex; align-items:center; gap:18rpx; background:#FFFFFF; border-radius:var(--r-lg); padding:28rpx; box-shadow:var(--shadow-card); margin-bottom:20rpx; }
+.invoice-engineer-card { flex-wrap:wrap; }
+.invoice-action-btn { flex-shrink:0; min-width:136rpx; min-height:72rpx; line-height:72rpx; margin:0; padding:0 16rpx; border:0; border-radius:var(--r-pill); background:#EEF2FF; color:#596CD4; font-size:24rpx; }
+.invoice-action-btn::after { border:none; }
 .action-section {
   display: flex;
   flex-direction: column;
@@ -468,6 +472,11 @@
 }
 .refund-request-title { color: #146BB5; font-size: 28rpx; font-weight: 600; }
 .refund-request-desc { color: #5D7894; font-size: 24rpx; line-height: 1.55; }
+.refund-request-card.rejected { border-color: #F1C1BC; background: #FFF5F4; }
+.refund-request-card.rejected .refund-request-title { color: #B43A32; }
+.refund-request-card.rejected .refund-request-desc { color: #875A56; }
+.btn-refund-escalate { min-height: 88rpx; margin: 12rpx 0 0; border: none; border-radius: var(--r-md); background: var(--grad-violet-pink); color: #FFFFFF; font-size: 27rpx; font-weight: 600; line-height: 1.4; }
+.btn-refund-escalate::after { border: none; }
 .btn-refund {
   width: 100%;
   padding: 22rpx 0;

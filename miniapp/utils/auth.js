@@ -165,6 +165,13 @@ async function resetPassword(username, newPassword, smsCode) {
   return data;
 }
 
+/** 手机号登录用户首次设置账号和密码。 */
+async function setAccountPassword(username, password) {
+  const data = await request('POST', '/auth/set-account-password', { username, password }, { silent: true });
+  if (data && data.user) saveUser(data.user);
+  return data && data.user;
+}
+
 module.exports = {
   initCloud,
   login,
@@ -176,6 +183,7 @@ module.exports = {
   getPasswordResetTarget,
   requestPasswordResetSms,
   resetPassword,
+  setAccountPassword,
   getUser, setUser, isLoggedIn, saveUser, saveSession, logout,
   ensureLogin, refreshUser,
 };

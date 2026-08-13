@@ -1,0 +1,12 @@
+<view class="page-container">
+  <view class="hero"><text class="hero-title">发票处理</text><text class="hero-desc">你可自行开票，或申请平台协助开票。平台开票可能收取服务费，费用另行确认。</text></view>
+  <view class="empty" wx:if="{{!loading && !items.length}}">暂无客户发票申请</view>
+  <view class="card" wx:for="{{items}}" wx:key="id">
+    <view class="row"><text class="title">{{item.invoiceTitle}}</text><text class="status">{{item.statusText}}</text></view>
+    <text class="desc">订单：{{item.projectName}} · 客户：{{item.customerName}}</text>
+    <text class="desc" wx:if="{{item.taxNumber}}">税号：{{item.taxNumber}}</text><text class="desc" wx:if="{{item.email}}">邮箱：{{item.email}}</text><text class="desc" wx:if="{{item.customerNote}}">客户备注：{{item.customerNote}}</text><text class="desc" wx:if="{{item.engineerNote}}">处理说明：{{item.engineerNote}}</text>
+    <view class="actions" wx:if="{{item.status === 'REQUESTED'}}"><button class="outline" data-id="{{item.id}}" data-action="SELF_ISSUE" bindtap="process">自行开票</button><button class="primary" data-id="{{item.id}}" data-action="PLATFORM_REQUESTED" bindtap="process">申请平台开票</button><button class="minor" data-id="{{item.id}}" data-action="REJECTED" bindtap="process">暂不支持</button></view>
+    <button class="primary" wx:if="{{item.status === 'SELF_ISSUE' || item.status === 'PLATFORM_REQUESTED'}}" data-id="{{item.id}}" data-action="ISSUED" bindtap="process">标记已完成开票</button>
+    <text class="order-link" data-id="{{item.orderId}}" bindtap="goOrder">查看所属订单 ›</text>
+  </view>
+</view>

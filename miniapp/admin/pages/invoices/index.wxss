@@ -1,0 +1,2 @@
+@import "../../admin.wxss";
+.admin-small{display:block;margin-top:10rpx;word-break:break-all}.admin-muted{display:block;line-height:1.55}.admin-chips .admin-chip{flex-basis:calc(33.333% - 8rpx)}

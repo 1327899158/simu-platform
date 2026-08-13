@@ -54,6 +54,9 @@ Page({
   goMyReviews() {
     wx.navigateTo({ url: '/pages/my-reviews/index' });
   },
+  goInvoices() {
+    wx.navigateTo({ url: '/pages/invoices/index' });
+  },
   goQualification() {
     wx.navigateTo({ url: '/pages/engineer-qualification/index' });
   },
@@ -62,6 +65,14 @@ Page({
   },
   goResetPassword() {
     wx.navigateTo({ url: '/pages/reset-password/index' });
+  },
+  goAccountSecurity() {
+    const user = this.data.user || {};
+    if (user.username) {
+      wx.navigateTo({ url: `/pages/reset-password/index?username=${encodeURIComponent(user.username)}` });
+      return;
+    }
+    wx.navigateTo({ url: '/pages/account-security/index' });
   },
   async switchRole() {
     const cur = getUser();

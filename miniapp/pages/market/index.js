@@ -61,7 +61,7 @@ Page({
         })),
       });
     } catch (e) {
-      wx.showToast({ title: e.message || '需求大厅加载失败', icon: 'none' });
+      wx.showToast({ title: e.message || '仿真大厅加载失败', icon: 'none' });
     } finally {
       this.setData({ loading: false });
       if (this._reloadPending) {

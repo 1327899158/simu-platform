@@ -4,16 +4,9 @@
     <text class="page-title">⚖️ 我的纠纷</text>
   </view>
 
-  <!-- 状态筛选 -->
+  <!-- 常驻状态筛选 -->
   <view class="filter-wrap">
-    <button class="filter-trigger" bindtap="toggleFilter">
-      <view class="filter-current">
-        <text class="status-dot {{currentDotCls}}"></text>
-        <text>{{currentLabel}}</text>
-      </view>
-      <text class="filter-arrow {{filterOpen ? 'open' : ''}}">⌄</text>
-    </button>
-    <view class="filter-panel" wx:if="{{filterOpen}}">
+    <view class="filter-panel">
       <button wx:for="{{tabs}}" wx:key="key"
         class="filter-item {{tab === item.key ? 'active' : ''}}"
         data-key="{{item.key}}" bindtap="pickTab">

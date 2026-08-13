@@ -9,13 +9,12 @@ const BADGE = { OPEN: 'badge-orange', RESOLVED: 'badge-green', CANCELLED: 'badge
 const REASON_ICON = { QUALITY: '📉', DELAY: '⏰', MISSING: '📭', PAYMENT: '💳', COMMUNICATION: '💬', OTHER: '📌' };
 
 Page({
-  data: { items: [], total: 0, loading: true, status: '', filterOpen: false, filterText: '全部纠纷' },
+  data: { items: [], total: 0, loading: true, status: '', filterText: '全部纠纷' },
   onLoad() {
     if (!getAdmin()) { denyAndExit('管理员会话不存在，请重新扫码进入。'); return; }
     this.load();
   },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
-  toggleFilters() { this.setData({ filterOpen: !this.data.filterOpen }); },
   setStatus(e) {
     const value = e.currentTarget.dataset.value;
     this.setData({ status: this.data.status === value ? '' : value }, () => { this.syncFilterText(); this.load(); });

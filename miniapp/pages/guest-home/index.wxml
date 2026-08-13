@@ -2,7 +2,12 @@
   <view class="hero-card">
     <view class="hero-orb orb-one"></view><view class="hero-orb orb-two"></view>
     <text class="hero-eyebrow">⚡ 仿真服务平台</text>
-    <text class="hero-title">让仿真更简单 · <text>让结果更可靠</text></text>
+    <view class="hero-title-wrap">
+      <text class="hero-title">让仿真更简单 · 让结果更可靠</text>
+      <view class="hero-title-shine-window">
+        <text class="hero-title hero-title-shine-copy">让仿真更简单 · 让结果更可靠</text>
+      </view>
+    </view>
     <text class="hero-subtitle">精准如光 · 高效交付</text>
     <text class="hero-desc">汇聚专业工程师，一站式解决复杂工程问题</text>
     <view class="hero-tags"><text>快速对接</text><text>精准匹配</text><text>价格透明</text><text>数据安全</text></view>
@@ -61,7 +66,7 @@
 
   <view class="guest-tabbar">
     <view class="guest-tab active" data-page="home" bindtap="goTab"><text class="tab-icon">⌂</text><text>首页</text></view>
-    <view class="guest-tab" data-page="market" bindtap="goTab"><text class="tab-icon">▤</text><text>需求大厅</text></view>
+    <view class="guest-tab" data-page="market" bindtap="goTab"><text class="tab-icon">▤</text><text>仿真大厅</text></view>
     <view class="guest-tab" data-page="profile" bindtap="goTab"><text class="tab-icon">☺</text><text>我的</text></view>
   </view>
 </view>

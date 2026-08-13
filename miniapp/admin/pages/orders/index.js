@@ -3,7 +3,7 @@ const { getAdmin, denyAndExit } = require('../../utils/admin');
 const { timeShort, fenToYuan } = require('../../../utils/format');
 
 Page({
-  data: { items: [], total: 0, loading: true, status: '', search: '', showFilters: false, filterText: '全部订单' },
+  data: { items: [], total: 0, loading: true, status: '', search: '', filterText: '全部订单' },
   onLoad() {
     if (!getAdmin()) { denyAndExit('管理员会话不存在，请重新扫码进入。'); return; }
     this.load();
@@ -11,13 +11,12 @@ Page({
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   onSearchInput(e) { this.setData({ search: e.detail.value }); },
   search() { this.load(); },
-  toggleFilters() { this.setData({ showFilters: !this.data.showFilters }); },
   setStatus(e) {
     const value = e.currentTarget.dataset.value;
     this.setData({ status: this.data.status === value ? '' : value }, () => { this.syncFilterText(); this.load(); });
   },
   syncFilterText() {
-    const labels = { QUOTING: '待报价', AWAITING_PAYMENT: '待支付', IN_PROGRESS: '执行中', DELIVERED: '待验收', COMPLETED: '已完成', CLOSED: '已关闭' };
+    const labels = { QUOTING: '报价中', AWAITING_PAYMENT: '待支付', IN_PROGRESS: '执行中', DELIVERED: '待验收', COMPLETED: '已完成', CLOSED: '已关闭' };
     this.setData({ filterText: labels[this.data.status] || '全部订单' });
   },
   async load() {

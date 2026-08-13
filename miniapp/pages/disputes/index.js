@@ -20,14 +20,13 @@ Page({
   data: {
     tabs: TABS, tab: '',
     currentLabel: '全部', currentDotCls: 'dot-purple',
-    items: [], loading: true, filterOpen: false,
+    items: [], loading: true,
   },
   onShow() {
     const user = ensureLogin();
     if (!user) return;
     this.load();
   },
-  toggleFilter() { this.setData({ filterOpen: !this.data.filterOpen }); },
   pickTab(e) {
     const key = e.currentTarget.dataset.key;
     const t = TABS.find((x) => x.key === key) || TABS[0];
@@ -35,7 +34,6 @@ Page({
       tab: key,
       currentLabel: t.label,
       currentDotCls: t.dotCls,
-      filterOpen: false,
     }, () => this.load());
   },
   async load() {

@@ -26,7 +26,7 @@ const BADGE_CLASS = {
 };
 
 Page({
-  data: { tabs: TABS, tab: '', currentLabel: '全部', currentDotCls: 'dot-purple', currentCount: 0, filterOpen: false, items: [] },
+  data: { tabs: TABS, tab: '', currentLabel: '全部', currentDotCls: 'dot-purple', currentCount: 0, items: [] },
   onShow() {
     const user = ensureLogin();
     if (!user) return;
@@ -37,7 +37,6 @@ Page({
     }
     this.load();
   },
-  toggleFilter() { this.setData({ filterOpen: !this.data.filterOpen }); },
   pickTab(e) {
     const key = e.currentTarget.dataset.key;
     const t = this.data.tabs.find((x) => x.key === key);
@@ -46,7 +45,6 @@ Page({
       currentLabel: t ? t.label : '全部',
       currentDotCls: t ? t.dotCls : 'dot-purple',
       currentCount: t ? Number(t.count || 0) : 0,
-      filterOpen: false,
     }, () => this.load());
   },
   async load() {

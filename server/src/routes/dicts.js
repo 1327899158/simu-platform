@@ -22,7 +22,7 @@ const DICTS = {
     { key: 'custom', label: '自定义', days: null },
   ],
   orderStatus: {
-    QUOTING: '待报价',
+    QUOTING: '报价中',
     AWAITING_PAYMENT: '待支付',
     IN_PROGRESS: '执行中',
     DELIVERED: '待验收',

@@ -6,17 +6,9 @@
     <text class="quote-count">共 {{currentCount}} 个</text>
   </view>
 
-  <!-- 可折叠状态筛选 -->
+  <!-- 常驻状态筛选：全部标签一次展示，不需要滚动或展开。 -->
   <view class="filter-wrap">
-    <button class="filter-trigger" bindtap="toggleFilter" aria-label="展开或收起报价状态筛选">
-      <view class="filter-current">
-        <text class="status-dot {{currentDotCls}}"></text>
-        <text>{{currentLabel}}</text>
-        <text class="filter-count">{{currentCount}}</text>
-      </view>
-      <text class="filter-arrow {{filterOpen ? 'open' : ''}}">⌄</text>
-    </button>
-    <view class="filter-panel" wx:if="{{filterOpen}}">
+    <view class="filter-panel">
       <button wx:for="{{tabs}}" wx:key="key"
         class="filter-item {{tab === item.key ? 'active' : ''}}"
         data-key="{{item.key}}" bindtap="pickTab">
@@ -67,7 +59,7 @@
     <view class="empty-state" wx:if="{{!items.length}}">
       <text class="empty-icon">📭</text>
       <text class="empty-text">暂无报价</text>
-      <text class="empty-desc">去需求大厅浏览并报价吧</text>
+      <text class="empty-desc">去仿真大厅浏览并报价吧</text>
       <button class="btn-sm" bindtap="gotoMarket">🔍 浏览需求</button>
     </view>
   </view>

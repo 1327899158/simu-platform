@@ -67,7 +67,7 @@
 
   <view class="guest-tabbar">
     <view class="guest-tab" data-page="home" bindtap="goTab"><text class="tab-icon">⌂</text><text>首页</text></view>
-    <view class="guest-tab active" data-page="market" bindtap="goTab"><text class="tab-icon">▤</text><text>需求大厅</text></view>
+    <view class="guest-tab active" data-page="market" bindtap="goTab"><text class="tab-icon">▤</text><text>大厅</text></view>
     <view class="guest-tab" data-page="profile" bindtap="goTab"><text class="tab-icon">☺</text><text>我的</text></view>
   </view>
 </view>

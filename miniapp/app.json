@@ -20,6 +20,9 @@
     "pages/profile-edit/index",
     "pages/engineer-qualification/index",
     "pages/reset-password/index",
+    "pages/account-security/index",
+    "pages/invoice-request/index",
+    "pages/invoices/index",
     "pages/dispute-form/index",
     "pages/dispute-detail/index",
     "pages/disputes/index"
@@ -40,7 +43,8 @@
         "pages/audit-logs/index",
         "pages/data-preview/index",
         "pages/disputes/index",
-        "pages/dispute-detail/index"
+        "pages/dispute-detail/index",
+        "pages/invoices/index"
       ]
     }
   ],

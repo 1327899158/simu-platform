@@ -82,6 +82,7 @@
   display: flex;
 }
 .action-item {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -101,6 +102,26 @@
 .action-label {
   font-size: 24rpx;
   color: var(--c-text-2);
+}
+.action-notice {
+  position: absolute;
+  top: -8rpx;
+  right: 10rpx;
+  z-index: 1;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 7rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 3rpx solid #FFFFFF;
+  border-radius: 999rpx;
+  background: #E5484D;
+  color: #FFFFFF;
+  font-size: 18rpx;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /* ===== 通用区块 ===== */
@@ -146,9 +167,10 @@
 /* ===== 订单状态统计 ===== */
 .order-stats {
   display: flex;
+  flex-wrap: wrap;
 }
 .stat-item {
-  flex: 1;
+  flex: 1 0 20%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -165,7 +187,7 @@
   color: var(--neon-violet);
 }
 .stat-label {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: var(--c-text-3);
 }
 

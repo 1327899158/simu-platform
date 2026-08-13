@@ -19,6 +19,7 @@
         <text class="action-label">发布需求</text>
       </view>
       <view class="action-item" bindtap="goOrders">
+        <text class="action-notice" wx:if="{{unreadOrderCount}}">{{unreadOrderCount > 99 ? '99+' : unreadOrderCount}}</text>
         <text class="action-icon">📋</text>
         <text class="action-label">我的订单</text>
       </view>
@@ -40,8 +41,12 @@
       </view>
       <view class="order-stats">
         <view class="stat-item" bindtap="goOrders">
-          <text class="stat-number">{{counts.QUOTING}}</text>
-          <text class="stat-label">待报价</text>
+          <text class="stat-number">{{counts.UNQUOTED}}</text>
+          <text class="stat-label">未报价</text>
+        </view>
+        <view class="stat-item" bindtap="goOrders">
+          <text class="stat-number">{{counts.AWAITING_CONFIRMATION}}</text>
+          <text class="stat-label">待确认</text>
         </view>
         <view class="stat-item" bindtap="goOrders">
           <text class="stat-number">{{counts.AWAITING_PAYMENT}}</text>

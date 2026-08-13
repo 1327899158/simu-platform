@@ -1,0 +1,15 @@
+<view class="page-container">
+  <view class="hero">
+    <text class="hero-title">设置账号和密码</text>
+    <text class="hero-desc">绑定手机号 {{phoneMasked}} 已完成验证。本页仅能设置一次；之后可通过忘记密码重置。</text>
+  </view>
+  <view class="form-card">
+    <text class="label">账号</text>
+    <input class="input" value="{{username}}" maxlength="12" type="number" placeholder="设置6-12位数字账号" bindinput="onUsername" />
+    <text class="label">密码</text>
+    <input class="input" password="true" maxlength="50" placeholder="设置至少6位密码" bindinput="onPassword" />
+    <text class="label">确认密码</text>
+    <input class="input" password="true" maxlength="50" placeholder="再次输入密码" bindinput="onConfirmPassword" />
+    <button class="submit" loading="{{saving}}" disabled="{{saving}}" bindtap="submit">确认设置</button>
+  </view>
+</view>

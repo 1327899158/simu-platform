@@ -27,6 +27,7 @@ function userView(u, profile, identity) {
     avatarUrl: u.avatarUrl || null,
     openid: u.openid,
     username: u.username,
+    hasPassword: Boolean(u.passwordHash),
     // 完整手机号仅保留在服务端，任何用户视图都只返回脱敏值。
     hasPhone: Boolean(u.phone),
     phoneMasked: maskPhone(u.phone),

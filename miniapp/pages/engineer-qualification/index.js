@@ -86,6 +86,9 @@ Page({
   },
   async uploadIdImage(side, file) {
     if (!file.path) return;
+    if (!imageMime(file.name, file.mime)) {
+      return wx.showModal({ title: '文件格式不支持', content: '身份证正反面只能上传图片文件。', showCancel: false });
+    }
     if (file.size > this.data.maxFileBytes) {
       return wx.showModal({ title: '图片超过大小限制', content: `身份证图片不能超过 ${this.data.maxFileMb}MB。`, showCancel: false });
     }
