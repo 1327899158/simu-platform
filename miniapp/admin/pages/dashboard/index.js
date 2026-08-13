@@ -12,7 +12,7 @@ Page({
       const stats = await request('GET', '/admin/dashboard', null, { silent: true });
       const definitions = [
         { key: 'users', title: '用户管理', desc: '查看账号与状态', path: '/admin/pages/users/index', permission: 'USER_READ' },
-        { key: 'engineers', title: '工程师审核', desc: '审核工程师资格', path: '/admin/pages/engineers/index', permission: 'ENGINEER_READ', count: stats.engineerReviews.pending },
+        { key: 'engineers', title: '身份认证审核', desc: '审核工程师身份认证', path: '/admin/pages/engineers/index', permission: 'ENGINEER_READ', count: stats.engineerReviews.pending },
         { key: 'orders', title: '订单管理', desc: '查看平台全部订单', path: '/admin/pages/orders/index', permission: 'ORDER_READ' },
         { key: 'disputes', title: '纠纷管理', desc: '处理订单履约纠纷', path: '/admin/pages/disputes/index', permission: 'DISPUTE_READ' },
         { key: 'preview', title: '数据预览', desc: '查看趋势、分布与评分', path: '/admin/pages/data-preview/index', permission: 'DASHBOARD_READ' },

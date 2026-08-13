@@ -73,7 +73,7 @@ const config = {
     ? 'mock'
     : 'wechat',
 
-  // 工程师资格演示开关：当前阶段允许登录用户自主核验通过，便于联调。
+  // 身份认证演示开关：当前阶段允许工程师自主认证通过，便于联调。
   // 正式上线前设置 ALLOW_ENGINEER_SELF_VERIFY=false 关闭。
   allowEngineerSelfVerify: process.env.ALLOW_ENGINEER_SELF_VERIFY !== 'false',
 

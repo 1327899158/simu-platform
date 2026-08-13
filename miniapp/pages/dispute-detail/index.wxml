@@ -39,7 +39,7 @@
     </view>
 
     <view class="evidence-notice">
-      仅支持上传文件作为证据，双方不能在纠纷页对话。举证截止后不可再补充，平台管理员将依据全部材料进行仲裁。
+      支持上传文件作为证据。举证截止后不可再补充，平台管理员将依据全部材料进行仲裁。
     </view>
 
     <view class="evid-item" wx:for="{{dispute.evidence}}" wx:key="fileId"

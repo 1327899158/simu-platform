@@ -11,7 +11,7 @@ const ROLE_TEXT = {
   SUPER_ADMIN: '超级管理员',
   OPERATOR: '运营管理员',
   AUDITOR: '审计员',
-  ENGINEER_REVIEWER: '工程师审核员',
+  ENGINEER_REVIEWER: '身份认证审核员',
 };
 
 const VERIFY_TEXT = {
@@ -318,7 +318,7 @@ function register(router) {
     });
   });
 
-  // 资格资料是私密文件。管理员只能在通过 ENGINEER_READ 鉴权后取得 fileID，
+  // 身份认证材料是私密文件。管理员只能在通过 ENGINEER_READ 鉴权后取得 fileID，
   // 由小程序直接下载/预览，避免开放通用文件读取权限。
   router.get('/api/admin/files/:id/url', async (req, res, params) => {
     await requireAdmin(req, 'ENGINEER_READ');
@@ -328,7 +328,7 @@ function register(router) {
        JOIN uploaded_files f ON f.id = evf.fileId
        WHERE f.id = ?`, [params.id]
     );
-    if (!file) throw err.notFound('资格资料不存在');
+    if (!file) throw err.notFound('身份认证材料不存在');
     return ok(res, { ...file, sizeBytes: Number(file.sizeBytes || 0) });
   });
 

@@ -16,9 +16,9 @@ function verifyView(user) {
   const status = user && user.role === 'ENGINEER' ? (profile?.verifyStatus || user.verifyStatus || 'PENDING') : 'UNAPPLIED';
   return {
     verifyStatus: status,
-    verifyText: status === 'APPROVED' ? '已通过' : status === 'PENDING' ? '待核验' : '未申请',
+    verifyText: status === 'APPROVED' ? '已通过' : status === 'PENDING' ? '待审核' : '未申请',
     qualificationFileCount: Number(profile?.qualificationFileCount || 0),
-    // 已提交资料后必须等待管理员审核，避免演示自核验绕过已发起的人工审核。
+    // 已提交材料后必须等待管理员审核，避免演示自主认证绕过已发起的人工审核。
     showSelfVerify: status !== 'APPROVED' && !Number(profile?.qualificationFileCount || 0),
   };
 }
@@ -100,16 +100,16 @@ Page({
     if (this.data.selfVerifyLoading) return;
     const result = await new Promise((resolve) => {
       wx.showModal({
-        title: '自主核验（调试）',
-        content: '该操作仅用于当前演示和联调，会立即将当前账号设为已核验工程师。正式上线前请关闭此开关。',
-        confirmText: '确认核验',
+        title: '自主认证（调试）',
+        content: '该操作仅用于当前演示和联调，会立即将当前账号设为身份认证已通过。正式上线前请关闭此开关。',
+        confirmText: '确认认证',
         success: resolve,
         fail: () => resolve({ confirm: false }),
       });
     });
     if (!result.confirm) return;
     this.setData({ selfVerifyLoading: true });
-    wx.showLoading({ title: '核验中…', mask: true });
+    wx.showLoading({ title: '认证中…', mask: true });
     try {
       const user = await promoteToEngineer();
       this.setData({
@@ -117,9 +117,9 @@ Page({
         roleText: '工程师',
         ...verifyView(user),
       });
-      wx.showToast({ title: '已核验通过', icon: 'success' });
+      wx.showToast({ title: '认证已通过', icon: 'success' });
     } catch (e) {
-      wx.showToast({ title: e.message || '核验失败', icon: 'none' });
+      wx.showToast({ title: e.message || '认证失败', icon: 'none' });
     } finally {
       wx.hideLoading();
       this.setData({ selfVerifyLoading: false });

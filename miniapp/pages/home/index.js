@@ -81,19 +81,19 @@ Page({
   goMyQuotes() { wx.navigateTo({ url: '/pages/my-quotes/index' }); },
   goMarketHall() {
     if (this.data.role !== 'ENGINEER') return wx.showToast({ title: '仅工程师可以进入接单大厅', icon: 'none' });
-    if (!this.data.canTakeOrders) return wx.showToast({ title: '工程师资格通过后才能接单', icon: 'none' });
+    if (!this.data.canTakeOrders) return wx.showToast({ title: '身份认证通过后才能接单', icon: 'none' });
     wx.navigateTo({ url: '/pages/market/index' });
   },
   // 大厅卡片上的快捷报价：与 order-detail 的 goQuote 参数格式保持一致
   quickQuote(e) {
-    if (!this.data.canTakeOrders) return wx.showToast({ title: '工程师资格通过后才能报价', icon: 'none' });
+    if (!this.data.canTakeOrders) return wx.showToast({ title: '身份认证通过后才能报价', icon: 'none' });
     const { id, flexible, fen } = e.currentTarget.dataset;
     let url = `/pages/quote-form/index?orderId=${id}&flexible=${flexible}`;
     if (String(flexible) === '0' && fen) url += `&fixedFen=${fen}`;
     wx.navigateTo({ url });
   },
   openMarket(e) {
-    if (!this.data.canTakeOrders) return wx.showToast({ title: '工程师资格通过后才能查看需求', icon: 'none' });
+    if (!this.data.canTakeOrders) return wx.showToast({ title: '身份认证通过后才能查看需求', icon: 'none' });
     wx.navigateTo({ url: `/pages/order-detail/index?id=${e.currentTarget.dataset.id}&mode=market` });
   },
   openMine(e) {

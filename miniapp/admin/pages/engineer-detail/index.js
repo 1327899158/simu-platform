@@ -38,10 +38,10 @@ Page({
       else wx.showToast({ title: error.message || '资料加载失败', icon: 'none' });
     } finally { this.setData({ loading: false }); }
   },
-  approve() { this.review('APPROVED', '确认通过该工程师的资格审核？'); },
+  approve() { this.review('APPROVED', '确认通过该工程师的身份认证？'); },
   reject() {
     wx.showModal({
-      title: '驳回工程师资格', editable: true, placeholderText: '请输入驳回原因（至少2个字）',
+      title: '驳回身份认证', editable: true, placeholderText: '请输入驳回原因（至少2个字）',
       success: (result) => {
         if (!result.confirm) return;
         const reason = String(result.content || '').trim();
@@ -51,7 +51,7 @@ Page({
     });
   },
   review(status, content) {
-    wx.showModal({ title: '审核确认', content, success: (result) => { if (result.confirm) this.submitReview(status, '资料审核通过'); } });
+    wx.showModal({ title: '认证审核确认', content, success: (result) => { if (result.confirm) this.submitReview(status, '身份认证审核通过'); } });
   },
   async submitReview(status, reason) {
     try {

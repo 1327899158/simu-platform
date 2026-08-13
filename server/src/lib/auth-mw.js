@@ -151,7 +151,7 @@ async function requireEngineer(req) {
   const user = await requireUser(req);
   if (user.role !== 'ENGINEER') throw err.forbidden('仅工程师可操作');
   const p = await queryOne(`SELECT verifyStatus FROM engineer_profiles WHERE userId = ?`, [user.id]);
-  if (!p || p.verifyStatus !== 'APPROVED') throw err.forbidden('工程师资质未通过审核');
+  if (!p || p.verifyStatus !== 'APPROVED') throw err.forbidden('身份认证未通过审核');
   return user;
 }
 

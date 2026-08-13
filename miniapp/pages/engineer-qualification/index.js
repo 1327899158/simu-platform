@@ -22,7 +22,7 @@ Page({
     const user = ensureLogin();
     if (!user) return;
     if (user.role !== 'ENGINEER') {
-      wx.showToast({ title: '仅工程师可提交资格资料', icon: 'none' });
+      wx.showToast({ title: '仅工程师可提交认证材料', icon: 'none' });
       wx.navigateBack();
       return;
     }
@@ -62,7 +62,7 @@ Page({
     wx.chooseMessageFile({
       count: Math.min(3, rest), type: 'all',
       success: (result) => this.uploadSelected((result.tempFiles || []).map((file) => ({
-        path: file.path, name: file.name || '资格资料', size: Number(file.size || 0), mime: file.type || '',
+        path: file.path, name: file.name || '认证材料', size: Number(file.size || 0), mime: file.type || '',
       }))),
     });
   },
@@ -110,7 +110,7 @@ Page({
     const file = this.data.files[e.currentTarget.dataset.index];
     if (!file) return;
     wx.showModal({
-      title: '删除资格资料', content: `确认删除“${file.name}”？删除后需重新审核。`,
+      title: '删除认证材料', content: `确认删除“${file.name}”？删除后需重新审核。`,
       success: async (result) => {
         if (!result.confirm) return;
         try {

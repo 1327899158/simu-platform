@@ -88,7 +88,7 @@
   color: #FFFFFF;
 }
 
-/* ===== 工程师资格（演示） ===== */
+/* ===== 身份认证（演示） ===== */
 .verify-card {
   background: var(--bg-card);
   border-radius: var(--r-md);

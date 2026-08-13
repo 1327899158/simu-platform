@@ -154,7 +154,7 @@ Page({
       const loggedIn = await loginByUsername(this.data.username, this.data.password);
       wx.hideLoading();
       if (loggedIn && loggedIn.verifyStatus === 'PENDING') {
-        wx.showModal({ title: '登录成功', content: '工程师资格正在审核，审核通过后即可报价。', showCancel: false });
+        wx.showModal({ title: '登录成功', content: '身份认证正在审核，审核通过后即可报价。', showCancel: false });
         this.setData({ loading: false });
         return;
       }
@@ -184,7 +184,7 @@ Page({
       const registered = await registerByPhone(this.data.username, this.data.phone, this.data.password, this.data.smsCode, this.data.role || 'customer');
       wx.hideLoading();
       if (registered && registered.verifyStatus === 'PENDING') {
-        wx.showModal({ title: '注册成功', content: '工程师资格正在审核，审核通过后即可报价。', showCancel: false });
+        wx.showModal({ title: '注册成功', content: '身份认证正在审核，审核通过后即可报价。', showCancel: false });
         this.setData({ loading: false });
         return;
       } else {
@@ -270,7 +270,7 @@ Page({
       const loggedIn = await loginByPhone(this.data.phone, this.data.smsCode, this.data.role || 'customer');
       wx.hideLoading();
       if (loggedIn && loggedIn.verifyStatus === 'PENDING') {
-        wx.showModal({ title: '登录成功', content: '工程师资格正在审核，审核通过后即可报价。', showCancel: false });
+        wx.showModal({ title: '登录成功', content: '身份认证正在审核，审核通过后即可报价。', showCancel: false });
         this.setData({ loading: false });
         return;
       }

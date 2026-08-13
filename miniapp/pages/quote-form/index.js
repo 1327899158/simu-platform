@@ -9,7 +9,7 @@ Page({
     if (!user) return;
     const verifyStatus = user.engineer?.verifyStatus || user.verifyStatus || '';
     if (user.role !== 'ENGINEER' || verifyStatus !== 'APPROVED') {
-      wx.showToast({ title: user.role === 'ENGINEER' ? '工程师资格通过后才能报价' : '仅工程师可以报价', icon: 'none' });
+      wx.showToast({ title: user.role === 'ENGINEER' ? '身份认证通过后才能报价' : '仅工程师可以报价', icon: 'none' });
       setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
       return;
     }

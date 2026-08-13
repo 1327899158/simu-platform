@@ -26,7 +26,7 @@
 | POST | `/api/auth/phone-login` | 公开 | 手机号 + 短信验证码登录 |
 | POST | `/api/auth/reset-password` | 公开 | 忘记密码：手机号 + 短信码 + 新密码 |
 | POST | `/api/auth/logout` | 登录 | 服务端吊销 sessionToken |
-| POST | `/api/dev/promote-engineer` | 登录 | 演示阶段自主核验（`ALLOW_ENGINEER_SELF_VERIFY=true` 才启用） |
+| POST | `/api/dev/promote-engineer` | 登录 | 演示阶段自主认证（`ALLOW_ENGINEER_SELF_VERIFY=true` 才启用） |
 | GET  | `/api/me` | 登录 | 当前用户信息（含 engineer 详情） |
 | PATCH| `/api/me` | 登录 | 更新昵称 / 头像 fileID / 工程师资料 |
 

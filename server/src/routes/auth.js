@@ -29,7 +29,7 @@ function userView(u, profile) {
     // 完整手机号仅保留在服务端，任何用户视图都只返回脱敏值。
     hasPhone: Boolean(u.phone),
     phoneMasked: maskPhone(u.phone),
-    // 与账号/手机号登录返回结构保持一致，前端可直接读取资格状态
+    // 与账号/手机号登录返回结构保持一致，前端可直接读取认证状态
     verifyStatus: profile ? profile.verifyStatus : null,
     engineer: profile
       ? {
@@ -147,10 +147,10 @@ function register(router) {
     ok(res, await loadUserView(user.id));
   });
 
-  // POST /api/dev/promote-engineer —— 演示阶段自主核验，正式环境可通过配置关闭
+  // POST /api/dev/promote-engineer —— 演示阶段自主认证，正式环境可通过配置关闭
   router.post('/api/dev/promote-engineer', async (req, res) => {
     if (!config.allowEngineerSelfVerify) {
-      throw err.forbidden('工程师自主核验未开启，请设置 ALLOW_ENGINEER_SELF_VERIFY=true');
+      throw err.forbidden('工程师自主认证未开启，请设置 ALLOW_ENGINEER_SELF_VERIFY=true');
     }
     const user = await requireUser(req);
     const now = nowIso();
