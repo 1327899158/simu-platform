@@ -43,13 +43,18 @@ function adminReviewView(row, extra = {}) {
   const qualityScore = Number(row.qualityScore);
   const attitudeScore = Number(row.attitudeScore);
   const speedScore = Number(row.speedScore);
+  const legacyAverage = (qualityScore + attitudeScore + speedScore) / 3;
+  const professionalScore = row.professionalScore == null ? legacyAverage : Number(row.professionalScore);
+  const communicationScore = row.communicationScore == null ? legacyAverage : Number(row.communicationScore);
   return {
     id: row.id,
     orderId: row.orderId,
     qualityScore,
     attitudeScore,
     speedScore,
-    averageScore: Number(((qualityScore + attitudeScore + speedScore) / 3).toFixed(1)),
+    professionalScore: Number(professionalScore.toFixed(1)),
+    communicationScore: Number(communicationScore.toFixed(1)),
+    averageScore: Number(((qualityScore + attitudeScore + speedScore + professionalScore + communicationScore) / 5).toFixed(1)),
     content: row.content || '该用户未给出评价',
     revisionCount: Number(row.revisionCount || 0),
     createdAt: row.createdAt,
@@ -112,8 +117,12 @@ function register(router) {
     const [orderStates, verifyStates, ratingStates, trendRows, reviewSummary] = await Promise.all([
       query(`SELECT status AS keyName, COUNT(*) AS count FROM orders WHERE deletedAt IS NULL GROUP BY status`),
       query(`SELECT verifyStatus AS keyName, COUNT(*) AS count FROM identity_verifications GROUP BY verifyStatus`),
-      query(`SELECT ROUND((qualityScore + attitudeScore + speedScore) / 3) AS keyName, COUNT(*) AS count
-               FROM engineer_reviews GROUP BY ROUND((qualityScore + attitudeScore + speedScore) / 3)`),
+      query(`SELECT ROUND((qualityScore + attitudeScore + speedScore +
+                 COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+                 COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5) AS keyName, COUNT(*) AS count
+               FROM engineer_reviews GROUP BY ROUND((qualityScore + attitudeScore + speedScore +
+                 COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+                 COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5)`),
       query(`SELECT DATE_FORMAT(dayValue, '%m-%d') AS day,
                     SUM(kind = 'USER') AS users,
                     SUM(kind = 'ORDER') AS orders,
@@ -130,7 +139,9 @@ function register(router) {
                ) daily
               GROUP BY dayValue ORDER BY dayValue ASC`),
       queryOne(`SELECT COUNT(*) AS count,
-                AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+                 AVG((qualityScore + attitudeScore + speedScore +
+                   COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+                   COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5) AS averageScore
                    FROM engineer_reviews`),
     ]);
     const today = new Date();
@@ -319,7 +330,9 @@ function register(router) {
     );
     const [reviewSummary, receivedReviews] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS reviewCount,
-                AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+                AVG((qualityScore + attitudeScore + speedScore +
+                  COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+                  COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5) AS averageScore
                  FROM engineer_reviews WHERE engineerId=?`, [params.id]),
       query(`SELECT r.*, o.orderNo, o.projectName, c.nickname AS customerNickname
                FROM engineer_reviews r

@@ -92,7 +92,7 @@ Page({
   goMarketHall() {
     if (this.data.role !== 'ENGINEER') return wx.showToast({ title: '仅工程师可以进入接单大厅', icon: 'none' });
     if (!this.data.canTakeOrders) return promptIdentity('进入接单大厅');
-    wx.navigateTo({ url: '/pages/market/index' });
+    wx.switchTab({ url: '/pages/market/index' });
   },
   // 大厅卡片上的快捷报价：与 order-detail 的 goQuote 参数格式保持一致
   quickQuote(e) {

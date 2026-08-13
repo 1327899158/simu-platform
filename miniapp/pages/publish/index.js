@@ -184,7 +184,7 @@ Page({
     let selectedIndex;
     try {
       const result = await new Promise((resolve, reject) => wx.showActionSheet({
-        itemList: ['微信聊天文件（文档/压缩包等）', '手机相册/相机（图片/视频）'],
+        itemList: ['微信聊天文件（文档/压缩包等）', '手机相册/本地文件'],
         success: resolve,
         fail: reject,
       }));

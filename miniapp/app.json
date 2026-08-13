@@ -62,6 +62,7 @@
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/home/index", "text": "首页" },
+      { "pagePath": "pages/market/index", "text": "接单大厅" },
       { "pagePath": "pages/chat-list/index", "text": "消息" },
       { "pagePath": "pages/me/index", "text": "我的" }
     ]

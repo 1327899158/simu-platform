@@ -84,7 +84,9 @@ function register(router) {
            FROM orders
           WHERE deletedAt IS NULL) AS totalViews,
         (SELECT COUNT(*) FROM engineer_reviews) AS reviewCount,
-        (SELECT AVG((qualityScore + attitudeScore + speedScore) / 3)
+        (SELECT AVG((qualityScore + attitudeScore + speedScore +
+          COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+          COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5)
            FROM engineer_reviews) AS averageReview`
     );
 

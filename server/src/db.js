@@ -242,6 +242,8 @@ async function init() {
       qualityScore    TINYINT UNSIGNED NOT NULL,
       attitudeScore   TINYINT UNSIGNED NOT NULL,
       speedScore      TINYINT UNSIGNED NOT NULL,
+      professionalScore TINYINT UNSIGNED,
+      communicationScore TINYINT UNSIGNED,
       content         VARCHAR(100),
       revisionCount   TINYINT UNSIGNED NOT NULL DEFAULT 0,
       createdAt       DATETIME(3) NOT NULL,
@@ -467,6 +469,9 @@ async function init() {
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedBy VARCHAR(32)`, check: "reviewedBy" },
     { table: 'refund_requests', sql: `ALTER TABLE refund_requests ADD COLUMN orderStatusAtRequest VARCHAR(24)`, check: "orderStatusAtRequest" },
     { table: 'disputes', sql: `ALTER TABLE disputes ADD COLUMN evidenceDeadlineAt DATETIME(3)`, check: "evidenceDeadlineAt" },
+    // 评价从三项扩展至五项。旧评价保留为空，读取时以旧三项均分回填，避免历史评分被不公平拉低。
+    { table: 'engineer_reviews', sql: `ALTER TABLE engineer_reviews ADD COLUMN professionalScore TINYINT UNSIGNED`, check: "professionalScore" },
+    { table: 'engineer_reviews', sql: `ALTER TABLE engineer_reviews ADD COLUMN communicationScore TINYINT UNSIGNED`, check: "communicationScore" },
   ];
 
   for (const m of migrations) {

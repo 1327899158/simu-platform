@@ -18,7 +18,7 @@ Page({
     this.setData({ status: this.data.status === value ? '' : value }, () => { this.syncFilterText(); this.load(); });
   },
   syncFilterText() {
-    const text = { PENDING: '待审核', APPROVED: '已通过', REJECTED: '已驳回' }[this.data.status] || '全部工程师';
+    const text = { PENDING: '待审核', APPROVED: '已通过', REJECTED: '已驳回' }[this.data.status] || '全部用户';
     this.setData({ filterText: text });
   },
   async load() {

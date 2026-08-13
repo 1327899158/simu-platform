@@ -14,13 +14,19 @@ function reviewView(row, extra = {}) {
   const qualityScore = Number(row.qualityScore);
   const attitudeScore = Number(row.attitudeScore);
   const speedScore = Number(row.speedScore);
+  // 旧版三维评价没有新字段；以原三项均分补齐展示和统计，保证历史评分不变。
+  const legacyAverage = (qualityScore + attitudeScore + speedScore) / 3;
+  const professionalScore = row.professionalScore == null ? legacyAverage : Number(row.professionalScore);
+  const communicationScore = row.communicationScore == null ? legacyAverage : Number(row.communicationScore);
   return {
     id: row.id,
     orderId: row.orderId,
     qualityScore,
     attitudeScore,
     speedScore,
-    averageScore: Number(((qualityScore + attitudeScore + speedScore) / 3).toFixed(1)),
+    professionalScore: Number(professionalScore.toFixed(1)),
+    communicationScore: Number(communicationScore.toFixed(1)),
+    averageScore: Number(((qualityScore + attitudeScore + speedScore + professionalScore + communicationScore) / 5).toFixed(1)),
     content: row.content || '',
     contentText: row.content || '该用户未给出评价',
     revisionCount: Number(row.revisionCount || 0),
@@ -54,6 +60,8 @@ function register(router) {
     const qualityScore = score(body.qualityScore, '质量评分');
     const attitudeScore = score(body.attitudeScore, '态度评分');
     const speedScore = score(body.speedScore, '速度评分');
+    const professionalScore = score(body.professionalScore, '专业能力评分');
+    const communicationScore = score(body.communicationScore, '沟通评分');
     const content = v.str(body.content, '评价内容', { max: 100, optional: true }) || null;
     const saved = await tx(async (conn) => {
       const order = await ensureReviewableOrder(conn, params.id, user.id);
@@ -64,9 +72,9 @@ function register(router) {
       const id = newId();
       await conn.execute(
         `INSERT INTO engineer_reviews
-          (id, orderId, customerId, engineerId, qualityScore, attitudeScore, speedScore, content, revisionCount, createdAt, updatedAt)
-         VALUES(?,?,?,?,?,?,?,?,0,?,?)`,
-        [id, order.id, user.id, order.engineerId, qualityScore, attitudeScore, speedScore, content, now, now]
+          (id, orderId, customerId, engineerId, qualityScore, attitudeScore, speedScore, professionalScore, communicationScore, content, revisionCount, createdAt, updatedAt)
+         VALUES(?,?,?,?,?,?,?,?,?, ?,0,?,?)`,
+        [id, order.id, user.id, order.engineerId, qualityScore, attitudeScore, speedScore, professionalScore, communicationScore, content, now, now]
       );
       const [[row]] = await conn.execute(`SELECT * FROM engineer_reviews WHERE id=?`, [id]);
       return row;
@@ -81,6 +89,8 @@ function register(router) {
     const qualityScore = score(body.qualityScore, '质量评分');
     const attitudeScore = score(body.attitudeScore, '态度评分');
     const speedScore = score(body.speedScore, '速度评分');
+    const professionalScore = score(body.professionalScore, '专业能力评分');
+    const communicationScore = score(body.communicationScore, '沟通评分');
     const content = v.str(body.content, '评价内容', { max: 100, optional: true }) || null;
     const saved = await tx(async (conn) => {
       await ensureReviewableOrder(conn, params.id, user.id);
@@ -93,10 +103,10 @@ function register(router) {
       const now = nowIso();
       await conn.execute(
         `UPDATE engineer_reviews
-            SET qualityScore=?, attitudeScore=?, speedScore=?, content=?,
+            SET qualityScore=?, attitudeScore=?, speedScore=?, professionalScore=?, communicationScore=?, content=?,
                 revisionCount=1, revisedAt=?, updatedAt=?
           WHERE id=?`,
-        [qualityScore, attitudeScore, speedScore, content, now, now, existing.id]
+        [qualityScore, attitudeScore, speedScore, professionalScore, communicationScore, content, now, now, existing.id]
       );
       const [[row]] = await conn.execute(`SELECT * FROM engineer_reviews WHERE id=?`, [existing.id]);
       return row;
@@ -110,7 +120,9 @@ function register(router) {
     if (user.role !== 'ENGINEER') throw err.forbidden('仅工程师可查看我的评价');
     const summary = await queryOne(
       `SELECT COUNT(*) AS reviewCount,
-              AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+              AVG((qualityScore + attitudeScore + speedScore +
+                   COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+                   COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5) AS averageScore
          FROM engineer_reviews WHERE engineerId=?`, [user.id]);
     const rows = await query(
       `SELECT r.*, o.orderNo, o.projectName, u.nickname AS customerNickname, u.avatarUrl AS customerAvatarUrl
@@ -142,7 +154,9 @@ function register(router) {
     if (!engineer) throw err.notFound('工程师不存在');
     const summary = await queryOne(
       `SELECT COUNT(*) AS reviewCount,
-              AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+              AVG((qualityScore + attitudeScore + speedScore +
+                   COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+                   COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5) AS averageScore
          FROM engineer_reviews WHERE engineerId=?`, [engineer.id]);
     const rows = await query(
       `SELECT r.*, u.nickname AS customerNickname

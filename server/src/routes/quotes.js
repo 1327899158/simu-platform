@@ -159,7 +159,9 @@ function register(router) {
          WHERE s.engineerId=? AND o.status='COMPLETED'`, [qt.engineerId]);
       const ratingRow = await queryOne(
         `SELECT COUNT(*) AS reviewCount,
-                AVG((qualityScore + attitudeScore + speedScore) / 3) AS averageScore
+               AVG((qualityScore + attitudeScore + speedScore +
+                    COALESCE(professionalScore, (qualityScore + attitudeScore + speedScore) / 3) +
+                    COALESCE(communicationScore, (qualityScore + attitudeScore + speedScore) / 3)) / 5) AS averageScore
            FROM engineer_reviews WHERE engineerId=?`, [qt.engineerId]);
       const reviewCount = Number(ratingRow?.reviewCount || 0);
       return quoteView(qt, {

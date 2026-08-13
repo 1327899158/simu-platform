@@ -225,7 +225,7 @@ function register(router) {
       if (row) engineer = { id: row.id, nickname: row.nickname, avatarUrl: row.avatarUrl };
     }
     const review = await queryOne(
-      `SELECT id, qualityScore, attitudeScore, speedScore, content, revisionCount, createdAt, updatedAt
+      `SELECT id, qualityScore, attitudeScore, speedScore, professionalScore, communicationScore, content, revisionCount, createdAt, updatedAt
          FROM engineer_reviews WHERE orderId=? AND customerId=?`, [o.id, user.id]);
     const quoteCount = await quoteCountOf(o.id);
     ok(res, orderView(o, {
@@ -236,6 +236,12 @@ function register(router) {
         qualityScore: Number(review.qualityScore),
         attitudeScore: Number(review.attitudeScore),
         speedScore: Number(review.speedScore),
+        professionalScore: review.professionalScore == null
+          ? Number(((Number(review.qualityScore) + Number(review.attitudeScore) + Number(review.speedScore)) / 3).toFixed(1))
+          : Number(review.professionalScore),
+        communicationScore: review.communicationScore == null
+          ? Number(((Number(review.qualityScore) + Number(review.attitudeScore) + Number(review.speedScore)) / 3).toFixed(1))
+          : Number(review.communicationScore),
         revisionCount: Number(review.revisionCount || 0),
         content: review.content || '',
       } : null,

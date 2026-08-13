@@ -13,6 +13,8 @@ Page({
       { key: 'qualityScore', label: '质量', score: 0, stars: STAR_ITEMS },
       { key: 'attitudeScore', label: '态度', score: 0, stars: STAR_ITEMS },
       { key: 'speedScore', label: '速度', score: 0, stars: STAR_ITEMS },
+      { key: 'professionalScore', label: '专业能力', score: 0, stars: STAR_ITEMS },
+      { key: 'communicationScore', label: '沟通', score: 0, stars: STAR_ITEMS },
     ],
     content: '',
     contentLength: 0,
@@ -57,7 +59,7 @@ Page({
     const data = {};
     for (const row of this.data.rows) {
       if (!row.score) {
-        wx.showToast({ title: '请完成三项星级评分', icon: 'none' });
+        wx.showToast({ title: '请完成五项星级评分', icon: 'none' });
         return;
       }
       data[row.key] = row.score;

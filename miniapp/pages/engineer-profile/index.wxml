@@ -20,7 +20,7 @@
   <view class="empty" wx:if="{{!profile.reviews.length}}">该工程师暂未获得评价</view>
   <view class="review-card" wx:for="{{profile.reviews}}" wx:key="id">
     <view class="review-head"><text>{{item.customerNickname}}</text><text class="score">★ {{item.averageScore}}</text></view>
-    <view class="score-lines"><text>质量 {{item.qualityScore}} 星</text><text>态度 {{item.attitudeScore}} 星</text><text>速度 {{item.speedScore}} 星</text></view>
+    <view class="score-lines"><text>质量 {{item.qualityScore}} 星</text><text>态度 {{item.attitudeScore}} 星</text><text>速度 {{item.speedScore}} 星</text><text>专业 {{item.professionalScore}} 星</text><text>沟通 {{item.communicationScore}} 星</text></view>
     <text class="review-content">{{item.contentText}}</text>
   </view>
 </view>
