@@ -126,6 +126,7 @@
 }
 .verify-status.approved { color: #16A34A; }
 .verify-status.pending { color: #D97706; }
+.verify-status.rejected { color: #DC2626; }
 .verify-btn {
   width: 100%;
   min-height: 88rpx;

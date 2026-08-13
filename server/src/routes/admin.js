@@ -6,6 +6,7 @@ const { query, queryOne, tx, parseJson } = require('../db');
 const { requireAdmin, writeAdminAudit } = require('../lib/admin-mw');
 const { DICTS } = require('./dicts');
 const { requireUser } = require('../lib/auth-mw');
+const { decryptIdCard, ensureIdentityRecord } = require('../services/identity-svc');
 
 const ROLE_TEXT = {
   SUPER_ADMIN: '超级管理员',
@@ -76,10 +77,11 @@ function register(router) {
         SUM(role = 'ENGINEER') AS engineerCount
         FROM users WHERE deletedAt IS NULL`),
       queryOne(`SELECT COUNT(*) AS total,
-        SUM(verifyStatus = 'PENDING') AS pendingCount,
-        SUM(verifyStatus = 'APPROVED') AS approvedCount,
-        SUM(verifyStatus = 'REJECTED') AS rejectedCount
-        FROM engineer_profiles`),
+        SUM(iv.verifyStatus = 'PENDING') AS pendingCount,
+        SUM(iv.verifyStatus = 'APPROVED') AS approvedCount,
+        SUM(iv.verifyStatus = 'REJECTED') AS rejectedCount
+        FROM identity_verifications iv JOIN users u ON u.id=iv.userId
+        WHERE u.role='ENGINEER' AND u.deletedAt IS NULL`),
       query(`SELECT status, COUNT(*) AS count FROM orders WHERE deletedAt IS NULL GROUP BY status`),
       queryOne(`SELECT COUNT(*) AS total FROM quotes WHERE status <> 'WITHDRAWN'`),
       queryOne(`SELECT COUNT(*) AS count FROM users
@@ -109,7 +111,7 @@ function register(router) {
     await requireAdmin(req, 'DASHBOARD_READ');
     const [orderStates, verifyStates, ratingStates, trendRows, reviewSummary] = await Promise.all([
       query(`SELECT status AS keyName, COUNT(*) AS count FROM orders WHERE deletedAt IS NULL GROUP BY status`),
-      query(`SELECT verifyStatus AS keyName, COUNT(*) AS count FROM engineer_profiles GROUP BY verifyStatus`),
+      query(`SELECT verifyStatus AS keyName, COUNT(*) AS count FROM identity_verifications GROUP BY verifyStatus`),
       query(`SELECT ROUND((qualityScore + attitudeScore + speedScore) / 3) AS keyName, COUNT(*) AS count
                FROM engineer_reviews GROUP BY ROUND((qualityScore + attitudeScore + speedScore) / 3)`),
       query(`SELECT DATE_FORMAT(dayValue, '%m-%d') AS day,
@@ -170,9 +172,9 @@ function register(router) {
     const totalRow = await queryOne(`SELECT COUNT(*) AS count FROM users u WHERE ${where}`, args);
     const rows = await query(
       `SELECT u.id, u.role, u.username, u.phone, u.nickname, u.avatarUrl, u.status,
-              u.createdAt, ep.verifyStatus, aa.adminRole, aa.status AS adminStatus
+              u.createdAt, iv.verifyStatus, aa.adminRole, aa.status AS adminStatus
        FROM users u
-       LEFT JOIN engineer_profiles ep ON ep.userId = u.id
+       LEFT JOIN identity_verifications iv ON iv.userId = u.id
        LEFT JOIN admin_accounts aa ON aa.userId = u.id
        WHERE ${where}
        ORDER BY u.createdAt DESC LIMIT ${limit} OFFSET ${offset}`,
@@ -216,6 +218,13 @@ function register(router) {
       `SELECT id, role, username, phone, nickname, avatarUrl, status, createdAt
          FROM users WHERE id=? AND deletedAt IS NULL`, [params.id]);
     if (!target) throw err.notFound('用户不存在');
+    const identity = await ensureIdentityRecord(target);
+    const identityFiles = await query(
+      `SELECT f.id, f.name, f.kind, f.mime, f.sizeBytes, ivf.purpose, ivf.createdAt
+         FROM identity_verification_files ivf JOIN uploaded_files f ON f.id=ivf.fileId
+        WHERE ivf.userId=?
+        ORDER BY FIELD(ivf.purpose,'ID_FRONT','ID_BACK','SUPPORTING'), ivf.createdAt DESC`,
+      [target.id]);
     const reviews = await query(
       `SELECT r.*, o.orderNo, o.projectName, e.nickname AS engineerNickname
          FROM engineer_reviews r
@@ -226,6 +235,16 @@ function register(router) {
     return ok(res, {
       ...target,
       phone: maskPhone(target.phone),
+      identity: {
+        realName: identity.realName || '',
+        phone: identity.phone || target.phone || '',
+        idCardNumber: decryptIdCard(identity.idCardCipher),
+        verifyStatus: identity.verifyStatus || 'PENDING',
+        verifyStatusText: VERIFY_TEXT[identity.verifyStatus] || identity.verifyStatus,
+        reviewReason: identity.reviewReason || '',
+        submittedAt: identity.submittedAt,
+        files: identityFiles.map((file) => ({ ...file, fileId: file.id, sizeBytes: Number(file.sizeBytes || 0) })),
+      },
       sentReviews: reviews.map((row) => adminReviewView(row, {
         order: { id: row.orderId, orderNo: row.orderNo, projectName: row.projectName },
         engineerNickname: row.engineerNickname || '工程师',
@@ -242,7 +261,7 @@ function register(router) {
     const search = String(q.get('search') || '').trim().slice(0, 60);
     if (verifyStatus) {
       v.oneOf(verifyStatus, '审核状态', ['PENDING', 'APPROVED', 'REJECTED']);
-      cond.push('ep.verifyStatus = ?'); args.push(verifyStatus);
+      cond.push('COALESCE(iv.verifyStatus, ep.verifyStatus) = ?'); args.push(verifyStatus);
     }
     if (search) {
       cond.push('(u.nickname LIKE ? OR ep.realName LIKE ? OR u.id = ?)');
@@ -250,15 +269,21 @@ function register(router) {
     }
     const where = cond.join(' AND ');
     const totalRow = await queryOne(
-      `SELECT COUNT(*) AS count FROM engineer_profiles ep JOIN users u ON u.id = ep.userId WHERE ${where}`, args
+      `SELECT COUNT(*) AS count FROM engineer_profiles ep
+       JOIN users u ON u.id = ep.userId
+       LEFT JOIN identity_verifications iv ON iv.userId=u.id
+       WHERE ${where}`, args
     );
     const rows = await query(
       `SELECT u.id, u.nickname, u.avatarUrl, u.status AS userStatus, u.createdAt,
-              ep.realName, ep.specialties, ep.softwares, ep.intro, ep.verifyStatus,
-              ep.reviewReason, ep.reviewedAt
+              COALESCE(iv.realName, ep.realName) AS realName, ep.specialties, ep.softwares, ep.intro,
+              COALESCE(iv.verifyStatus, ep.verifyStatus) AS verifyStatus,
+              COALESCE(iv.reviewReason, ep.reviewReason) AS reviewReason,
+              COALESCE(iv.reviewedAt, ep.reviewedAt) AS reviewedAt
        FROM engineer_profiles ep JOIN users u ON u.id = ep.userId
+       LEFT JOIN identity_verifications iv ON iv.userId=u.id
        WHERE ${where}
-       ORDER BY FIELD(ep.verifyStatus, 'PENDING', 'REJECTED', 'APPROVED'), u.createdAt DESC
+       ORDER BY FIELD(COALESCE(iv.verifyStatus, ep.verifyStatus), 'PENDING', 'REJECTED', 'APPROVED'), u.createdAt DESC
        LIMIT ${limit} OFFSET ${offset}`,
       args
     );
@@ -276,17 +301,21 @@ function register(router) {
     await requireAdmin(req, 'ENGINEER_READ');
     const engineer = await queryOne(
       `SELECT u.id, u.nickname, u.avatarUrl, u.username, u.phone, u.status AS userStatus, u.createdAt,
-              ep.realName, ep.specialties, ep.softwares, ep.intro, ep.verifyStatus,
-              ep.reviewReason, ep.reviewedAt
+              COALESCE(iv.realName, ep.realName) AS realName, ep.specialties, ep.softwares, ep.intro,
+              COALESCE(iv.verifyStatus, ep.verifyStatus) AS verifyStatus,
+              COALESCE(iv.reviewReason, ep.reviewReason) AS reviewReason,
+              COALESCE(iv.reviewedAt, ep.reviewedAt) AS reviewedAt,
+              iv.phone AS identityPhone, iv.idCardCipher, iv.submittedAt
        FROM engineer_profiles ep JOIN users u ON u.id = ep.userId
+       LEFT JOIN identity_verifications iv ON iv.userId=u.id
        WHERE ep.userId = ? AND u.deletedAt IS NULL`, [params.id]
     );
     if (!engineer) throw err.notFound('工程师资料不存在');
     const files = await query(
-      `SELECT f.id, f.name, f.kind, f.mime, f.sizeBytes, evf.createdAt
-       FROM engineer_verification_files evf
-       JOIN uploaded_files f ON f.id = evf.fileId
-       WHERE evf.engineerId = ? ORDER BY evf.createdAt DESC`, [params.id]
+      `SELECT f.id, f.name, f.kind, f.mime, f.sizeBytes, ivf.purpose, ivf.createdAt
+       FROM identity_verification_files ivf
+       JOIN uploaded_files f ON f.id = ivf.fileId
+       WHERE ivf.userId = ? ORDER BY FIELD(ivf.purpose,'ID_FRONT','ID_BACK','SUPPORTING'), ivf.createdAt DESC`, [params.id]
     );
     const [reviewSummary, receivedReviews] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS reviewCount,
@@ -303,6 +332,8 @@ function register(router) {
     return ok(res, {
       ...engineer,
       phone: maskPhone(engineer.phone),
+      identityPhone: engineer.identityPhone || engineer.phone || '',
+      idCardNumber: decryptIdCard(engineer.idCardCipher),
       specialties: parseJson(engineer.specialties),
       softwares: parseJson(engineer.softwares),
       verifyStatusText: VERIFY_TEXT[engineer.verifyStatus] || engineer.verifyStatus,
@@ -318,14 +349,14 @@ function register(router) {
     });
   });
 
-  // 身份认证材料是私密文件。管理员只能在通过 ENGINEER_READ 鉴权后取得 fileID，
+  // 身份认证材料是私密文件。管理员只能在通过 USER_READ 鉴权后取得 fileID，
   // 由小程序直接下载/预览，避免开放通用文件读取权限。
   router.get('/api/admin/files/:id/url', async (req, res, params) => {
-    await requireAdmin(req, 'ENGINEER_READ');
+    await requireAdmin(req, 'USER_READ');
     const file = await queryOne(
       `SELECT f.id, f.fileID, f.name, f.mime, f.sizeBytes
-       FROM engineer_verification_files evf
-       JOIN uploaded_files f ON f.id = evf.fileId
+       FROM identity_verification_files ivf
+       JOIN uploaded_files f ON f.id = ivf.fileId
        WHERE f.id = ?`, [params.id]
     );
     if (!file) throw err.notFound('身份认证材料不存在');
@@ -339,8 +370,14 @@ function register(router) {
     const reason = v.str(body.reason, '审核说明', {
       min: status === 'REJECTED' ? 2 : 0, max: 500, optional: status === 'APPROVED',
     });
-    const profile = await queryOne(`SELECT userId, verifyStatus FROM engineer_profiles WHERE userId = ?`, [params.id]);
+    const profile = await queryOne(
+      `SELECT ep.userId, COALESCE(iv.verifyStatus, ep.verifyStatus) AS verifyStatus
+         FROM engineer_profiles ep
+         LEFT JOIN identity_verifications iv ON iv.userId=ep.userId
+        WHERE ep.userId = ?`, [params.id]
+    );
     if (!profile) throw err.notFound('工程师资料不存在');
+    await ensureIdentityRecord({ id: profile.userId, role: 'ENGINEER' });
     await tx(async (conn) => {
       await conn.execute(
         `UPDATE engineer_profiles
@@ -348,8 +385,48 @@ function register(router) {
          WHERE userId = ?`,
         [status, reason || null, nowIso(), admin.id, params.id]
       );
+      await conn.execute(
+        `UPDATE identity_verifications
+            SET verifyStatus = ?, reviewReason = ?, reviewedAt = ?, reviewedBy = ?, updatedAt = ?
+          WHERE userId = ?`,
+        [status, reason || null, nowIso(), admin.id, nowIso(), params.id]
+      );
       await writeAdminAudit(req, admin, 'ENGINEER_REVIEW', 'ENGINEER', params.id, {
         from: profile.verifyStatus, to: status, reason: reason || null,
+      }, conn);
+    });
+    return ok(res, { userId: params.id, verifyStatus: status, verifyStatusText: VERIFY_TEXT[status] });
+  });
+
+  router.post('/api/admin/users/:id/identity-review', async (req, res, params) => {
+    const { admin } = await requireAdmin(req, 'IDENTITY_APPROVE');
+    const body = await readJson(req);
+    const status = v.oneOf(String(body.status || '').toUpperCase(), '审核结果', ['APPROVED', 'REJECTED']);
+    const reason = v.str(body.reason, '审核说明', {
+      min: status === 'REJECTED' ? 2 : 0, max: 500, optional: status === 'APPROVED',
+    });
+    const user = await queryOne(`SELECT id, role FROM users WHERE id=? AND deletedAt IS NULL`, [params.id]);
+    if (!user) throw err.notFound('用户不存在');
+    await ensureIdentityRecord(user);
+    const identity = await queryOne(`SELECT verifyStatus FROM identity_verifications WHERE userId=?`, [params.id]);
+    const reviewedAt = nowIso();
+    await tx(async (conn) => {
+      await conn.execute(
+        `UPDATE identity_verifications
+            SET verifyStatus=?, reviewReason=?, reviewedAt=?, reviewedBy=?, updatedAt=?
+          WHERE userId=?`,
+        [status, reason || null, reviewedAt, admin.id, reviewedAt, params.id]
+      );
+      if (user.role === 'ENGINEER') {
+        await conn.execute(
+          `UPDATE engineer_profiles
+              SET verifyStatus=?, reviewReason=?, reviewedAt=?, reviewedBy=?
+            WHERE userId=?`,
+          [status, reason || null, reviewedAt, admin.id, params.id]
+        );
+      }
+      await writeAdminAudit(req, admin, 'IDENTITY_REVIEW', 'USER', params.id, {
+        from: identity.verifyStatus, to: status, reason: reason || null,
       }, conn);
     });
     return ok(res, { userId: params.id, verifyStatus: status, verifyStatusText: VERIFY_TEXT[status] });

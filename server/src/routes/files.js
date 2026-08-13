@@ -75,7 +75,7 @@ async function orderFileAccess(user, order) {
   if (order.customerId === user.id) return 'ALL';
   if (user.role !== 'ENGINEER') return null;
   const profile = await queryOne(
-    `SELECT verifyStatus FROM engineer_profiles WHERE userId = ?`, [user.id]);
+    `SELECT verifyStatus FROM identity_verifications WHERE userId = ?`, [user.id]);
   if (!profile || profile.verifyStatus !== 'APPROVED') return null;
   if (order.status === 'QUOTING') return 'REQUIREMENT';
   const selected = order.selectedQuoteId
@@ -224,12 +224,21 @@ function register(router) {
           `INSERT INTO engineer_verification_files(engineerId, fileId, createdAt) VALUES(?, ?, ?)`,
           [user.id, fileId, now]
         );
+        await conn.execute(
+          `INSERT IGNORE INTO identity_verification_files(userId, fileId, purpose, createdAt)
+           VALUES(?, ?, 'SUPPORTING', ?)`, [user.id, fileId, now]
+        );
       }
       // 上传或补充资料意味着需要重新复核；演示自核验开关不改变资料的归属与访问控制。
       await conn.execute(
         `UPDATE engineer_profiles
          SET verifyStatus = 'PENDING', reviewReason = NULL, reviewedAt = NULL, reviewedBy = NULL
          WHERE userId = ?`, [user.id]
+      );
+      await conn.execute(
+        `UPDATE identity_verifications
+            SET verifyStatus='PENDING', reviewReason=NULL, reviewedAt=NULL, reviewedBy=NULL, updatedAt=?
+          WHERE userId=?`, [now, user.id]
       );
     });
     ok(res, { attached: fileIds.length, maxFiles: MAX_ENGINEER_VERIFICATION_FILES, verifyStatus: 'PENDING' });
@@ -247,11 +256,17 @@ function register(router) {
     if (file.uploaderId !== user.id) throw err.forbidden('无权删除该身份认证材料');
     await tx(async (conn) => {
       await conn.execute(`DELETE FROM engineer_verification_files WHERE engineerId = ? AND fileId = ?`, [user.id, file.id]);
+      await conn.execute(`DELETE FROM identity_verification_files WHERE userId = ? AND fileId = ?`, [user.id, file.id]);
       await conn.execute(`DELETE FROM uploaded_files WHERE id = ? AND uploaderId = ?`, [file.id, user.id]);
       await conn.execute(
         `UPDATE engineer_profiles
          SET verifyStatus = 'PENDING', reviewReason = NULL, reviewedAt = NULL, reviewedBy = NULL
          WHERE userId = ?`, [user.id]
+      );
+      await conn.execute(
+        `UPDATE identity_verifications
+            SET verifyStatus='PENDING', reviewReason=NULL, reviewedAt=NULL, reviewedBy=NULL, updatedAt=?
+          WHERE userId=?`, [nowIso(), user.id]
       );
     });
     ok(res, { deleted: true, fileID: file.fileID, verifyStatus: 'PENDING' });
@@ -326,7 +341,11 @@ function register(router) {
     if (!file) throw err.notFound('文件不存在');
     if (file.uploaderId !== user.id) throw err.forbidden('仅上传者可删除');
     if (file.orderId) throw err.conflict('订单附件不能直接删除');
-    const verification = await queryOne(`SELECT fileId FROM engineer_verification_files WHERE fileId = ?`, [file.id]);
+    const verification = await queryOne(
+      `SELECT fileId FROM identity_verification_files WHERE fileId = ?
+       UNION SELECT fileId FROM engineer_verification_files WHERE fileId = ? LIMIT 1`,
+      [file.id, file.id]
+    );
     if (verification) throw err.conflict('身份认证材料请在“身份认证”页面删除');
     await query(`DELETE FROM uploaded_files WHERE id = ?`, [params.id]);
     if (config.env !== 'production') {

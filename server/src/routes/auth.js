@@ -13,12 +13,13 @@
  */
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, maskPhone, v } = require('../lib/util');
-const { query, queryOne } = require('../db');
+const { query, queryOne, tx } = require('../db');
 const { requireUser, getOrCreateUser, switchUserRole, getOpenid } = require('../lib/auth-mw');
 const { parseJson } = require('../db');
 const { config } = require('../config');
+const { ensureIdentityRecord } = require('../services/identity-svc');
 
-function userView(u, profile) {
+function userView(u, profile, identity) {
   return {
     id: u.id,
     role: u.role,
@@ -30,10 +31,18 @@ function userView(u, profile) {
     hasPhone: Boolean(u.phone),
     phoneMasked: maskPhone(u.phone),
     // 与账号/手机号登录返回结构保持一致，前端可直接读取认证状态
-    verifyStatus: profile ? profile.verifyStatus : null,
+    verifyStatus: identity?.verifyStatus || 'PENDING',
+    identity: identity ? {
+      verifyStatus: identity.verifyStatus || 'PENDING',
+      reviewReason: identity.reviewReason || '',
+      submittedAt: identity.submittedAt || null,
+      hasSubmitted: Boolean(identity.submittedAt),
+      fileCount: Number(identity.fileCount || 0),
+    } : { verifyStatus: 'PENDING', reviewReason: '', submittedAt: null, hasSubmitted: false },
     engineer: profile
       ? {
           ...profile,
+          verifyStatus: identity?.verifyStatus || profile.verifyStatus || 'PENDING',
           specialties: parseJson(profile.specialties),
           softwares: parseJson(profile.softwares),
         }
@@ -47,13 +56,15 @@ async function loadUserView(id) {
   const profile = u.role === 'ENGINEER'
     ? await queryOne(`SELECT * FROM engineer_profiles WHERE userId = ?`, [u.id])
     : null;
+  const identity = await ensureIdentityRecord(u);
+  const count = await queryOne(
+    `SELECT COUNT(*) AS count FROM identity_verification_files WHERE userId = ?`, [u.id]
+  );
+  identity.fileCount = Number(count.count || 0);
   if (profile) {
-    const count = await queryOne(
-      `SELECT COUNT(*) AS count FROM engineer_verification_files WHERE engineerId = ?`, [u.id]
-    );
     profile.qualificationFileCount = Number(count.count || 0);
   }
-  return userView(u, profile);
+  return userView(u, profile, identity);
 }
 
 function register(router) {
@@ -165,6 +176,12 @@ function register(router) {
     } else {
       await query(`UPDATE engineer_profiles SET verifyStatus = 'APPROVED' WHERE userId = ?`, [user.id]);
     }
+    await query(
+      `INSERT INTO identity_verifications(userId, phone, verifyStatus, reviewedAt, updatedAt)
+       VALUES(?, ?, 'APPROVED', ?, ?)
+       ON DUPLICATE KEY UPDATE verifyStatus='APPROVED', reviewReason=NULL,
+         reviewedAt=VALUES(reviewedAt), updatedAt=VALUES(updatedAt)`,
+      [user.id, user.phone || null, now, now]);
     ok(res, await loadUserView(user.id));
   });
 
@@ -212,7 +229,16 @@ function register(router) {
     const existing = await queryOne(`SELECT id FROM users WHERE phone = ? AND id != ? AND deletedAt IS NULL`, [phoneNumber, user.id]);
     if (existing) throw err.conflict('该手机号已被其他账号绑定');
 
-    await query(`UPDATE users SET phone = ?, updatedAt = ? WHERE id = ?`, [phoneNumber, nowIso(), user.id]);
+    const boundAt = nowIso();
+    await tx(async (conn) => {
+      await conn.execute(`UPDATE users SET phone = ?, updatedAt = ? WHERE id = ?`, [phoneNumber, boundAt, user.id]);
+      await conn.execute(
+        `UPDATE identity_verifications
+            SET phone = CASE WHEN phone IS NULL OR phone = '' THEN ? ELSE phone END, updatedAt = ?
+          WHERE userId = ?`,
+        [phoneNumber, boundAt, user.id]
+      );
+    });
     ok(res, { phoneMasked: maskPhone(phoneNumber), user: await loadUserView(user.id) });
   });
 }

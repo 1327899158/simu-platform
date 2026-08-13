@@ -5,7 +5,7 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne, tx, nextOrderNo, parseJson } = require('../db');
-const { requireUser, requireCustomer, requireEngineer } = require('../lib/auth-mw');
+const { requireUser, requireCustomer, requireVerifiedCustomer, requireEngineer } = require('../lib/auth-mw');
 const { DICTS } = require('./dicts');
 const { createPayment, createJsapiOrder } = require('../services/pay-svc');
 const { config } = require('../config');
@@ -67,7 +67,7 @@ async function assertNotDisputing(orderId) {
 function register(router) {
   // POST /api/orders
   router.post('/api/orders', async (req, res) => {
-    const user = await requireCustomer(req);
+    const user = await requireVerifiedCustomer(req);
     const b = await readJson(req);
     const projectName = v.str(b.projectName, '项目名称', { min: 4, max: 60 });
     const description = v.str(b.description, '项目描述', { min: 20, max: 5000 });

@@ -4,6 +4,7 @@ const { request, upload } = require('../../utils/request');
 const { deleteCloudFile } = require('../../utils/cloud-file');
 const { yuanToFen } = require('../../utils/format');
 const { digits, money, validMoney } = require('../../utils/input');
+const { isApproved, promptIdentity } = require('../../utils/identity');
 
 const MAX_ATTACHMENTS = 20;
 const DEFAULT_MAX_FILE_MB = 30;
@@ -82,12 +83,20 @@ Page({
     submitting: false,
   },
   async onLoad() {
-    const user = ensureLogin();
+    let user = ensureLogin();
     if (!user) return;
     this._userId = user.id;
     if (user.role !== 'CUSTOMER') {
       wx.showToast({ title: '仅客户可以发布需求', icon: 'none' });
       setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
+      return;
+    }
+    try {
+      user = await request('GET', '/me', null, { silent: true });
+      wx.setStorageSync('user', user);
+    } catch (_) {}
+    if (!isApproved(user)) {
+      promptIdentity('发布需求', true);
       return;
     }
     const draft = wx.getStorageSync(draftKey(user.id));

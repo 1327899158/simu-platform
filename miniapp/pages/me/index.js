@@ -13,13 +13,14 @@ function resolveAvatar(user) {
 
 function verifyView(user) {
   const profile = user && user.engineer;
-  const status = user && user.role === 'ENGINEER' ? (profile?.verifyStatus || user.verifyStatus || 'PENDING') : 'UNAPPLIED';
+  const status = user?.identity?.verifyStatus || profile?.verifyStatus || user?.verifyStatus || 'PENDING';
+  const fileCount = Number(user?.identity?.fileCount || profile?.qualificationFileCount || 0);
   return {
     verifyStatus: status,
-    verifyText: status === 'APPROVED' ? '已通过' : status === 'PENDING' ? '待审核' : '未申请',
-    qualificationFileCount: Number(profile?.qualificationFileCount || 0),
+    verifyText: status === 'APPROVED' ? '已通过' : status === 'REJECTED' ? '未通过' : '待审核',
+    qualificationFileCount: fileCount,
     // 已提交材料后必须等待管理员审核，避免演示自主认证绕过已发起的人工审核。
-    showSelfVerify: status !== 'APPROVED' && !Number(profile?.qualificationFileCount || 0),
+    showSelfVerify: user?.role === 'ENGINEER' && status !== 'APPROVED' && !fileCount,
   };
 }
 

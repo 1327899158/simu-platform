@@ -16,28 +16,28 @@
     <button class="edit-btn" bindtap="goEdit">编辑</button>
   </view>
 
-  <!-- 身份认证：演示阶段提供可见的自主认证入口 -->
-  <view class="verify-card" wx:if="{{user && user.role === 'ENGINEER'}}">
+  <!-- 所有角色统一使用身份认证；工程师在演示环境可保留自主认证入口。 -->
+  <view class="verify-card" wx:if="{{user}}" bindtap="goQualification">
     <view class="verify-head">
       <view class="verify-copy">
         <text class="verify-title">身份认证</text>
         <text class="verify-desc">当前状态：{{verifyText}}</text>
       </view>
-      <text class="verify-status {{verifyStatus === 'APPROVED' ? 'approved' : 'pending'}}">{{verifyText}}</text>
+      <text class="verify-status {{verifyStatus === 'APPROVED' ? 'approved' : verifyStatus === 'REJECTED' ? 'rejected' : 'pending'}}">{{verifyText}}</text>
     </view>
     <button
       wx:if="{{showSelfVerify}}"
       class="verify-btn"
       loading="{{selfVerifyLoading}}"
       disabled="{{selfVerifyLoading}}"
-      bindtap="selfVerifyEngineer"
+      catchtap="selfVerifyEngineer"
     >自主认证通过（调试）</button>
-    <text class="verify-hint">{{qualificationFileCount ? '已提交 ' + qualificationFileCount + ' 份认证材料，等待管理员审核。' : '演示阶段使用；正式上线前请关闭服务端自主认证开关。'}}</text>
+    <text class="verify-hint">{{qualificationFileCount ? '已提交 ' + qualificationFileCount + ' 份认证材料。' : (user.role === 'ENGINEER' ? '可填写资料申请审核；演示环境也可使用自主认证。' : '填写本人信息并上传身份证正反面后提交审核。')}}</text>
   </view>
 
   <!-- 菜单（仅保留 simu-platform 已有功能的跳转） -->
   <view class="menu" wx:if="{{user}}">
-    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goQualification">
+    <view class="menu-item" bindtap="goQualification">
       <text class="icon">🪪</text>
       <text class="title">身份认证</text>
       <text class="arrow">›</text>

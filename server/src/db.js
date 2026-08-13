@@ -97,6 +97,27 @@ async function init() {
       FOREIGN KEY(userId) REFERENCES users(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+    `CREATE TABLE IF NOT EXISTS identity_verifications (
+      userId          VARCHAR(32) PRIMARY KEY,
+      realName        VARCHAR(60),
+      phone           VARCHAR(20),
+      idCardCipher    TEXT,
+      idCardHash      CHAR(64) UNIQUE,
+      verifyStatus    VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+      reviewReason    VARCHAR(500),
+      submittedAt     DATETIME(3),
+      reviewedAt      DATETIME(3),
+      reviewedBy      VARCHAR(32),
+      updatedAt       DATETIME(3) NOT NULL,
+      INDEX idx_identity_verify_status(verifyStatus, updatedAt),
+      FOREIGN KEY(userId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS schema_migrations (
+      id          VARCHAR(100) PRIMARY KEY,
+      appliedAt   DATETIME(3) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
     `CREATE TABLE IF NOT EXISTS orders (
       id              VARCHAR(32) PRIMARY KEY,
       orderNo         VARCHAR(24) NOT NULL UNIQUE,
@@ -190,6 +211,18 @@ async function init() {
       UNIQUE KEY uq_engineer_verification_file(fileId),
       INDEX idx_engineer_verification_engineer(engineerId, createdAt),
       FOREIGN KEY(engineerId) REFERENCES users(id),
+      FOREIGN KEY(fileId) REFERENCES uploaded_files(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS identity_verification_files (
+      userId      VARCHAR(32) NOT NULL,
+      fileId      VARCHAR(32) NOT NULL,
+      purpose     VARCHAR(16) NOT NULL DEFAULT 'SUPPORTING',
+      createdAt   DATETIME(3) NOT NULL,
+      PRIMARY KEY(userId, fileId),
+      UNIQUE KEY uq_identity_verification_file(fileId),
+      INDEX idx_identity_files_user_purpose(userId, purpose, createdAt),
+      FOREIGN KEY(userId) REFERENCES users(id),
       FOREIGN KEY(fileId) REFERENCES uploaded_files(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
@@ -416,6 +449,32 @@ async function init() {
       // startup so a partially upgraded schema is never served silently.
       if (e.code !== 'ER_DUP_FIELDNAME' && e.code !== 'ER_DUP_KEYNAME') throw e;
     }
+  }
+
+  // 一次性迁移：升级前已有客户默认通过；工程师严格保留原审核状态。
+  // 新注册用户不会命中该迁移，首次认证记录默认为 PENDING。
+  const identityMigration = await queryOne(
+    `SELECT id FROM schema_migrations WHERE id='20260813_identity_verification_v1'`);
+  if (!identityMigration) {
+    await tx(async (conn) => {
+      await conn.execute(
+        `INSERT IGNORE INTO identity_verifications
+          (userId, realName, phone, verifyStatus, reviewReason, reviewedAt, reviewedBy, updatedAt)
+         SELECT u.id, ep.realName, u.phone,
+                CASE WHEN u.role='ENGINEER' THEN COALESCE(ep.verifyStatus, 'PENDING') ELSE 'APPROVED' END,
+                ep.reviewReason, ep.reviewedAt, ep.reviewedBy, UTC_TIMESTAMP(3)
+           FROM users u LEFT JOIN engineer_profiles ep ON ep.userId=u.id
+          WHERE u.deletedAt IS NULL`
+      );
+      await conn.execute(
+        `INSERT IGNORE INTO identity_verification_files(userId, fileId, purpose, createdAt)
+         SELECT engineerId, fileId, 'SUPPORTING', createdAt FROM engineer_verification_files`
+      );
+      await conn.execute(
+        `INSERT IGNORE INTO schema_migrations(id, appliedAt)
+         VALUES('20260813_identity_verification_v1', UTC_TIMESTAMP(3))`
+      );
+    });
   }
 
   // 兼容上一版本已经提交但尚未处理的退款申请：记录原状态并冻结订单。

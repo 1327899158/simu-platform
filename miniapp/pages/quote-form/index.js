@@ -2,15 +2,17 @@ const { ensureLogin } = require('../../utils/auth');
 const { request } = require('../../utils/request');
 const { yuanToFen, fenToYuan } = require('../../utils/format');
 const { digits, money, validMoney } = require('../../utils/input');
+const { isApproved, promptIdentity } = require('../../utils/identity');
 Page({
   data: { orderId: '', amountYuan: '', days: '', solution: '', flexible: true, submitting: false },
-  onLoad(q) {
-    const user = ensureLogin();
+  async onLoad(q) {
+    let user = ensureLogin();
     if (!user) return;
-    const verifyStatus = user.engineer?.verifyStatus || user.verifyStatus || '';
-    if (user.role !== 'ENGINEER' || verifyStatus !== 'APPROVED') {
-      wx.showToast({ title: user.role === 'ENGINEER' ? '身份认证通过后才能报价' : '仅工程师可以报价', icon: 'none' });
-      setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
+    try { user = await request('GET', '/me', null, { silent: true }); wx.setStorageSync('user', user); } catch (_) {}
+    if (user.role !== 'ENGINEER' || !isApproved(user)) {
+      if (user.role === 'ENGINEER') promptIdentity('报价', true);
+      else wx.showToast({ title: '仅工程师可以报价', icon: 'none' });
+      if (user.role !== 'ENGINEER') setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
       return;
     }
     const flexible = q.flexible !== '0';          // 0=固定预算，其余=弹性

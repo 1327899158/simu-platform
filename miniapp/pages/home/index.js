@@ -2,6 +2,7 @@
 const { ensureLogin } = require('../../utils/auth');
 const { request } = require('../../utils/request');
 const { fenToYuan, timeShort, STATUS_CLASS } = require('../../utils/format');
+const { isApproved, promptIdentity } = require('../../utils/identity');
 
 Page({
   data: {
@@ -15,10 +16,13 @@ Page({
     hall: [],
   },
   async onShow() {
-    const user = ensureLogin();
+    let user = ensureLogin();
     if (!user) return;
-    const verifyStatus = user.engineer?.verifyStatus || user.verifyStatus || '';
-    const canTakeOrders = user.role === 'ENGINEER' && verifyStatus === 'APPROVED';
+    try {
+      user = await request('GET', '/me', null, { silent: true });
+      wx.setStorageSync('user', user);
+    } catch (_) {}
+    const canTakeOrders = user.role === 'ENGINEER' && isApproved(user);
     this.setData({
       role: user.role,
       user,
@@ -55,6 +59,7 @@ Page({
   },
   goPublish() {
     if (this.data.role !== 'CUSTOMER') return wx.showToast({ title: '仅客户可以发布需求', icon: 'none' });
+    if (!isApproved(this.data.user)) return promptIdentity('发布需求');
     wx.navigateTo({ url: '/pages/publish/index' });
   },
   goOrders() {
@@ -81,19 +86,19 @@ Page({
   goMyQuotes() { wx.navigateTo({ url: '/pages/my-quotes/index' }); },
   goMarketHall() {
     if (this.data.role !== 'ENGINEER') return wx.showToast({ title: '仅工程师可以进入接单大厅', icon: 'none' });
-    if (!this.data.canTakeOrders) return wx.showToast({ title: '身份认证通过后才能接单', icon: 'none' });
+    if (!this.data.canTakeOrders) return promptIdentity('进入接单大厅');
     wx.navigateTo({ url: '/pages/market/index' });
   },
   // 大厅卡片上的快捷报价：与 order-detail 的 goQuote 参数格式保持一致
   quickQuote(e) {
-    if (!this.data.canTakeOrders) return wx.showToast({ title: '身份认证通过后才能报价', icon: 'none' });
+    if (!this.data.canTakeOrders) return promptIdentity('报价');
     const { id, flexible, fen } = e.currentTarget.dataset;
     let url = `/pages/quote-form/index?orderId=${id}&flexible=${flexible}`;
     if (String(flexible) === '0' && fen) url += `&fixedFen=${fen}`;
     wx.navigateTo({ url });
   },
   openMarket(e) {
-    if (!this.data.canTakeOrders) return wx.showToast({ title: '身份认证通过后才能查看需求', icon: 'none' });
+    if (!this.data.canTakeOrders) return promptIdentity('查看可接需求');
     wx.navigateTo({ url: `/pages/order-detail/index?id=${e.currentTarget.dataset.id}&mode=market` });
   },
   openMine(e) {

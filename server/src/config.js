@@ -77,6 +77,10 @@ const config = {
   // 正式上线前设置 ALLOW_ENGINEER_SELF_VERIFY=false 关闭。
   allowEngineerSelfVerify: process.env.ALLOW_ENGINEER_SELF_VERIFY !== 'false',
 
+  // 身份证号使用 AES-256-GCM 加密保存。生产环境应设置独立且长期不变的随机密钥；
+  // 未配置时使用云环境与数据库密码派生，保证升级可运行但不建议长期依赖。
+  identityDataKey: process.env.IDENTITY_DATA_KEY || `${process.env.CLOUDBASE_ENV_ID || 'local'}:${process.env.MYSQL_PASSWORD || 'dev123456'}`,
+
   // 腾讯云短信（验证码、忘记密码等）
   sms: {
     secretId: process.env.TENCENT_SMS_SECRET_ID || '',

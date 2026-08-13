@@ -18,6 +18,7 @@ require('./routes/auth').register(router);
 require('./routes/auth-multi').register(router);  // 新增：多种登录方式
 require('./routes/dicts').register(router);
 require('./routes/files').register(router);
+require('./routes/identity').register(router);
 require('./routes/orders').register(router);
 require('./routes/market').register(router);
 require('./routes/quotes').register(router);

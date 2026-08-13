@@ -3,7 +3,7 @@ const { getAdmin, denyAndExit } = require('../../utils/admin');
 const { timeShort } = require('../../../utils/format');
 
 const ACTION_TEXT = {
-  USER_STATUS_UPDATE: '修改用户状态', ENGINEER_REVIEW: '审核身份认证', ORDER_FORCE_CLOSE: '关闭订单',
+  USER_STATUS_UPDATE: '修改用户状态', ENGINEER_REVIEW: '审核身份认证', IDENTITY_REVIEW: '审核身份认证', ORDER_FORCE_CLOSE: '关闭订单',
 };
 
 Page({

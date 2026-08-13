@@ -150,8 +150,7 @@ async function requireUser(req, roleHint) {
 async function requireEngineer(req) {
   const user = await requireUser(req);
   if (user.role !== 'ENGINEER') throw err.forbidden('仅工程师可操作');
-  const p = await queryOne(`SELECT verifyStatus FROM engineer_profiles WHERE userId = ?`, [user.id]);
-  if (!p || p.verifyStatus !== 'APPROVED') throw err.forbidden('身份认证未通过审核');
+  await require('../services/identity-svc').requireApprovedIdentity(user);
   return user;
 }
 
@@ -159,6 +158,13 @@ async function requireEngineer(req) {
 async function requireCustomer(req) {
   const user = await requireUser(req);
   if (user.role !== 'CUSTOMER') throw err.forbidden('仅客户可操作');
+  return user;
+}
+
+/** 必须是已通过身份认证的客户，仅用于发布需求等新增业务动作。 */
+async function requireVerifiedCustomer(req) {
+  const user = await requireCustomer(req);
+  await require('../services/identity-svc').requireApprovedIdentity(user);
   return user;
 }
 
@@ -208,6 +214,6 @@ async function getOrCreateUserByPhone(phone, roleHint = 'CUSTOMER') {
 }
 
 module.exports = {
-  getOpenid, getOrCreateUser, switchUserRole, requireUser, requireCustomer, requireEngineer,
+  getOpenid, getOrCreateUser, switchUserRole, requireUser, requireCustomer, requireVerifiedCustomer, requireEngineer,
   findUserByUsername, findUserByPhone, getOrCreateUserByPhone
 };

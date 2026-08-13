@@ -57,7 +57,8 @@ function register(router) {
            JOIN engineer_profiles ep ON ep.userId = u.id
           WHERE u.role = 'ENGINEER'
             AND u.status = 'ACTIVE'
-            AND ep.verifyStatus = 'APPROVED') AS approvedEngineers,
+            AND EXISTS (SELECT 1 FROM identity_verifications iv
+                         WHERE iv.userId=u.id AND iv.verifyStatus='APPROVED')) AS approvedEngineers,
         (SELECT COUNT(*)
            FROM orders
           WHERE status = 'COMPLETED' AND deletedAt IS NULL) AS completedOrders,

@@ -1,6 +1,7 @@
 const { ensureLogin } = require('../../utils/auth');
 const { request } = require('../../utils/request');
 const { fenToYuan, timeShort } = require('../../utils/format');
+const { isApproved, promptIdentity } = require('../../utils/identity');
 
 Page({
   data: {
@@ -13,12 +14,13 @@ Page({
   },
 
   async onLoad() {
-    const user = ensureLogin();
+    let user = ensureLogin();
     if (!user) return;
-    const verifyStatus = user.engineer?.verifyStatus || user.verifyStatus || '';
-    if (user.role !== 'ENGINEER' || verifyStatus !== 'APPROVED') {
-      wx.showToast({ title: user.role === 'ENGINEER' ? '身份认证通过后才能接单' : '仅工程师可以进入接单大厅', icon: 'none' });
-      setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
+    try { user = await request('GET', '/me', null, { silent: true }); wx.setStorageSync('user', user); } catch (_) {}
+    if (user.role !== 'ENGINEER' || !isApproved(user)) {
+      if (user.role === 'ENGINEER') promptIdentity('进入接单大厅', true);
+      else wx.showToast({ title: '仅工程师可以进入接单大厅', icon: 'none' });
+      if (user.role !== 'ENGINEER') setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/home/index' }) }), 500);
       return;
     }
     try {
