@@ -1,0 +1,74 @@
+server/src/config.js
+  s_83d4d73338ab33::t_20a4e77ecf6b51 76
+miniapp/pages/me/index.wxss
+  s_83d4d73338ab33::t_042c8a6c3820a2 91
+miniapp/pages/engineer-qualification/index.js
+  s_83d4d73338ab33::t_962f5b97d27b03 25,65,113
+miniapp/pages/engineer-qualification/index.json
+  s_83d4d73338ab33::t_962f5b97d27b03 2
+ADMIN_DEPLOYMENT.md
+  s_83d4d73338ab33::t_20a4e77ecf6b51 55,61,102
+miniapp/admin/pages/audit-logs/index.js
+  s_83d4d73338ab33::t_e4097e84cb1b76 6
+miniapp/pages/me/index.js
+  s_83d4d73338ab33::t_042c8a6c3820a2 19,21,104-105,112,120,122
+  s_83d4d73338ab33::t_962f5b97d27b03 103
+miniapp/pages/market/index.js
+  s_83d4d73338ab33::t_042c8a6c3820a2 20
+docs/api.md
+  s_83d4d73338ab33::t_20a4e77ecf6b51 29
+miniapp/utils/auth.js
+  s_83d4d73338ab33::t_20a4e77ecf6b51 37
+server/src/routes/files.js
+  s_83d4d73338ab33::t_20a4e77ecf6b51 188
+  s_83d4d73338ab33::t_042c8a6c3820a2 133,204,206,211,246-247,330
+miniapp/pages/home/index.js
+  s_83d4d73338ab33::t_042c8a6c3820a2 84,89,96
+server/src/lib/auth-mw.js
+  s_83d4d73338ab33::t_042c8a6c3820a2 154
+server/src/routes/admin.js
+  s_83d4d73338ab33::t_e4097e84cb1b76 14,321,331
+miniapp/admin/pages/data-preview/index.wxml
+  s_83d4d73338ab33::t_e4097e84cb1b76 6
+miniapp/pages/quote-form/index.js
+  s_83d4d73338ab33::t_042c8a6c3820a2 12
+miniapp/admin/pages/engineers/index.wxml
+  s_83d4d73338ab33::t_e4097e84cb1b76 2,13
+miniapp/admin/pages/engineers/index.json
+  s_83d4d73338ab33::t_e4097e84cb1b76 2
+miniapp/admin/pages/engineer-detail/index.js
+  s_83d4d73338ab33::t_e4097e84cb1b76 41,44,54
+miniapp/pages/engineer-qualification/index.wxml
+  s_83d4d73338ab33::t_962f5b97d27b03 2-4
+miniapp/admin/pages/dashboard/index.js
+  s_83d4d73338ab33::t_e4097e84cb1b76 15
+miniapp/admin/pages/engineers/index.js
+  s_83d4d73338ab33::t_e4097e84cb1b76 40,44,54
+miniapp/admin/pages/engineer-detail/index.wxml
+  s_83d4d73338ab33::t_e4097e84cb1b76 4,7
+miniapp/pages/me/index.wxml
+  s_83d4d73338ab33::t_042c8a6c3820a2 35
+  s_83d4d73338ab33::t_20a4e77ecf6b51 20
+  s_83d4d73338ab33::t_962f5b97d27b03 19,23,34,40-44
+miniapp/pages/login/index.js
+  s_83d4d73338ab33::t_042c8a6c3820a2 157,187,273
+server/src/routes/auth.js
+  s_83d4d73338ab33::t_042c8a6c3820a2 153
+  s_83d4d73338ab33::t_20a4e77ecf6b51 32,150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "1a5c02b96a56c69deccf7fdd0a1f40e148985fd6",
+  "prompts": {},
+  "sessions": {
+    "s_83d4d73338ab33": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb6a0-cd17-7120-9cd9-8cf281faa2f5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Yuyang Jiang （蒋宇阳） <jyuyang@trip.com>"
+    }
+  }
+}
