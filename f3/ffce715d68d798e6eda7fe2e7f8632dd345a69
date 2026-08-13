@@ -1,0 +1,47 @@
+server/src/routes/quotes.js
+  s_83d4d73338ab33::t_c583fd19a921d0 162-164
+server/src/routes/dicts.js
+  s_83d4d73338ab33::t_c583fd19a921d0 87-89
+miniapp/admin/pages/user-detail/index.wxml
+  s_83d4d73338ab33::t_cb701c8530d2fe 14
+miniapp/app.json
+  s_83d4d73338ab33::t_cd0fb55fe489a1 65
+server/src/routes/reviews.js
+  s_83d4d73338ab33::t_fa339d7a18706c 17-20,27-29,63-64,75-77,92-93,106,109,123-125,157-159
+miniapp/pages/market/index.js
+  s_83d4d73338ab33::t_cd0fb55fe489a1 22-25
+miniapp/pages/engineer-profile/index.wxml
+  s_83d4d73338ab33::t_cb701c8530d2fe 23
+server/src/db.js
+  s_83d4d73338ab33::t_cd0fb55fe489a1 245-246,472-474
+miniapp/pages/review-form/index.js
+  s_83d4d73338ab33::t_fa339d7a18706c 16-17,62
+miniapp/admin/pages/engineer-detail/index.wxml
+  s_83d4d73338ab33::t_cb701c8530d2fe 5
+miniapp/pages/order-detail/index.wxml
+  s_83d4d73338ab33::t_cb701c8530d2fe 162-163
+miniapp/pages/my-reviews/index.wxml
+  s_83d4d73338ab33::t_cb701c8530d2fe 23
+server/src/routes/admin.js
+  s_83d4d73338ab33::t_c583fd19a921d0 46-48,55-57,120-125,142-144,333-335
+server/src/routes/orders.js
+  s_83d4d73338ab33::t_c583fd19a921d0 228,239-244
+miniapp/pages/home/index.js
+  s_83d4d73338ab33::t_cd0fb55fe489a1 95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "f3ffce715d68d798e6eda7fe2e7f8632dd345a69",
+  "prompts": {},
+  "sessions": {
+    "s_83d4d73338ab33": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb6a0-cd17-7120-9cd9-8cf281faa2f5",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Yuyang Jiang （蒋宇阳） <jyuyang@trip.com>"
+    }
+  }
+}
