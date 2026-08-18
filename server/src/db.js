@@ -407,6 +407,7 @@ async function init() {
       engineerId  VARCHAR(32) NOT NULL,
       status      VARCHAR(16) NOT NULL DEFAULT 'PENDING',
       orderStatusAtRequest VARCHAR(24) NOT NULL,
+      reason      TEXT NOT NULL,
       disputeId   VARCHAR(32),
       createdAt   DATETIME(3) NOT NULL,
       respondedAt DATETIME(3),
@@ -416,6 +417,19 @@ async function init() {
       FOREIGN KEY(orderId) REFERENCES orders(id),
       FOREIGN KEY(customerId) REFERENCES users(id),
       FOREIGN KEY(engineerId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS refund_request_files (
+      refundRequestId VARCHAR(32) NOT NULL,
+      fileId          VARCHAR(32) NOT NULL,
+      uploaderId      VARCHAR(32) NOT NULL,
+      createdAt       DATETIME(3) NOT NULL,
+      PRIMARY KEY(refundRequestId, fileId),
+      UNIQUE KEY uq_refund_request_files_file(fileId),
+      INDEX idx_refund_request_files_request(refundRequestId, createdAt),
+      FOREIGN KEY(refundRequestId) REFERENCES refund_requests(id),
+      FOREIGN KEY(fileId) REFERENCES uploaded_files(id),
+      FOREIGN KEY(uploaderId) REFERENCES users(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS dispute_evidence (
@@ -468,6 +482,7 @@ async function init() {
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedAt DATETIME(3)`, check: "reviewedAt" },
     { table: 'engineer_profiles', sql: `ALTER TABLE engineer_profiles ADD COLUMN reviewedBy VARCHAR(32)`, check: "reviewedBy" },
     { table: 'refund_requests', sql: `ALTER TABLE refund_requests ADD COLUMN orderStatusAtRequest VARCHAR(24)`, check: "orderStatusAtRequest" },
+    { table: 'refund_requests', sql: `ALTER TABLE refund_requests ADD COLUMN reason TEXT`, check: "reason" },
     { table: 'disputes', sql: `ALTER TABLE disputes ADD COLUMN evidenceDeadlineAt DATETIME(3)`, check: "evidenceDeadlineAt" },
     // 评价从三项扩展至五项。旧评价保留为空，读取时以旧三项均分回填，避免历史评分被不公平拉低。
     { table: 'engineer_reviews', sql: `ALTER TABLE engineer_reviews ADD COLUMN professionalScore TINYINT UNSIGNED`, check: "professionalScore" },
@@ -525,6 +540,13 @@ async function init() {
             o.updatedAt = UTC_TIMESTAMP(3)
       WHERE rr.status = 'PENDING'
         AND o.status IN ('IN_PROGRESS', 'DELIVERED', 'COMPLETED')`
+  );
+
+  // 升级前的退款申请没有理由字段，补齐可读的历史占位，之后的新申请由接口强制填写。
+  await query(
+    `UPDATE refund_requests
+        SET reason = '历史退款申请未填写理由'
+      WHERE reason IS NULL OR TRIM(reason) = ''`
   );
 
   // 老纠纷按发起时间补齐 48 小时举证截止时间。

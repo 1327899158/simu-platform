@@ -93,6 +93,7 @@ model User {
   disputeEvidence    DisputeEvidence[]
   customerRefundRequests RefundRequest[] @relation("CustomerRefundRequests")
   engineerRefundRequests RefundRequest[] @relation("EngineerRefundRequests")
+  uploadedRefundRequestFiles RefundRequestFile[]
 }
 
 model EngineerProfile {
@@ -186,6 +187,7 @@ model UploadedFile {
   order Order? @relation(fields: [orderId], references: [id])
   attachment OrderAttachment?
   disputeEvidence DisputeEvidence[]
+  refundRequestFile RefundRequestFile?
 
   @@index([orderId])
 }
@@ -303,6 +305,7 @@ model RefundRequest {
   engineerId  String
   status      RefundRequestStatus @default(PENDING)
   orderStatusAtRequest String
+  reason      String              @db.Text
   disputeId   String?
   createdAt   DateTime            @default(now())
   respondedAt DateTime?
@@ -311,10 +314,26 @@ model RefundRequest {
   order       Order @relation(fields: [orderId], references: [id])
   customer    User  @relation("CustomerRefundRequests", fields: [customerId], references: [id])
   engineer    User  @relation("EngineerRefundRequests", fields: [engineerId], references: [id])
+  files       RefundRequestFile[]
 
   @@index([engineerId, status, createdAt])
   @@index([orderId, status, createdAt])
   @@map("refund_requests")
+}
+
+model RefundRequestFile {
+  refundRequestId String
+  fileId          String @unique
+  uploaderId      String
+  createdAt       DateTime @default(now())
+
+  refundRequest RefundRequest @relation(fields: [refundRequestId], references: [id])
+  file          UploadedFile  @relation(fields: [fileId], references: [id])
+  uploader      User          @relation(fields: [uploaderId], references: [id])
+
+  @@id([refundRequestId, fileId])
+  @@index([refundRequestId, createdAt])
+  @@map("refund_request_files")
 }
 
 model Dispute {

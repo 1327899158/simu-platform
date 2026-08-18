@@ -92,6 +92,8 @@ async function canReadFile(user, file) {
   // 避免通用 IMAGE 规则把纠纷证据泄漏给所有登录用户。
   if (!file.orderId) {
     if (await canReadDisputeEvidence(user, file)) return true;
+    const refundAccess = await refundRequestFileAccess(user, file);
+    if (refundAccess !== null) return refundAccess;
     // 头像等公开 IMAGE 所有登录用户均可读
     if (file.kind === 'IMAGE') return true;
     return false;
@@ -121,6 +123,27 @@ async function canReadDisputeEvidence(user, file) {
     if (q && q.engineerId === user.id) return true;
   }
   // 管理员
+  const admin = await queryOne(
+    `SELECT id FROM admin_accounts WHERE userId = ? AND status = 'ACTIVE'`,
+    [user.id]
+  );
+  return !!admin;
+}
+
+/** 退款申请附件读取权限：订单客户、选中工程师或管理员 */
+async function refundRequestFileAccess(user, file) {
+  const row = await queryOne(
+    `SELECT o.customerId, q.engineerId
+       FROM refund_request_files rf
+       JOIN refund_requests rr ON rr.id = rf.refundRequestId
+       JOIN orders o ON o.id = rr.orderId
+       LEFT JOIN quotes q ON q.id = o.selectedQuoteId
+      WHERE rf.fileId = ?
+      ORDER BY rf.createdAt DESC LIMIT 1`,
+    [file.id]
+  );
+  if (!row) return null;
+  if (row.customerId === user.id || row.engineerId === user.id) return true;
   const admin = await queryOne(
     `SELECT id FROM admin_accounts WHERE userId = ? AND status = 'ACTIVE'`,
     [user.id]

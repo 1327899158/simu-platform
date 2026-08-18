@@ -169,6 +169,21 @@ module.exports = {
     <view class="refund-request-card" wx:if="{{refundRequest && refundRequest.status === 'PENDING'}}">
       <text class="refund-request-title">↩️ 退款申请已提交</text>
       <text class="refund-request-desc">等待工程师确认；若对方拒绝，你可自行决定是否申请客服介入。</text>
+      <view class="refund-reason-box">
+        <text class="refund-detail-label">退款理由</text>
+        <text class="refund-detail-value">{{refundRequest.reason}}</text>
+      </view>
+      <view class="refund-materials" wx:if="{{refundRequest.files.length}}">
+        <text class="refund-detail-label">已提交材料（{{refundRequest.files.length}}）</text>
+        <view class="refund-file-row" wx:for="{{refundRequest.files}}" wx:key="fileId"
+          bindtap="download" data-id="{{item.fileId}}">
+          <view class="refund-file-copy">
+            <text class="refund-file-name">📎 {{item.name}}</text>
+            <text class="refund-file-size">{{item.sizeText}}</text>
+          </view>
+          <text class="refund-file-action">{{downloadingFileId === item.fileId ? '打开中…' : '查看'}}</text>
+        </view>
+      </view>
     </view>
 
     <view class="invoice-action-card" wx:if="{{order.status === 'COMPLETED'}}">
@@ -182,6 +197,21 @@ module.exports = {
     <view class="refund-request-card rejected" wx:if="{{refundRequest && refundRequest.status === 'REJECTED' && !dispute}}">
       <text class="refund-request-title">退款申请已被拒绝</text>
       <text class="refund-request-desc">工程师拒绝了你的退款请求。你可以继续沟通，或申请客服介入处理。</text>
+      <view class="refund-reason-box">
+        <text class="refund-detail-label">退款理由</text>
+        <text class="refund-detail-value">{{refundRequest.reason}}</text>
+      </view>
+      <view class="refund-materials" wx:if="{{refundRequest.files.length}}">
+        <text class="refund-detail-label">已提交材料（{{refundRequest.files.length}}）</text>
+        <view class="refund-file-row" wx:for="{{refundRequest.files}}" wx:key="fileId"
+          bindtap="download" data-id="{{item.fileId}}">
+          <view class="refund-file-copy">
+            <text class="refund-file-name">📎 {{item.name}}</text>
+            <text class="refund-file-size">{{item.sizeText}}</text>
+          </view>
+          <text class="refund-file-action">{{downloadingFileId === item.fileId ? '打开中…' : '查看'}}</text>
+        </view>
+      </view>
       <button class="btn-refund-escalate" bindtap="escalateRefund">申请客服介入</button>
     </view>
 
@@ -193,8 +223,52 @@ module.exports = {
       <button class="btn-delete-order" wx:if="{{order.status === 'QUOTING'}}" bindtap="del">🗑️ 删除订单</button>
       <!-- 退款入口：工程师拒绝后由客户自主决定是否申请客服介入。 -->
       <button class="btn-refund"
-        wx:if="{{(order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED') && !dispute && !refundRequest}}"
+        wx:if="{{(order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED') && !dispute && !refundRequest && !refundFormOpen}}"
         bindtap="requestRefund">↩️ 发起退款</button>
+    </view>
+
+    <!-- 退款申请表：理由必填，附件选填 -->
+    <view class="refund-form-card" wx:if="{{refundFormOpen}}">
+      <view class="refund-form-head">
+        <view class="refund-form-copy">
+          <text class="refund-form-title">申请退款</text>
+          <text class="refund-form-tip">请说明退款原因，工程师将在订单页确认申请</text>
+        </view>
+        <text class="refund-form-required">理由必填</text>
+      </view>
+      <view class="refund-field-title">退款理由 <text class="required-mark">*</text></view>
+      <textarea class="refund-reason-input" value="{{refundReason}}" bindinput="onRefundReason"
+        maxlength="1000" placeholder="请清楚描述申请退款的原因" placeholder-class="refund-placeholder" />
+      <view class="refund-word-count">{{refundReason.length}} / 1000</view>
+
+      <view class="refund-upload-head">
+        <view>
+          <text class="refund-field-title">补充材料</text>
+          <text class="refund-upload-optional">（选填，最多 5 个）</text>
+        </view>
+        <button class="refund-upload-btn" bindtap="addRefundFiles"
+          disabled="{{refundUploading || refundSubmitting || refundUploads.length >= 5}}">
+          {{refundUploading ? '上传中…' : '+ 上传文件'}}
+        </button>
+      </view>
+      <view class="refund-upload-list" wx:if="{{refundUploads.length}}">
+        <view class="refund-upload-row" wx:for="{{refundUploads}}" wx:key="fileId">
+          <view class="refund-file-copy">
+            <text class="refund-file-name">📎 {{item.name}}</text>
+            <text class="refund-file-size">{{item.sizeText}}</text>
+          </view>
+          <text class="refund-remove-file" bindtap="removeRefundFile" data-index="{{index}}">删除</text>
+        </view>
+      </view>
+      <view class="refund-form-notice">提交后订单履约将暂停，等待工程师同意或拒绝。</view>
+      <view class="refund-form-actions">
+        <button class="refund-form-cancel" bindtap="cancelRefundForm"
+          disabled="{{refundUploading || refundSubmitting}}">取消</button>
+        <button class="refund-form-submit" bindtap="submitRefundRequest"
+          disabled="{{refundUploading || refundSubmitting || !refundReason}}">
+          {{refundSubmitting ? '提交中…' : '提交退款申请'}}
+        </button>
+      </view>
     </view>
   </block>
 
@@ -228,6 +302,21 @@ module.exports = {
         <view class="refund-decision-copy">
           <text class="refund-decision-title">客户申请退款</text>
           <text class="refund-decision-desc">订单履约已暂停，请确认是否同意退款。拒绝后将恢复原订单状态，客户可自行申请客服介入。</text>
+        </view>
+      </view>
+      <view class="refund-reason-box engineer-refund-reason">
+        <text class="refund-detail-label">客户填写的退款理由</text>
+        <text class="refund-detail-value">{{refundRequest.reason}}</text>
+      </view>
+      <view class="refund-materials" wx:if="{{refundRequest.files.length}}">
+        <text class="refund-detail-label">退款材料（{{refundRequest.files.length}}）</text>
+        <view class="refund-file-row" wx:for="{{refundRequest.files}}" wx:key="fileId"
+          bindtap="download" data-id="{{item.fileId}}">
+          <view class="refund-file-copy">
+            <text class="refund-file-name">📎 {{item.name}}</text>
+            <text class="refund-file-size">{{item.sizeText}}</text>
+          </view>
+          <text class="refund-file-action">{{downloadingFileId === item.fileId ? '打开中…' : '查看'}}</text>
         </view>
       </view>
       <view class="refund-decision-actions">

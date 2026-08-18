@@ -14,13 +14,27 @@ const { evidenceDeadlineIso } = require('../services/dispute-svc');
 
 const REFUNDABLE_ORDER_STATUS = ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
 
-function refundRequestView(row) {
+function refundFileView(row) {
+  return {
+    id: row.fileId || row.id,
+    fileId: row.fileId || row.id,
+    name: row.name,
+    kind: row.kind,
+    mime: row.mime || '',
+    sizeBytes: Number(row.sizeBytes || 0),
+    createdAt: row.createdAt,
+  };
+}
+
+function refundRequestView(row, files = []) {
   if (!row) return null;
   return {
     id: row.id,
     orderId: row.orderId,
     status: row.status,
     statusText: row.status === 'PENDING' ? '待工程师确认' : row.status === 'REJECTED' ? '工程师已拒绝' : row.status,
+    reason: row.reason || '历史退款申请未填写理由',
+    files: files.map(refundFileView),
     disputeId: row.disputeId || null,
     createdAt: row.createdAt,
     respondedAt: row.respondedAt || null,
@@ -29,6 +43,17 @@ function refundRequestView(row) {
 
 function customerQuotingText(quoteCount) {
   return Number(quoteCount || 0) > 0 ? '待确认' : '未报价';
+}
+
+async function refundFilesOf(refundRequestId) {
+  return query(
+    `SELECT rf.fileId, f.name, f.kind, f.mime, f.sizeBytes, rf.createdAt
+       FROM refund_request_files rf
+       JOIN uploaded_files f ON f.id = rf.fileId
+      WHERE rf.refundRequestId = ?
+      ORDER BY rf.createdAt ASC`,
+    [refundRequestId]
+  );
 }
 
 function orderView(o, extra = {}) {
@@ -268,12 +293,19 @@ function register(router) {
         ORDER BY createdAt DESC LIMIT 1`,
       [params.id]
     );
-    ok(res, refundRequestView(refundRequest));
+    const files = refundRequest ? await refundFilesOf(refundRequest.id) : [];
+    ok(res, refundRequestView(refundRequest, files));
   });
 
   // POST /api/orders/:id/refund-request —— 客户发起退款，由选中工程师确认。
   router.post('/api/orders/:id/refund-request', async (req, res, params) => {
     const customer = await requireCustomer(req);
+    const body = await readJson(req);
+    const reason = v.str(body.reason, '退款理由', { min: 1, max: 1000 });
+    const rawFileIds = v.arr(body.fileIds, '退款附件', { maxLen: 5, optional: true }) || [];
+    const fileIds = rawFileIds.map((fileId) => v.str(fileId, '文件ID', { min: 1, max: 32 }));
+    if (new Set(fileIds).size !== fileIds.length) throw err.bad('退款附件包含重复文件');
+
     const result = await tx(async (conn) => {
       const [[order]] = await conn.execute(
         `SELECT o.*, q.engineerId
@@ -300,6 +332,30 @@ function register(router) {
       );
       if (dispute) throw err.conflict('订单存在进行中的纠纷，暂不能申请退款');
 
+      let refundFiles = [];
+      if (fileIds.length) {
+        const [rows] = await conn.execute(
+          `SELECT f.id AS fileId, f.uploaderId, f.orderId, f.name, f.kind, f.mime, f.sizeBytes,
+                  EXISTS(SELECT 1 FROM engineer_verification_files evf WHERE evf.fileId = f.id) AS usedForVerification,
+                  EXISTS(SELECT 1 FROM dispute_evidence de WHERE de.fileId = f.id) AS usedForDispute,
+                  EXISTS(SELECT 1 FROM refund_request_files rf WHERE rf.fileId = f.id) AS usedForRefund
+             FROM uploaded_files f
+            WHERE f.id IN (${fileIds.map(() => '?').join(',')})
+            FOR UPDATE`,
+          fileIds
+        );
+        if (rows.length !== fileIds.length) throw err.bad('部分退款附件不存在，请删除后重新上传');
+        for (const file of rows) {
+          if (file.uploaderId !== customer.id) throw err.forbidden('不能使用其他用户上传的附件');
+          if (file.orderId) throw err.conflict('退款附件已用于其他业务，请重新上传');
+          if (file.usedForVerification || file.usedForDispute || file.usedForRefund) {
+            throw err.conflict('退款附件已用于其他业务，请重新上传');
+          }
+          if (file.kind === 'RESULT') throw err.bad('成果文件不能作为退款申请附件');
+        }
+        refundFiles = rows;
+      }
+
       const id = newId();
       const now = nowIso();
       const originalStatus = order.status;
@@ -311,18 +367,25 @@ function register(router) {
       if (frozen.affectedRows !== 1) throw err.conflict('订单状态已变化，请刷新后重试');
       await conn.execute(
         `INSERT INTO refund_requests
-           (id, orderId, customerId, engineerId, status, orderStatusAtRequest, createdAt, updatedAt)
-         VALUES(?, ?, ?, ?, 'PENDING', ?, ?, ?)`,
-        [id, order.id, customer.id, order.engineerId, originalStatus, now, now]
+           (id, orderId, customerId, engineerId, status, orderStatusAtRequest, reason, createdAt, updatedAt)
+         VALUES(?, ?, ?, ?, 'PENDING', ?, ?, ?, ?)`,
+        [id, order.id, customer.id, order.engineerId, originalStatus, reason, now, now]
       );
-      return { id, orderId: order.id, status: 'PENDING', createdAt: now };
+      for (const file of refundFiles) {
+        await conn.execute(
+          `INSERT INTO refund_request_files(refundRequestId, fileId, uploaderId, createdAt)
+           VALUES(?, ?, ?, ?)`,
+          [id, file.fileId, customer.id, now]
+        );
+      }
+      return { id, orderId: order.id, status: 'PENDING', reason, createdAt: now, files: refundFiles };
     });
     systemMessageForOrder(
       params.id,
-      '客户发起了退款申请，请进入订单确认同意或拒绝。',
+      `客户发起退款申请：${reason.length > 48 ? `${reason.slice(0, 48)}…` : reason}。请进入订单查看材料并确认同意或拒绝。`,
       { senderId: customer.id, actionOrderId: params.id }
     ).catch(() => {});
-    ok(res, refundRequestView(result));
+    ok(res, refundRequestView(result, result.files));
   });
 
   // POST /api/orders/:id/refund-request/respond { action: ACCEPT | REJECT }
@@ -421,7 +484,16 @@ function register(router) {
            (id, orderId, initiatorId, reasonType, description, status, orderStatusAtOpen, evidenceDeadlineAt, createdAt, updatedAt)
          VALUES(?, ?, ?, 'OTHER', ?, 'OPEN', ?, ?, ?, ?)`,
         [disputeId, refundRequest.orderId, customer.id,
-          '客户退款申请被工程师拒绝，现申请客服介入处理。', originalStatus, evidenceDeadlineIso(), now, now]
+          `客户退款申请被工程师拒绝，现申请客服介入处理。退款理由：${refundRequest.reason || '未填写'}`,
+          originalStatus, evidenceDeadlineIso(), now, now]
+      );
+      // 客户决定申请客服介入时，将退款申请附件作为纠纷的首批证据。
+      await conn.execute(
+        `INSERT IGNORE INTO dispute_evidence(disputeId, fileId, uploaderId, createdAt)
+         SELECT ?, fileId, uploaderId, createdAt
+           FROM refund_request_files
+          WHERE refundRequestId = ?`,
+        [disputeId, refundRequest.id]
       );
       await conn.execute(
         `UPDATE refund_requests SET status='ESCALATED', disputeId=?, updatedAt=? WHERE id=? AND status='REJECTED'`,

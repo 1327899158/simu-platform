@@ -5,8 +5,14 @@
  */
 const { ensureLogin, getUser } = require('../../utils/auth');
 const { request, upload } = require('../../utils/request');
-const { downloadAndOpen, formatDownloadError } = require('../../utils/cloud-file');
+const { deleteCloudFile, downloadAndOpen, formatDownloadError } = require('../../utils/cloud-file');
 const { fenToYuan, timeShort, STATUS_CLASS } = require('../../utils/format');
+
+function fileSizeText(sizeBytes) {
+  if (!Number(sizeBytes)) return '大小未知';
+  if (Number(sizeBytes) < 1024 * 1024) return `${(Number(sizeBytes) / 1024).toFixed(1)}KB`;
+  return `${(Number(sizeBytes) / 1024 / 1024).toFixed(2)}MB`;
+}
 
 Page({
   data: {
@@ -17,6 +23,11 @@ Page({
     refundRequest: null,
     invoiceRequest: null,
     respondingRefund: false,
+    refundFormOpen: false,
+    refundReason: '',
+    refundUploads: [],
+    refundUploading: false,
+    refundSubmitting: false,
   },
   onLoad(q) { this.setData({ id: q.id, mode: q.mode || 'customer' }); },
   onShow() {
@@ -45,6 +56,13 @@ Page({
     let refundRequest = null;
     try {
       refundRequest = await request('GET', `/orders/${id}/refund-request`, null, { silent: true });
+      if (refundRequest) {
+        refundRequest.files = (refundRequest.files || []).map((file) => ({
+          ...file,
+          fileId: file.fileId || file.id,
+          sizeText: fileSizeText(file.sizeBytes),
+        }));
+      }
     } catch (e) {
       // 未选中工程师、无退款申请等场景不影响订单详情展示。
     }
@@ -279,18 +297,61 @@ Page({
   requestRefund() {
     const o = this.data.order;
     if (!o || this.data.refundRequest) return;
-    wx.showModal({
-      title: '发起退款申请',
-      content: '申请将发送给工程师确认。同意后订单会标记为已取消；若工程师拒绝，你可自行决定是否申请客服介入。',
-      confirmText: '提交申请',
-      success: async (r) => {
-        if (!r.confirm) return;
-        try {
-          await request('POST', `/orders/${this.data.id}/refund-request`, {});
-          wx.showToast({ title: '退款申请已提交', icon: 'success' });
-          this.load();
-        } catch (e) {
-          wx.showToast({ title: e.message || '退款申请提交失败', icon: 'none' });
+    this.setData({
+      refundFormOpen: true,
+      refundReason: '',
+      refundUploads: [],
+    });
+  },
+
+  onRefundReason(e) {
+    this.setData({ refundReason: e.detail.value });
+  },
+
+  addRefundFiles() {
+    if (this.data.refundUploading || this.data.refundSubmitting) return;
+    const remaining = 5 - this.data.refundUploads.length;
+    if (remaining <= 0) {
+      wx.showToast({ title: '最多上传 5 个附件', icon: 'none' });
+      return;
+    }
+    const that = this;
+    wx.chooseMessageFile({
+      count: remaining,
+      type: 'all',
+      success: async (result) => {
+        const chosen = result.tempFiles || [];
+        if (!chosen.length) return;
+        that.setData({ refundUploading: true });
+        wx.showLoading({ title: '上传中…', mask: true });
+        const uploaded = that.data.refundUploads.slice();
+        const failures = [];
+        for (const file of chosen) {
+          try {
+            const name = file.name || '退款材料';
+            const kind = /\.(png|jpe?g|gif|webp|bmp)$/i.test(name) ? 'IMAGE' : 'DOC';
+            const item = await upload(file.path || file.tempFilePath, { kind, name });
+            uploaded.push({
+              fileId: item.id || item.fileId,
+              fileID: item.fileID || '',
+              name: item.name || name,
+              sizeText: fileSizeText(file.size || item.sizeBytes),
+            });
+            that.setData({ refundUploads: uploaded });
+          } catch (e) {
+            failures.push(`${file.name || '文件'}：${e.message || '上传失败'}`);
+          }
+        }
+        wx.hideLoading();
+        that.setData({ refundUploading: false });
+        if (failures.length) {
+          wx.showModal({
+            title: uploaded.length ? '部分文件未上传' : '附件上传失败',
+            content: failures.join('\n').slice(0, 500),
+            showCancel: false,
+          });
+        } else {
+          wx.showToast({ title: '附件已上传', icon: 'success' });
         }
       },
     });
@@ -315,6 +376,68 @@ Page({
         } catch (error) { wx.showToast({ title: error.message || '申请客服介入失败', icon: 'none' }); }
       },
     });
+  },
+
+  async removeRefundFile(e) {
+    if (this.data.refundUploading || this.data.refundSubmitting) return;
+    const index = Number(e.currentTarget.dataset.index);
+    const file = this.data.refundUploads[index];
+    if (!file) return;
+    try {
+      const deleted = await request('DELETE', `/files/${file.fileId}`, null, { silent: true });
+      const uploads = this.data.refundUploads.slice();
+      uploads.splice(index, 1);
+      this.setData({ refundUploads: uploads });
+      if (deleted && deleted.fileID) deleteCloudFile(deleted.fileID).catch(() => {});
+    } catch (err) {
+      wx.showToast({ title: err.message || '附件删除失败', icon: 'none' });
+    }
+  },
+
+  cancelRefundForm() {
+    if (this.data.refundUploading || this.data.refundSubmitting) return;
+    const abandoned = this.data.refundUploads.slice();
+    this.setData({ refundFormOpen: false, refundReason: '', refundUploads: [] });
+    // 表单取消后清理尚未绑定业务的临时文件，清理失败不阻塞页面操作。
+    abandoned.forEach(async (file) => {
+      try {
+        const deleted = await request('DELETE', `/files/${file.fileId}`, null, { silent: true });
+        if (deleted && deleted.fileID) await deleteCloudFile(deleted.fileID);
+      } catch (e) { /* 后端的孤立文件清理任务可继续兜底 */ }
+    });
+  },
+
+  async submitRefundRequest() {
+    if (this.data.refundUploading || this.data.refundSubmitting) return;
+    const reason = String(this.data.refundReason || '').trim();
+    if (!reason) {
+      wx.showToast({ title: '请填写退款理由', icon: 'none' });
+      return;
+    }
+    const confirmed = await new Promise((resolve) => {
+      wx.showModal({
+        title: '确认提交退款申请',
+        content: '申请将发送给工程师确认；若工程师拒绝，你可以选择是否申请客服介入。',
+        confirmText: '确认提交',
+        success: (result) => resolve(!!result.confirm),
+        fail: () => resolve(false),
+      });
+    });
+    if (!confirmed) return;
+    this.setData({ refundSubmitting: true });
+    try {
+      await request('POST', `/orders/${this.data.id}/refund-request`, {
+        reason,
+        fileIds: this.data.refundUploads.map((file) => file.fileId),
+      });
+      this.setData({ refundFormOpen: false, refundReason: '', refundUploads: [] });
+      wx.showToast({ title: '退款申请已提交', icon: 'success' });
+      this.load();
+    } catch (e) {
+      wx.showToast({ title: e.message || '退款申请提交失败', icon: 'none' });
+    } finally {
+      this.setData({ refundSubmitting: false });
+    }
   },
 
   // ---------- 工程师操作 ----------
