@@ -214,3 +214,14 @@
 .send-btn.dim {
   opacity: 0.6;
 }
+.chat-disabled-tip {
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid var(--c-divider);
+  background: #F7F8FA;
+  color: var(--c-text-3);
+  font-size: 24rpx;
+  line-height: 1.5;
+  text-align: center;
+  flex-shrink: 0;
+}

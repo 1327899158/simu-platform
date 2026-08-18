@@ -131,9 +131,14 @@ module.exports = {
         </view>
         <text class="quote-desc" wx:if="{{item.solution}}">{{item.solution}}</text>
         <view class="quote-profile-link" bindtap="goEngineerProfile" data-id="{{item.engineer.id}}">查看工程师资料与评价 ›</view>
-        <view class="btn-select" wx:if="{{order.status === 'QUOTING'}}"
-          bindtap="select" data-id="{{item.id}}" data-nick="{{item.engineer.nickname}}"
-          data-amounty="{{item.amountY}}" data-days="{{item.days}}">选择该工程师</view>
+        <view class="quote-actions" wx:if="{{order.status === 'QUOTING' && item.status === 'PENDING'}}">
+          <view class="btn-quote-chat" bindtap="goQuoteChat" data-id="{{item.id}}">
+            {{chatOpeningQuoteId === item.id ? '进入中…' : '💬 先聊一聊'}}
+          </view>
+          <view class="btn-select"
+            bindtap="select" data-id="{{item.id}}" data-nick="{{item.engineer.nickname}}"
+            data-amounty="{{item.amountY}}" data-days="{{item.days}}">选择该工程师</view>
+        </view>
       </view>
     </view>
 

@@ -31,6 +31,7 @@ Page({
     sending: false, imageSending: false,
     avatarSize: 48, bubbleMaxWidth: '70%', imageWidth: 360,
     peer: null,
+    canSend: true, sendDisabledReason: '',
   },
   _watcher: null,
   _pollTimer: null,
@@ -150,7 +151,12 @@ Page({
       if (peerChange) this.setData({ peer: data.peer });
       const mapped = this._mapMsgs(data.items || []);
       this._seenIds = new Set(mapped.map((m) => m.id));
-      this.setData({ msgs: mapped, lastId: data.lastId });
+      this.setData({
+        msgs: mapped,
+        lastId: data.lastId,
+        canSend: data.canSend !== false,
+        sendDisabledReason: data.sendDisabledReason || '',
+      });
       this._scrollBottom();
     } catch (e) {
       console.warn('[chat] pullHistory failed', e.message);
@@ -173,7 +179,12 @@ Page({
           { after: this.data.lastId, limit: 50 }, { silent: true }),
         PULL_TIMEOUT_MS,
       );
-      if (!data || !data.items.length) {
+      if (!data) return;
+      this.setData({
+        canSend: data.canSend !== false,
+        sendDisabledReason: data.sendDisabledReason || '',
+      });
+      if (!data.items.length) {
         return;
       }
       const peerArrived = data.peer && !this.data.peer;
@@ -241,6 +252,9 @@ Page({
   input(e) { this.setData({ text: e.detail.value }); },
 
   async send() {
+    if (!this.data.canSend) {
+      return wx.showToast({ title: this.data.sendDisabledReason || '当前会话不可发送消息', icon: 'none' });
+    }
     const text = (this.data.text || '').trim();
     if (!text || this.data.sending) return;
     this.setData({ sending: true, text: '' }); // 乐观清空输入框
@@ -258,6 +272,10 @@ Page({
   },
 
   sendImage() {
+    if (!this.data.canSend) {
+      wx.showToast({ title: this.data.sendDisabledReason || '当前会话不可发送消息', icon: 'none' });
+      return;
+    }
     if (this.data.imageSending) return;
     wx.chooseMedia({
       count: 1, mediaType: ['image'],

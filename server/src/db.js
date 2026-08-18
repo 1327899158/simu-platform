@@ -259,11 +259,12 @@ async function init() {
 
     `CREATE TABLE IF NOT EXISTS conversations (
       id          VARCHAR(32) PRIMARY KEY,
-      orderId     VARCHAR(32) NOT NULL UNIQUE,
+      orderId     VARCHAR(32) NOT NULL,
       customerId  VARCHAR(32) NOT NULL,
       engineerId  VARCHAR(32) NOT NULL,
       lastMsgAt   DATETIME(3) NOT NULL,
       createdAt   DATETIME(3) NOT NULL,
+      UNIQUE KEY uq_conversations_order_engineer(orderId, engineerId),
       FOREIGN KEY(orderId) REFERENCES orders(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
@@ -515,6 +516,65 @@ async function init() {
       // duplicate-column condition; all other migration failures must stop
       // startup so a partially upgraded schema is never served silently.
       if (e.code !== 'ER_DUP_FIELDNAME' && e.code !== 'ER_DUP_KEYNAME') throw e;
+    }
+  }
+
+  // 报价阶段允许客户分别与多位报价工程师沟通。旧结构将 orderId 设为唯一，
+  // 这里保留已有会话数据，仅把唯一约束升级为 (orderId, engineerId)。
+  // 使用 MySQL 命名锁避免多个云托管实例同时执行索引 DDL。
+  const conversationLockName = 'simu_conversation_pair_v1';
+  const migrationConn = await getPool().getConnection();
+  let conversationLockAcquired = false;
+  try {
+    const [[conversationLock]] = await migrationConn.execute(
+      `SELECT GET_LOCK(?, 30) AS acquired`, [conversationLockName]
+    );
+    if (Number(conversationLock?.acquired) !== 1) {
+      throw new Error('获取会话结构迁移锁失败');
+    }
+    conversationLockAcquired = true;
+    const migrationId = '20260819_conversation_order_engineer_v1';
+    const [[applied]] = await migrationConn.execute(
+      `SELECT id FROM schema_migrations WHERE id=?`, [migrationId]
+    );
+    if (!applied) {
+      const [indexRows] = await migrationConn.execute(`SHOW INDEX FROM conversations`);
+      const indexes = new Map();
+      for (const row of indexRows) {
+        if (!indexes.has(row.Key_name)) indexes.set(row.Key_name, []);
+        indexes.get(row.Key_name).push(row);
+      }
+      const hasPairUnique = [...indexes.values()].some((rows) => {
+        const ordered = rows.slice().sort((a, b) => Number(a.Seq_in_index) - Number(b.Seq_in_index));
+        return Number(ordered[0]?.Non_unique) === 0
+          && ordered.map((row) => row.Column_name).join(',') === 'orderId,engineerId';
+      });
+      if (!hasPairUnique) {
+        const legacyUnique = [...indexes.entries()].find(([, rows]) => {
+          const ordered = rows.slice().sort((a, b) => Number(a.Seq_in_index) - Number(b.Seq_in_index));
+          return Number(ordered[0]?.Non_unique) === 0
+            && ordered.map((row) => row.Column_name).join(',') === 'orderId';
+        });
+        const dropLegacy = legacyUnique
+          ? `DROP INDEX \`${String(legacyUnique[0]).replace(/`/g, '``')}\`, `
+          : '';
+        await migrationConn.execute(
+          `ALTER TABLE conversations ${dropLegacy}`
+          + `ADD UNIQUE KEY uq_conversations_order_engineer(orderId, engineerId)`
+        );
+      }
+      await migrationConn.execute(
+        `INSERT IGNORE INTO schema_migrations(id, appliedAt) VALUES(?, UTC_TIMESTAMP(3))`,
+        [migrationId]
+      );
+    }
+  } finally {
+    try {
+      if (conversationLockAcquired) {
+        await migrationConn.execute(`SELECT RELEASE_LOCK(?)`, [conversationLockName]);
+      }
+    } finally {
+      migrationConn.release();
     }
   }
 

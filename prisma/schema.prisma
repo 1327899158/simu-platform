@@ -215,12 +215,14 @@ model OrderAttachment {
 
 model Conversation {
   id         String    @id @default(cuid())
-  orderId    String    @unique
+  orderId    String
   customerId String
   engineerId String
   lastMsgAt  DateTime  @default(now())
   createdAt  DateTime  @default(now())
   messages   Message[]
+
+  @@unique([orderId, engineerId])
 }
 
 model Message {

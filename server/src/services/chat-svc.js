@@ -122,13 +122,16 @@ async function ensureConversation(orderId, conn) {
     ? (sql, p) => conn.execute(sql, p).then(([rows]) => rows[0] || null)
     : (sql, p) => queryOne(sql, p);
 
-  const existing = await getOne(`SELECT * FROM conversations WHERE orderId = ?`, [orderId]);
-  if (existing) return Object.assign(existing, { _isNew: false });
-
   const order = await getOne(`SELECT * FROM orders WHERE id = ?`, [orderId]);
   if (!order || !order.selectedQuoteId) throw err.conflict('订单尚未选定工程师，无法创建会话');
   const quote = await getOne(`SELECT * FROM quotes WHERE id = ?`, [order.selectedQuoteId]);
   if (!quote) throw err.conflict('订单报价不存在，无法创建会话');
+
+  const existing = await getOne(
+    `SELECT * FROM conversations WHERE orderId = ? AND engineerId = ?`,
+    [orderId, quote.engineerId]
+  );
+  if (existing) return Object.assign(existing, { _isNew: false });
 
   const id = newId();
   const now = nowIso();
@@ -182,7 +185,14 @@ function publishSystemMessage(convId, content, sqlMsgId, meta = {}) {
 }
 
 async function systemMessageForOrder(orderId, content, meta = {}) {
-  const conv = await queryOne(`SELECT id FROM conversations WHERE orderId = ?`, [orderId]);
+  const conv = await queryOne(
+    `SELECT c.id
+       FROM orders o
+       JOIN quotes q ON q.id = o.selectedQuoteId
+       JOIN conversations c ON c.orderId = o.id AND c.engineerId = q.engineerId
+      WHERE o.id = ?`,
+    [orderId]
+  );
   if (!conv) return;
   const { msgId } = await systemMessage(conv.id, content, null, meta);
   publishSystemMessage(conv.id, content, msgId, meta);

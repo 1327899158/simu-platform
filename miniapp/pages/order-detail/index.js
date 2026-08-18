@@ -28,6 +28,7 @@ Page({
     refundUploads: [],
     refundUploading: false,
     refundSubmitting: false,
+    chatOpeningQuoteId: '',
   },
   onLoad(q) { this.setData({ id: q.id, mode: q.mode || 'customer' }); },
   onShow() {
@@ -167,6 +168,25 @@ Page({
       const c = await request('GET', `/conversations/by-order/${this.data.id}`);
       wx.navigateTo({ url: `/pages/chat-room/index?id=${c.id}` });
     } catch (e) { wx.showToast({ title: e.message || '聊天入口加载失败', icon: 'none' }); }
+  },
+
+  async goQuoteChat(e) {
+    const quoteId = e.currentTarget.dataset.id;
+    if (!quoteId || this.data.chatOpeningQuoteId) return;
+    this.setData({ chatOpeningQuoteId: quoteId });
+    try {
+      const conversation = await request(
+        'POST',
+        `/orders/${this.data.id}/quotes/${quoteId}/conversation`,
+        null,
+        { silent: true }
+      );
+      wx.navigateTo({ url: `/pages/chat-room/index?id=${conversation.id}` });
+    } catch (e2) {
+      wx.showToast({ title: e2.message || '聊天入口加载失败', icon: 'none' });
+    } finally {
+      this.setData({ chatOpeningQuoteId: '' });
+    }
   },
 
   // ---------- 客户操作 ----------

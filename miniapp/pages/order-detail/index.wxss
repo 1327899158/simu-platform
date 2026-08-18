@@ -234,17 +234,31 @@
 .quote-profile-link:active { opacity: .7; }
 .peer-quotes-card { border: 1rpx solid rgba(102, 126, 234, 0.14); }
 .peer-quotes-tip { flex-shrink: 0; padding: 6rpx 12rpx; border-radius: 999rpx; background: #EEF2FF; color: #596CD4; font-size: 20rpx; }
-.btn-select {
+.quote-actions {
   margin-top: 20rpx;
+  display: flex;
+  gap: 16rpx;
+}
+.btn-quote-chat,
+.btn-select {
+  flex: 1;
   padding: 18rpx 0;
   text-align: center;
   border-radius: var(--r-md);
-  background: var(--grad-violet-pink);
-  color: #FFFFFF;
   font-size: 28rpx;
   font-weight: 600;
+}
+.btn-quote-chat {
+  border: 1rpx solid var(--neon-cyan);
+  background: rgba(52, 152, 219, 0.06);
+  color: var(--neon-cyan);
+}
+.btn-select {
+  background: var(--grad-violet-pink);
+  color: #FFFFFF;
   box-shadow: var(--glow-primary);
 }
+.btn-quote-chat:active,
 .btn-select:active {
   transform: scale(0.98);
   opacity: 0.9;

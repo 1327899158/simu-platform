@@ -102,6 +102,17 @@ async function canReadFile(user, file) {
   }
   const order = await queryOne(`SELECT * FROM orders WHERE id = ? AND deletedAt IS NULL`, [file.orderId]);
   if (!order) return false;
+  // 报价沟通可能发生在选标之前。聊天附件只对实际会话双方开放，不能按订单
+  // 维度放给所有参与报价的工程师，也不能仅限制为最终被选中的工程师。
+  if (file.purpose === 'CHAT') {
+    const chat = await queryOne(
+      `SELECT c.customerId, c.engineerId
+         FROM messages m JOIN conversations c ON c.id = m.convId
+        WHERE m.fileId = ? ORDER BY m.id DESC LIMIT 1`,
+      [file.id]
+    );
+    return !!chat && (chat.customerId === user.id || chat.engineerId === user.id);
+  }
   const access = await orderFileAccess(user, order);
   if (!access) return false;
   return access === 'ALL' || (file.purpose || (file.kind === 'RESULT' ? 'RESULT' : 'REQUIREMENT')) === 'REQUIREMENT';
