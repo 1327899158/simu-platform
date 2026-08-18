@@ -1,6 +1,6 @@
 'use strict';
 
-// 发票业务流：只管理申请和履约状态。真实开票、平台服务费收取须在接入资质/支付能力后另行实现。
+// 发票业务流：管理申请、处理状态和自行开票文件；真实开票接口及平台服务费另行接入。
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne, tx } = require('../db');
@@ -8,10 +8,26 @@ const { requireUser, requireCustomer, requireEngineer } = require('../lib/auth-m
 const { requireAdmin } = require('../lib/admin-mw');
 const { systemMessageForOrder } = require('../services/chat-svc');
 
+const ALLOWED_INVOICE_EXTENSIONS = new Set([
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'heif', 'pdf', 'doc', 'docx',
+]);
+
 const STATUS_TEXT = Object.freeze({
   REQUESTED: '待工程师处理', SELF_ISSUE: '工程师自行开票中',
   PLATFORM_REQUESTED: '已申请平台开票', ISSUED: '已完成开票', REJECTED: '暂不支持开票',
 });
+
+function invoiceFileView(row) {
+  return {
+    id: row.fileId || row.id,
+    fileId: row.fileId || row.id,
+    name: row.name,
+    kind: row.kind,
+    mime: row.mime || '',
+    sizeBytes: Number(row.sizeBytes || 0),
+    createdAt: row.createdAt,
+  };
+}
 
 function invoiceView(row, extra = {}) {
   if (!row) return null;
@@ -21,6 +37,41 @@ function invoiceView(row, extra = {}) {
     statusText: STATUS_TEXT[row.status] || row.status,
     ...extra,
   };
+}
+
+async function invoiceFilesOf(invoiceRequestId) {
+  const rows = await query(
+    `SELECT irf.fileId, f.name, f.kind, f.mime, f.sizeBytes, irf.createdAt
+       FROM invoice_request_files irf
+       JOIN uploaded_files f ON f.id = irf.fileId
+      WHERE irf.invoiceRequestId = ?
+      ORDER BY irf.createdAt ASC`,
+    [invoiceRequestId]
+  );
+  return rows.map(invoiceFileView);
+}
+
+async function invoiceViewsWithFiles(rows) {
+  if (!rows.length) return [];
+  const files = await query(
+    `SELECT irf.invoiceRequestId, irf.fileId, f.name, f.kind, f.mime, f.sizeBytes, irf.createdAt
+       FROM invoice_request_files irf
+       JOIN uploaded_files f ON f.id = irf.fileId
+      WHERE irf.invoiceRequestId IN (${rows.map(() => '?').join(',')})
+      ORDER BY irf.createdAt ASC`,
+    rows.map((row) => row.id)
+  );
+  const grouped = new Map();
+  for (const file of files) {
+    if (!grouped.has(file.invoiceRequestId)) grouped.set(file.invoiceRequestId, []);
+    grouped.get(file.invoiceRequestId).push(invoiceFileView(file));
+  }
+  return rows.map((row) => invoiceView(row, { files: grouped.get(row.id) || [] }));
+}
+
+function invoiceFileExtension(name) {
+  const match = /\.([^.]+)$/.exec(String(name || '').trim().toLowerCase());
+  return match ? match[1] : '';
 }
 
 async function getOrderParties(orderId) {
@@ -49,7 +100,8 @@ function register(router) {
     const user = await requireUser(req);
     await assertParty(params.id, user);
     const row = await queryOne(`SELECT * FROM invoice_requests WHERE orderId=?`, [params.id]);
-    ok(res, invoiceView(row));
+    const files = row ? await invoiceFilesOf(row.id) : [];
+    ok(res, invoiceView(row, { files }));
   });
 
   router.post('/api/orders/:id/invoice-request', async (req, res, params) => {
@@ -82,7 +134,7 @@ function register(router) {
       return { id, orderId: params.id, status: 'REQUESTED', invoiceTitle, requestedAt: now };
     });
     systemMessageForOrder(params.id, '客户提交了发票申请，请在“我的 - 发票处理”中选择处理方式。', { senderId: customer.id, actionOrderId: params.id }).catch(() => {});
-    ok(res, invoiceView(result));
+    ok(res, invoiceView(result, { files: [] }));
   });
 
   router.get('/api/invoices/mine', async (req, res) => {
@@ -94,7 +146,7 @@ function register(router) {
         WHERE ir.engineerId=? ORDER BY FIELD(ir.status,'REQUESTED','SELF_ISSUE','PLATFORM_REQUESTED','ISSUED','REJECTED'), ir.updatedAt DESC
         LIMIT 100`, [engineer.id]
     );
-    ok(res, { items: rows.map((row) => invoiceView(row)) });
+    ok(res, { items: await invoiceViewsWithFiles(rows) });
   });
 
   router.post('/api/invoices/:id/process', async (req, res, params) => {
@@ -111,6 +163,9 @@ function register(router) {
       }
       if (action === 'ISSUED' && !['SELF_ISSUE', 'PLATFORM_REQUESTED'].includes(record.status)) {
         throw err.conflict('请先选择开票处理方式');
+      }
+      if (action === 'ISSUED' && record.status === 'SELF_ISSUE') {
+        throw err.conflict('自行开票请先上传发票文件，上传成功后将自动完成');
       }
       const now = nowIso();
       const handlingMode = action === 'SELF_ISSUE' ? 'SELF_ISSUE'
@@ -129,7 +184,76 @@ function register(router) {
       REJECTED: '工程师暂不支持该订单的发票申请，请与工程师沟通。',
     }[action];
     systemMessageForOrder(result.orderId, message, { senderId: engineer.id, actionOrderId: result.orderId }).catch(() => {});
-    ok(res, invoiceView(result));
+    ok(res, invoiceView(result, { files: await invoiceFilesOf(result.id) }));
+  });
+
+  // 工程师自行开票：上传电子发票文件后自动标记为已完成开票。
+  router.post('/api/invoices/:id/files', async (req, res, params) => {
+    const engineer = await requireEngineer(req);
+    const body = await readJson(req);
+    const rawFileIds = v.arr(body.fileIds, '发票文件', { minLen: 1, maxLen: 5 });
+    const fileIds = rawFileIds.map((fileId) => v.str(fileId, '文件ID', { min: 1, max: 32 }));
+    if (new Set(fileIds).size !== fileIds.length) throw err.bad('发票文件包含重复项');
+
+    const result = await tx(async (conn) => {
+      const [[record]] = await conn.execute(
+        `SELECT * FROM invoice_requests WHERE id=? AND engineerId=? FOR UPDATE`,
+        [params.id, engineer.id]
+      );
+      if (!record) throw err.notFound('发票申请不存在');
+      if (record.status !== 'SELF_ISSUE' || record.handlingMode !== 'SELF_ISSUE') {
+        throw err.conflict('仅选择“自行开票”后可以上传发票文件');
+      }
+
+      const [files] = await conn.execute(
+        `SELECT f.id AS fileId, f.uploaderId, f.orderId, f.name, f.kind, f.mime, f.sizeBytes,
+                EXISTS(SELECT 1 FROM identity_verification_files ivf WHERE ivf.fileId=f.id) AS usedForIdentity,
+                EXISTS(SELECT 1 FROM engineer_verification_files evf WHERE evf.fileId=f.id) AS usedForVerification,
+                EXISTS(SELECT 1 FROM dispute_evidence de WHERE de.fileId=f.id) AS usedForDispute,
+                EXISTS(SELECT 1 FROM refund_request_files rf WHERE rf.fileId=f.id) AS usedForRefund,
+                EXISTS(SELECT 1 FROM invoice_request_files irf WHERE irf.fileId=f.id) AS usedForInvoice
+           FROM uploaded_files f
+          WHERE f.id IN (${fileIds.map(() => '?').join(',')})
+          FOR UPDATE`,
+        fileIds
+      );
+      if (files.length !== fileIds.length) throw err.bad('部分发票文件不存在，请删除后重新上传');
+      for (const file of files) {
+        if (file.uploaderId !== engineer.id) throw err.forbidden('不能使用其他用户上传的文件');
+        if (file.orderId || file.usedForIdentity || file.usedForVerification
+          || file.usedForDispute || file.usedForRefund || file.usedForInvoice) {
+          throw err.conflict('文件已用于其他业务，请重新上传');
+        }
+        if (!['IMAGE', 'DOC'].includes(file.kind)
+          || !ALLOWED_INVOICE_EXTENSIONS.has(invoiceFileExtension(file.name))) {
+          throw err.bad('发票文件仅支持图片、PDF、Word 格式');
+        }
+      }
+
+      const now = nowIso();
+      for (const file of files) {
+        await conn.execute(
+          `INSERT INTO invoice_request_files(invoiceRequestId, fileId, uploaderId, createdAt)
+           VALUES(?, ?, ?, ?)`,
+          [record.id, file.fileId, engineer.id, now]
+        );
+      }
+      await conn.execute(
+        `UPDATE invoice_requests
+            SET status='ISSUED', handledAt=COALESCE(handledAt, ?), updatedAt=?
+          WHERE id=? AND status='SELF_ISSUE'`,
+        [now, now, record.id]
+      );
+      return { ...record, status: 'ISSUED', updatedAt: now };
+    });
+
+    const files = await invoiceFilesOf(result.id);
+    systemMessageForOrder(
+      result.orderId,
+      '工程师已上传电子发票，你可以在订单的发票详情中查看和下载。',
+      { senderId: engineer.id, actionOrderId: result.orderId }
+    ).catch(() => {});
+    ok(res, invoiceView(result, { files }));
   });
 
   // 管理员先提供只读预览；平台开票的收费、审核与实际开具将独立接入。
@@ -144,7 +268,7 @@ function register(router) {
         ${status ? 'WHERE ir.status=?' : ''}
         ORDER BY ir.updatedAt DESC LIMIT 200`, status ? [status] : []
     );
-    ok(res, { items: rows.map((row) => invoiceView(row)) });
+    ok(res, { items: await invoiceViewsWithFiles(rows) });
   });
 }
 

@@ -294,7 +294,7 @@ async function init() {
       INDEX idx_payments_order(orderId)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
-    // 发票仅记录申请与处理状态；不保存或调用任何第三方开票/支付凭据。
+    // 发票记录申请、处理状态及电子发票文件关系；不保存第三方开票/支付凭据。
     `CREATE TABLE IF NOT EXISTS invoice_requests (
       id                VARCHAR(32) PRIMARY KEY,
       orderId           VARCHAR(32) NOT NULL,
@@ -318,6 +318,19 @@ async function init() {
       FOREIGN KEY(orderId) REFERENCES orders(id),
       FOREIGN KEY(customerId) REFERENCES users(id),
       FOREIGN KEY(engineerId) REFERENCES users(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+    `CREATE TABLE IF NOT EXISTS invoice_request_files (
+      invoiceRequestId VARCHAR(32) NOT NULL,
+      fileId           VARCHAR(32) NOT NULL,
+      uploaderId       VARCHAR(32) NOT NULL,
+      createdAt        DATETIME(3) NOT NULL,
+      PRIMARY KEY(invoiceRequestId, fileId),
+      UNIQUE KEY uq_invoice_request_files_file(fileId),
+      INDEX idx_invoice_request_files_request(invoiceRequestId, createdAt),
+      FOREIGN KEY(invoiceRequestId) REFERENCES invoice_requests(id),
+      FOREIGN KEY(fileId) REFERENCES uploaded_files(id),
+      FOREIGN KEY(uploaderId) REFERENCES users(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS sms_codes (

@@ -94,6 +94,8 @@ async function canReadFile(user, file) {
     if (await canReadDisputeEvidence(user, file)) return true;
     const refundAccess = await refundRequestFileAccess(user, file);
     if (refundAccess !== null) return refundAccess;
+    const invoiceAccess = await invoiceRequestFileAccess(user, file);
+    if (invoiceAccess !== null) return invoiceAccess;
     // 头像等公开 IMAGE 所有登录用户均可读
     if (file.kind === 'IMAGE') return true;
     return false;
@@ -140,6 +142,25 @@ async function refundRequestFileAccess(user, file) {
        LEFT JOIN quotes q ON q.id = o.selectedQuoteId
       WHERE rf.fileId = ?
       ORDER BY rf.createdAt DESC LIMIT 1`,
+    [file.id]
+  );
+  if (!row) return null;
+  if (row.customerId === user.id || row.engineerId === user.id) return true;
+  const admin = await queryOne(
+    `SELECT id FROM admin_accounts WHERE userId = ? AND status = 'ACTIVE'`,
+    [user.id]
+  );
+  return !!admin;
+}
+
+/** 发票文件读取权限：发票申请对应的客户、工程师或管理员 */
+async function invoiceRequestFileAccess(user, file) {
+  const row = await queryOne(
+    `SELECT ir.customerId, ir.engineerId
+       FROM invoice_request_files irf
+       JOIN invoice_requests ir ON ir.id = irf.invoiceRequestId
+      WHERE irf.fileId = ?
+      ORDER BY irf.createdAt DESC LIMIT 1`,
     [file.id]
   );
   if (!row) return null;
@@ -370,6 +391,11 @@ function register(router) {
       [file.id, file.id]
     );
     if (verification) throw err.conflict('身份认证材料请在“身份认证”页面删除');
+    const invoiceFile = await queryOne(
+      `SELECT fileId FROM invoice_request_files WHERE fileId = ?`,
+      [file.id]
+    );
+    if (invoiceFile) throw err.conflict('已提交的发票文件不能直接删除');
     await query(`DELETE FROM uploaded_files WHERE id = ?`, [params.id]);
     if (config.env !== 'production') {
       try { await getStorage().deleteFile({ fileList: [file.fileID] }); } catch (e) {

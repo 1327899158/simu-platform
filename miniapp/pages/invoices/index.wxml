@@ -6,7 +6,33 @@
     <text class="desc">订单：{{item.projectName}} · 客户：{{item.customerName}}</text>
     <text class="desc" wx:if="{{item.taxNumber}}">税号：{{item.taxNumber}}</text><text class="desc" wx:if="{{item.email}}">邮箱：{{item.email}}</text><text class="desc" wx:if="{{item.customerNote}}">客户备注：{{item.customerNote}}</text><text class="desc" wx:if="{{item.engineerNote}}">处理说明：{{item.engineerNote}}</text>
     <view class="actions" wx:if="{{item.status === 'REQUESTED'}}"><button class="outline" data-id="{{item.id}}" data-action="SELF_ISSUE" bindtap="process">自行开票</button><button class="primary" data-id="{{item.id}}" data-action="PLATFORM_REQUESTED" bindtap="process">申请平台开票</button><button class="minor" data-id="{{item.id}}" data-action="REJECTED" bindtap="process">暂不支持</button></view>
-    <button class="primary" wx:if="{{item.status === 'SELF_ISSUE' || item.status === 'PLATFORM_REQUESTED'}}" data-id="{{item.id}}" data-action="ISSUED" bindtap="process">标记已完成开票</button>
+    <button class="primary" wx:if="{{item.status === 'SELF_ISSUE'}}" data-id="{{item.id}}" bindtap="openUpload">上传发票文件</button>
+    <button class="primary" wx:if="{{item.status === 'PLATFORM_REQUESTED'}}" data-id="{{item.id}}" data-action="ISSUED" bindtap="process">标记已完成开票</button>
+    <view class="invoice-files" wx:if="{{item.files.length}}">
+      <text class="files-title">已上传发票</text>
+      <view class="file-row" wx:for="{{item.files}}" wx:key="fileId" bindtap="downloadFile" data-id="{{item.fileId}}">
+        <view class="file-copy"><text class="file-name">📎 {{item.name}}</text><text class="file-size">{{item.sizeText}}</text></view>
+        <text class="file-open">{{downloadingFileId === item.fileId ? '打开中…' : '查看'}}</text>
+      </view>
+    </view>
     <text class="order-link" data-id="{{item.orderId}}" bindtap="goOrder">查看所属订单 ›</text>
+  </view>
+
+  <view class="upload-mask" wx:if="{{uploadOpen}}" catchtouchmove="noop">
+    <view class="upload-dialog">
+      <view class="dialog-head"><text class="dialog-title">上传电子发票</text><text class="dialog-tag">自行开票</text></view>
+      <text class="dialog-desc">支持图片、PDF、Word（.doc/.docx），最多上传 5 个文件。提交后客户即可查看。</text>
+      <button class="pick-file" bindtap="chooseInvoiceFiles" disabled="{{uploading || submittingFiles || invoiceUploads.length >= 5}}">{{uploading ? '上传中…' : '+ 选择发票文件'}}</button>
+      <view class="pending-files" wx:if="{{invoiceUploads.length}}">
+        <view class="pending-row" wx:for="{{invoiceUploads}}" wx:key="fileId">
+          <view class="file-copy"><text class="file-name">📎 {{item.name}}</text><text class="file-size">{{item.sizeText}}</text></view>
+          <text class="file-remove" data-index="{{index}}" bindtap="removeInvoiceFile">删除</text>
+        </view>
+      </view>
+      <view class="dialog-actions">
+        <button class="dialog-cancel" bindtap="closeUpload" disabled="{{uploading || submittingFiles}}">稍后上传</button>
+        <button class="dialog-submit" bindtap="submitInvoiceFiles" disabled="{{uploading || submittingFiles || !invoiceUploads.length}}">{{submittingFiles ? '提交中…' : '提交给客户'}}</button>
+      </view>
+    </view>
   </view>
 </view>

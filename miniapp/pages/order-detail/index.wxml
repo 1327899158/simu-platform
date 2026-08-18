@@ -223,7 +223,7 @@ module.exports = {
       <button class="btn-delete-order" wx:if="{{order.status === 'QUOTING'}}" bindtap="del">🗑️ 删除订单</button>
       <!-- 退款入口：工程师拒绝后由客户自主决定是否申请客服介入。 -->
       <button class="btn-refund"
-        wx:if="{{(order.status === 'IN_PROGRESS' || order.status === 'DELIVERED' || order.status === 'COMPLETED') && !dispute && !refundRequest && !refundFormOpen}}"
+        wx:if="{{(order.status === 'IN_PROGRESS' || order.status === 'DELIVERED') && !dispute && !refundRequest && !refundFormOpen}}"
         bindtap="requestRefund">↩️ 发起退款</button>
     </view>
 

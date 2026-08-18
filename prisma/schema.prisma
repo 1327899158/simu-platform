@@ -94,6 +94,9 @@ model User {
   customerRefundRequests RefundRequest[] @relation("CustomerRefundRequests")
   engineerRefundRequests RefundRequest[] @relation("EngineerRefundRequests")
   uploadedRefundRequestFiles RefundRequestFile[]
+  customerInvoiceRequests InvoiceRequest[] @relation("CustomerInvoiceRequests")
+  engineerInvoiceRequests InvoiceRequest[] @relation("EngineerInvoiceRequests")
+  uploadedInvoiceRequestFiles InvoiceRequestFile[]
 }
 
 model EngineerProfile {
@@ -137,6 +140,7 @@ model Order {
   views       OrderView[]
   disputes    Dispute[]
   refundRequests RefundRequest[]
+  invoiceRequest InvoiceRequest?
 
   @@index([status, createdAt])
   @@index([customerId, status])
@@ -188,6 +192,7 @@ model UploadedFile {
   attachment OrderAttachment?
   disputeEvidence DisputeEvidence[]
   refundRequestFile RefundRequestFile?
+  invoiceRequestFile InvoiceRequestFile?
 
   @@index([orderId])
 }
@@ -334,6 +339,49 @@ model RefundRequestFile {
   @@id([refundRequestId, fileId])
   @@index([refundRequestId, createdAt])
   @@map("refund_request_files")
+}
+
+model InvoiceRequest {
+  id             String   @id @default(cuid())
+  orderId        String   @unique
+  customerId     String
+  engineerId     String
+  invoiceTitle   String   @db.VarChar(120)
+  taxNumber      String?  @db.VarChar(50)
+  email          String?  @db.VarChar(120)
+  customerNote   String?  @db.VarChar(500)
+  engineerNote   String?  @db.VarChar(500)
+  status         String   @default("REQUESTED") @db.VarChar(24)
+  handlingMode   String?  @db.VarChar(24)
+  platformFeeFen BigInt?
+  requestedAt    DateTime
+  handledAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  order    Order @relation(fields: [orderId], references: [id])
+  customer User  @relation("CustomerInvoiceRequests", fields: [customerId], references: [id])
+  engineer User  @relation("EngineerInvoiceRequests", fields: [engineerId], references: [id])
+  files    InvoiceRequestFile[]
+
+  @@index([engineerId, status, updatedAt])
+  @@index([customerId, status, updatedAt])
+  @@map("invoice_requests")
+}
+
+model InvoiceRequestFile {
+  invoiceRequestId String
+  fileId           String @unique
+  uploaderId       String
+  createdAt        DateTime @default(now())
+
+  invoiceRequest InvoiceRequest @relation(fields: [invoiceRequestId], references: [id])
+  file           UploadedFile   @relation(fields: [fileId], references: [id])
+  uploader       User           @relation(fields: [uploaderId], references: [id])
+
+  @@id([invoiceRequestId, fileId])
+  @@index([invoiceRequestId, createdAt])
+  @@map("invoice_request_files")
 }
 
 model Dispute {

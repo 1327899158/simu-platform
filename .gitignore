@@ -25,3 +25,6 @@ tmp/
 # OS
 Thumbs.db
 EOF
+
+# 本地重复克隆，不作为子模块提交
+/simu-platform/

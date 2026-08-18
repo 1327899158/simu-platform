@@ -4,6 +4,14 @@
     <text class="status">{{invoice.statusText}}</text><text class="title">{{invoice.invoiceTitle}}</text>
     <text class="item" wx:if="{{invoice.taxNumber}}">税号：{{invoice.taxNumber}}</text><text class="item" wx:if="{{invoice.email}}">邮箱：{{invoice.email}}</text>
     <text class="item" wx:if="{{invoice.customerNote}}">客户备注：{{invoice.customerNote}}</text><text class="item" wx:if="{{invoice.engineerNote}}">工程师说明：{{invoice.engineerNote}}</text>
+    <view class="invoice-files" wx:if="{{invoice.files.length}}">
+      <text class="files-title">电子发票文件</text>
+      <view class="file-row" wx:for="{{invoice.files}}" wx:key="fileId" bindtap="downloadFile" data-id="{{item.fileId}}">
+        <view class="file-copy"><text class="file-name">📎 {{item.name}}</text><text class="file-size">{{item.sizeText}}</text></view>
+        <text class="file-open">{{downloadingFileId === item.fileId ? '打开中…' : '查看'}}</text>
+      </view>
+    </view>
+    <text class="waiting-file" wx:if="{{invoice.status === 'SELF_ISSUE' && !invoice.files.length}}">工程师已选择自行开票，正在准备电子发票文件。</text>
     <button wx:if="{{user.role === 'ENGINEER'}}" class="primary" bindtap="goInvoices">前往发票处理</button>
   </view>
   <view class="card" wx:elif="{{user.role === 'CUSTOMER'}}">

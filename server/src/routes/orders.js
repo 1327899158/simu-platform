@@ -12,7 +12,9 @@ const { config } = require('../config');
 const { systemMessageForOrder } = require('../services/chat-svc');
 const { evidenceDeadlineIso } = require('../services/dispute-svc');
 
-const REFUNDABLE_ORDER_STATUS = ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
+const REFUND_REQUESTABLE_ORDER_STATUS = ['IN_PROGRESS', 'DELIVERED'];
+// 保留 COMPLETED 仅用于兼容升级前已存在的退款记录恢复状态，新申请不得使用。
+const REFUND_RESTORABLE_ORDER_STATUS = [...REFUND_REQUESTABLE_ORDER_STATUS, 'COMPLETED'];
 
 function refundFileView(row) {
   return {
@@ -316,7 +318,7 @@ function register(router) {
         [params.id, customer.id]
       );
       if (!order) throw err.notFound('订单不存在或尚未选定工程师');
-      if (!REFUNDABLE_ORDER_STATUS.includes(order.status)) {
+      if (!REFUND_REQUESTABLE_ORDER_STATUS.includes(order.status)) {
         throw err.conflict('当前订单状态不可发起退款');
       }
       const [[pending]] = await conn.execute(
@@ -407,7 +409,7 @@ function register(router) {
       if (refundRequest.orderStatus !== 'REFUND_PENDING') {
         throw err.conflict('订单状态已变化，无法处理退款申请');
       }
-      const originalStatus = REFUNDABLE_ORDER_STATUS.includes(refundRequest.orderStatusAtRequest)
+      const originalStatus = REFUND_RESTORABLE_ORDER_STATUS.includes(refundRequest.orderStatusAtRequest)
         ? refundRequest.orderStatusAtRequest : 'IN_PROGRESS';
       const now = nowIso();
 
@@ -467,7 +469,7 @@ function register(router) {
       if (!refundRequest || refundRequest.status !== 'REJECTED') {
         throw err.conflict('没有可申请客服介入的退款拒绝记录');
       }
-      const originalStatus = REFUNDABLE_ORDER_STATUS.includes(refundRequest.orderStatusAtRequest)
+      const originalStatus = REFUND_RESTORABLE_ORDER_STATUS.includes(refundRequest.orderStatusAtRequest)
         ? refundRequest.orderStatusAtRequest : 'IN_PROGRESS';
       if (refundRequest.orderStatus !== originalStatus) throw err.conflict('订单状态已变化，暂不能申请客服介入');
       const [[openDispute]] = await conn.execute(
