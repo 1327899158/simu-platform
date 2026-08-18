@@ -289,6 +289,34 @@ module.exports = {
       </view>
     </view>
 
+    <!-- 同行报价：自己的报价仍在上方单独展示 -->
+    <view class="info-card peer-quotes-card" wx:if="{{order.status === 'QUOTING' || peerQuotes.length}}">
+      <view class="card-title-row">
+        <text class="card-title">📊 其他工程师报价（{{peerQuotes.length}}）</text>
+        <text class="peer-quotes-tip">报价透明</text>
+      </view>
+      <view class="no-data-text" wx:if="{{!peerQuotes.length}}">暂时还没有其他工程师报价</view>
+      <view class="quote-item {{item.status === 'SELECTED' ? 'selected' : ''}}" wx:for="{{peerQuotes}}" wx:key="id">
+        <view class="quote-header">
+          <view class="quote-engineer">
+            <image wx:if="{{item.engineer.avatarUrl}}" src="{{item.engineer.avatarUrl}}" class="quote-avatar" mode="aspectFill" />
+            <view wx:else class="quote-avatar quote-avatar-fallback">{{item.engineer.nickname ? item.engineer.nickname[0] : '工'}}</view>
+            <view class="quote-engineer-info">
+              <text class="quote-engineer-name">👨‍💼 {{item.engineer.nickname || '工程师'}}</text>
+              <text class="quote-sub">已完成 {{item.engineer.completedCount}} 单 · {{item.engineer.reviewCount ? ('★ ' + item.engineer.averageScore + '（' + item.engineer.reviewCount + '条）') : '暂无评价'}}</text>
+            </view>
+          </view>
+          <text class="status st-blue" wx:if="{{item.status === 'SELECTED'}}">已选中</text>
+        </view>
+        <view class="quote-body">
+          <text class="quote-price">💰 ¥{{item.amountY}}</text>
+          <text class="quote-days">📅 承诺 {{item.days}} 天</text>
+        </view>
+        <text class="quote-desc" wx:if="{{item.solution}}">{{item.solution}}</text>
+        <view class="quote-profile-link" bindtap="goEngineerProfile" data-id="{{item.engineer.id}}">查看工程师资料与评价 ›</view>
+      </view>
+    </view>
+
     <view class="invoice-engineer-card" wx:if="{{order.iAmSelected && order.status === 'COMPLETED'}}">
       <text class="review-action-title">🧾 发票处理</text>
       <text class="review-action-desc">{{invoiceRequest ? ('客户申请：' + invoiceRequest.statusText) : '客户暂未申请发票'}}</text>

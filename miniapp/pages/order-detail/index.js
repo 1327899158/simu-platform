@@ -17,7 +17,7 @@ function fileSizeText(sizeBytes) {
 Page({
   data: {
     id: '', mode: 'customer', role: '',
-    order: null, quotes: [], files: [],
+    order: null, quotes: [], peerQuotes: [], files: [],
     paying: false, delivering: false, downloadingFileId: '',
     dispute: null,
     refundRequest: null,
@@ -97,23 +97,28 @@ Page({
       if (e.statusCode !== 403) wx.showToast({ title: e.message || '附件加载失败', icon: 'none' });
     }
 
-    // 客户在报价阶段拉全部报价
-    if (this.data.mode === 'customer' && ['QUOTING', 'AWAITING_PAYMENT'].includes(order.status)) {
+    // 客户用于选标；工程师用于了解同一需求中的其他工程师报价。
+    const shouldLoadQuotes = (this.data.mode === 'customer'
+      && ['QUOTING', 'AWAITING_PAYMENT'].includes(order.status))
+      || this.data.mode === 'market';
+    if (shouldLoadQuotes) {
       try {
         const quotes = await request('GET', `/orders/${id}/quotes`);
-        this.setData({
-          quotes: quotes.map((x) => ({
+        const formattedQuotes = quotes.map((x) => ({
           ...x,
           amountY: fenToYuan(x.amountFen),
           engineer: x.engineer ? {
             ...x.engineer,
-            avatarUrl: x.engineer.avatarUrl
-              ? x.engineer.avatarUrl
-              : '',
+            avatarUrl: x.engineer.avatarUrl || '',
           } : x.engineer,
-          })),
+        }));
+        this.setData({
+          quotes: this.data.mode === 'customer' ? formattedQuotes : [],
+          peerQuotes: this.data.mode === 'market'
+            ? formattedQuotes.filter((quote) => !quote.isMine) : [],
         });
       } catch (e) {
+        this.setData({ quotes: [], peerQuotes: [] });
         wx.showToast({ title: e.message || '报价加载失败', icon: 'none' });
       }
     }

@@ -232,6 +232,8 @@
   font-size: 24rpx;
 }
 .quote-profile-link:active { opacity: .7; }
+.peer-quotes-card { border: 1rpx solid rgba(102, 126, 234, 0.14); }
+.peer-quotes-tip { flex-shrink: 0; padding: 6rpx 12rpx; border-radius: 999rpx; background: #EEF2FF; color: #596CD4; font-size: 20rpx; }
 .btn-select {
   margin-top: 20rpx;
   padding: 18rpx 0;

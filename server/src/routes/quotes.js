@@ -3,7 +3,7 @@
 const { readJson, ok, err } = require('../lib/http');
 const { newId, nowIso, v } = require('../lib/util');
 const { query, queryOne, tx, parseJson } = require('../db');
-const { requireCustomer, requireEngineer } = require('../lib/auth-mw');
+const { requireUser, requireEngineer } = require('../lib/auth-mw');
 const { DICTS } = require('./dicts');
 
 const quoteView = (qt, extra = {}) => ({
@@ -143,10 +143,23 @@ function register(router) {
 
   // GET /api/orders/:id/quotes
   router.get('/api/orders/:id/quotes', async (req, res, params) => {
-    const user = await requireCustomer(req);
+    const user = await requireUser(req);
     const o = await queryOne(`SELECT * FROM orders WHERE id=? AND deletedAt IS NULL`, [params.id]);
     if (!o) throw err.notFound('订单不存在');
-    if (o.customerId !== user.id) throw err.forbidden('仅订单发布者可查看全部报价');
+    if (user.role === 'CUSTOMER') {
+      if (o.customerId !== user.id) throw err.forbidden('仅订单发布者可查看该需求报价');
+    } else if (user.role === 'ENGINEER') {
+      if (o.customerId === user.id) throw err.forbidden('不能以工程师身份查看自己的需求报价');
+      if (o.status !== 'QUOTING') {
+        const participated = await queryOne(
+          `SELECT id FROM quotes WHERE orderId=? AND engineerId=? LIMIT 1`,
+          [o.id, user.id]
+        );
+        if (!participated) throw err.forbidden('该需求已停止报价，仅参与过报价的工程师可查看');
+      }
+    } else {
+      throw err.forbidden('当前身份不能查看报价');
+    }
     const rows = await query(
       `SELECT qt.*, u.nickname, u.avatarUrl FROM quotes qt
        JOIN users u ON u.id = qt.engineerId
@@ -165,6 +178,7 @@ function register(router) {
            FROM engineer_reviews WHERE engineerId=?`, [qt.engineerId]);
       const reviewCount = Number(ratingRow?.reviewCount || 0);
       return quoteView(qt, {
+        isMine: user.role === 'ENGINEER' && qt.engineerId === user.id,
         engineer: {
           id: qt.engineerId,
           nickname: qt.nickname,
