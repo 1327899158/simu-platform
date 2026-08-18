@@ -29,6 +29,8 @@ Page({
       user,
       canTakeOrders,
     });
+    const tabBar = this.getTabBar && this.getTabBar();
+    if (tabBar && tabBar.syncTabBar) tabBar.syncTabBar(user.role, '/pages/home/index');
     if (user.role === 'ENGINEER') {
       if (canTakeOrders) this.loadHall();
       else this.setData({ hall: [] });

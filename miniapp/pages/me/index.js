@@ -31,12 +31,16 @@ Page({
     const cached = ensureLogin();
     if (!cached) return;
     this.setData({ user: cached, roleText: cached.role === 'ENGINEER' ? '工程师' : '客户', ...verifyView(cached) });
+    let tabBar = this.getTabBar && this.getTabBar();
+    if (tabBar && tabBar.syncTabBar) tabBar.syncTabBar(cached.role, '/pages/me/index');
     // 后台刷新最新数据
     try {
       const fresh = await request('GET', '/me');
       const resolved = resolveAvatar(fresh);
       wx.setStorageSync('user', resolved);   // 存绝对路径，下次启动可直接用
       this.setData({ user: resolved, roleText: resolved.role === 'ENGINEER' ? '工程师' : '客户', ...verifyView(resolved) });
+      tabBar = this.getTabBar && this.getTabBar();
+      if (tabBar && tabBar.syncTabBar) tabBar.syncTabBar(resolved.role, '/pages/me/index');
     } catch (e) { /* 离线时静默，沿用缓存 */ }
   },
   goEdit() {

@@ -36,6 +36,9 @@ Page({
   },
 
   onShow() {
+    const user = wx.getStorageSync('user') || {};
+    const tabBar = this.getTabBar && this.getTabBar();
+    if (tabBar && tabBar.syncTabBar) tabBar.syncTabBar(user.role, '/pages/market/index');
     if (this._ready && !this.data.loading) this.load();
   },
 

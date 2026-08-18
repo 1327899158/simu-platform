@@ -3,7 +3,7 @@ const { request } = require('./utils/request');
 const UNREAD_POLL_MS = 10000;
 
 App({
-  globalData: { adminMode: false },
+  globalData: { adminMode: false, unreadTotal: 0 },
   _unreadTimer: null,
 
   onLaunch() {
@@ -45,11 +45,11 @@ App({
     try {
       const list = await request('GET', '/conversations', null, { silent: true });
       const total = (list || []).reduce((sum, c) => sum + (c.unread || 0), 0);
-      if (total > 0) {
-        wx.setTabBarBadge({ index: 1, text: total > 99 ? '99+' : String(total) });
-      } else {
-        wx.removeTabBarBadge({ index: 1 });
-      }
+      this.globalData.unreadTotal = total;
+      const pages = getCurrentPages();
+      const currentPage = pages.length ? pages[pages.length - 1] : null;
+      const tabBar = currentPage && currentPage.getTabBar ? currentPage.getTabBar() : null;
+      if (tabBar && tabBar.setUnreadTotal) tabBar.setUnreadTotal(total);
     } catch (e) { /* 静默 */ }
   },
 });

@@ -12,8 +12,12 @@ Page({
   data: { items: [], role: '', unreadTotal: 0 },
   onShow() {
     const user = ensureLogin();
-    if (user) { this.setData({ role: user.role }); this.load(); }
-    wx.removeTabBarBadge({ index: 1 });
+    if (user) {
+      this.setData({ role: user.role });
+      const tabBar = this.getTabBar && this.getTabBar();
+      if (tabBar && tabBar.syncTabBar) tabBar.syncTabBar(user.role, '/pages/chat-list/index');
+      this.load();
+    }
   },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
