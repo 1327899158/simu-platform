@@ -1,56 +1,58 @@
 /* ================================================================
-   仿真服务平台 · new_simu 同款紫色轻商务 Design Token
-   主色 #667EEA → #764BA2，浅灰蓝底 + 白卡片 + 柔和阴影。
+   仿真服务平台 · 年轻轻量化马卡龙 Design Token
+   主色天蓝 #5BC0EB，薄荷绿底 #DDEBD9 + 白卡片 + 荧光黄 #F5D33F 强调。
    neon-* 名称作为旧页面兼容别名保留，业务页面无需改动逻辑。
    ================================================================ */
 
 /* ---------- Design Tokens ---------- */
 page {
-  /* ===== 底色 · 浅灰空间 ===== */
-  --bg-deep: #E8EDF5;
-  --bg-base: #F0F4F8;
+  /* ===== 底色 · 薄荷绿空间 ===== */
+  --bg-deep: #CFE3C8;
+  --bg-base: #DDEBD9;
   --bg-elev: #FFFFFF;
   --bg-card: #FFFFFF;
 
   /* ===== 品牌色与语义色 ===== */
-  --color-primary: #667EEA;
-  --color-primary-dark: #764BA2;
-  --color-primary-light: #EEF2FF;
-  --color-success: #27AE60;
-  --color-warning: #F39C12;
-  --color-error: #E74C3C;
-  --color-info: #3498DB;
+  --color-primary: #5BC0EB;
+  --color-primary-dark: #2FA8DE;
+  --color-primary-light: #E3F4FC;
+  --color-success: #52B788;
+  --color-warning: #F5B31A;
+  --color-error: #E85A4F;
+  --color-info: #5BC0EB;
 
   /* 旧变量兼容映射 */
-  --neon-violet: #667EEA;
-  --neon-violet-2: #764BA2;
-  --neon-pink: #9B59B6;
-  --neon-pink-2: #B58BD1;
-  --neon-cyan: #3498DB;
-  --neon-cyan-2: #5DADE2;
-  --neon-blue: #3498DB;
-  --neon-green: #27AE60;
-  --neon-amber: #F39C12;
-  --neon-red: #E74C3C;
+  --neon-violet: #5BC0EB;
+  --neon-violet-2: #2FA8DE;
+  --neon-pink: #7ED3F2;
+  --neon-pink-2: #A5E1F7;
+  --neon-cyan: #5BC0EB;
+  --neon-cyan-2: #7ED3F2;
+  --neon-blue: #5BC0EB;
+  --neon-green: #52B788;
+  --neon-amber: #F5B31A;
+  --neon-red: #E85A4F;
 
-  /* ===== 渐变（商务化：低饱和同色系） ===== */
-  --grad-neon: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
-  --grad-violet-pink: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
-  --grad-cyan-blue: linear-gradient(135deg, #5DADE2, #3498DB);
-  --grad-pink-cyan: linear-gradient(90deg, #EC7063, #5DADE2);
-  --grad-gold: linear-gradient(135deg, #F39C12, #E67E22);
+  /* ===== 渐变（马卡龙浅色系） ===== */
+  --grad-neon: linear-gradient(135deg, #7ED3F2 0%, #5BC0EB 100%);
+  --grad-violet-pink: linear-gradient(135deg, #7ED3F2 0%, #5BC0EB 100%);
+  --grad-cyan-blue: linear-gradient(135deg, #A5E1F7, #5BC0EB);
+  --grad-pink-cyan: linear-gradient(90deg, #F7F3C9, #BEE3F0);
+  --grad-gold: linear-gradient(135deg, #F5D33F, #F5B31A);
+  --grad-hero-sunny: linear-gradient(160deg, #F7F3C9 0%, #DDEBD9 100%);
+  --grad-hero-sky: linear-gradient(160deg, #BEE3F0 0%, #DDEBD9 100%);
 
   /* ===== 文字 ===== */
-  --c-text: #1A1A2E;
-  --c-text-2: #4B5563;
-  --c-text-3: #767676;
-  --c-text-4: #8A8A8A;
-  --c-money: #E74C3C;
+  --c-text: #1F2B22;
+  --c-text-2: #5A665C;
+  --c-text-3: #7C877B;
+  --c-text-4: #9AA59A;
+  --c-money: #E85A4F;
 
   /* ===== 线条 ===== */
-  --c-border: #E4E7EE;
-  --c-border-strong: #667EEA;
-  --c-divider: #F0F2F5;
+  --c-border: #E1EBDD;
+  --c-border-strong: #5BC0EB;
+  --c-divider: #EDF3EA;
 
   /* ===== 间距 — 8px 基准 → rpx (×2) ===== */
   --sp-1: 8rpx;
@@ -68,15 +70,15 @@ page {
   --r-xl: 32rpx;
   --r-pill: 999rpx;
 
-  /* ===== 阴影 · 浅灰（沿用 glow-* 变量名，值换浅阴影） ===== */
-  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.10);
-  --shadow-card: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
-  --glow-cyan: 0 4rpx 12rpx rgba(52, 152, 219, 0.18);
-  --glow-violet: 0 4rpx 12rpx rgba(102, 126, 234, 0.22);
-  --glow-pink: 0 4rpx 12rpx rgba(231, 76, 60, 0.18);
-  --glow-primary: 0 8rpx 24rpx rgba(102, 126, 234, 0.28);
+  /* ===== 阴影 · 浅绿灰（沿用 glow-* 变量名） ===== */
+  --shadow-sm: 0 2rpx 8rpx rgba(70, 110, 60, 0.06);
+  --shadow-md: 0 4rpx 16rpx rgba(70, 110, 60, 0.08);
+  --shadow-lg: 0 8rpx 24rpx rgba(70, 110, 60, 0.10);
+  --shadow-card: 0 2rpx 12rpx rgba(70, 110, 60, 0.06);
+  --glow-cyan: 0 4rpx 12rpx rgba(91, 192, 235, 0.20);
+  --glow-violet: 0 4rpx 12rpx rgba(91, 192, 235, 0.22);
+  --glow-pink: 0 4rpx 12rpx rgba(232, 90, 79, 0.16);
+  --glow-primary: 0 8rpx 24rpx rgba(91, 192, 235, 0.30);
 
   /* ===== 字体 ===== */
   --font-family: -apple-system, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -108,18 +110,18 @@ page {
 }
 .card:active {
   transform: scale(0.985);
-  border-color: #D0D0D0;
+  border-color: #CFE0CA;
 }
 /* 整框可点反馈（hover-class 用） */
 .card-press {
   opacity: 0.85;
 }
 
-/* ---------- 按钮 · 商务 ---------- */
+/* ---------- 按钮 · 天蓝胶囊 ---------- */
 .btn-primary {
   background: var(--grad-violet-pink);
   color: #fff;
-  border-radius: var(--r-md);
+  border-radius: var(--r-pill);
   font-size: 30rpx;
   font-weight: 600;
   padding: 22rpx 0;
@@ -131,10 +133,10 @@ page {
 }
 .btn-primary:active {
   transform: scale(0.97);
-  background: #596CD4;
+  background: #2FA8DE;
 }
 .btn-primary.disabled {
-  background: #B0B7BD;
+  background: #B9C4BC;
   box-shadow: none;
   opacity: 0.7;
 }
@@ -142,8 +144,8 @@ page {
 .btn-outline {
   border: 1rpx solid var(--neon-cyan);
   color: var(--neon-cyan);
-  background: rgba(52, 152, 219, 0.06);
-  border-radius: var(--r-md);
+  background: rgba(91, 192, 235, 0.08);
+  border-radius: var(--r-pill);
   font-size: 30rpx;
   font-weight: 500;
   padding: 20rpx 0;
@@ -152,14 +154,14 @@ page {
 }
 .btn-outline:active {
   transform: scale(0.98);
-  background: rgba(52, 152, 219, 0.12);
+  background: rgba(91, 192, 235, 0.16);
 }
 
 .btn-danger-outline {
   border: 1rpx solid var(--neon-red);
   color: var(--neon-red);
-  background: rgba(231, 76, 60, 0.05);
-  border-radius: var(--r-md);
+  background: rgba(232, 90, 79, 0.05);
+  border-radius: var(--r-pill);
   font-size: 30rpx;
   font-weight: 500;
   padding: 20rpx 0;
@@ -168,7 +170,7 @@ page {
 }
 .btn-danger-outline:active {
   transform: scale(0.98);
-  background: rgba(231, 76, 60, 0.12);
+  background: rgba(232, 90, 79, 0.12);
 }
 
 /* ---------- 通用工具类 ---------- */
@@ -188,9 +190,9 @@ page {
   font-weight: 700;
 }
 
-/* 强调文字工具类（原渐变文字，浅色底改纯色） */
+/* 强调文字工具类（天蓝纯色） */
 .grad-text {
-  color: var(--neon-violet);
+  color: var(--neon-violet-2);
   font-weight: 600;
 }
 .grad-text-cyan {
@@ -201,26 +203,33 @@ page {
 /* ---------- 标签 Tag ---------- */
 .tag {
   display: inline-block;
-  background: #EEF2FF;
-  border: 1rpx solid #DDE4FF;
-  color: #596CD4;
-  border-radius: var(--r-sm);
+  background: #E3F4FC;
+  border: 1rpx solid #BEE3F0;
+  color: #175D7A;
+  border-radius: var(--r-pill);
   padding: 6rpx 16rpx;
   margin: 0 var(--sp-2) var(--sp-2) 0;
   font-size: 22rpx;
   font-weight: 500;
 }
 
+/* 荧光黄强调（设计稿 marker 高亮） */
+.highlight {
+  background: linear-gradient(transparent 62%, #F5D33F 62%);
+  padding: 0 6rpx;
+  font-weight: 700;
+}
+
 /* ---------- Chip 选择标签 ---------- */
 .chip {
   display: inline-block;
-  border: 1rpx solid #D5D8DC;
+  border: 1rpx solid #D8E2D4;
   color: var(--c-text-2);
   border-radius: var(--r-pill);
   padding: 12rpx 30rpx;
   margin: 0 var(--sp-2) var(--sp-2) 0;
   font-size: 26rpx;
-  background: #FAFAFA;
+  background: #FFFFFF;
   transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 .chip:active { transform: scale(0.95); }
@@ -240,12 +249,12 @@ page {
   white-space: nowrap;
   border: 1rpx solid transparent;
 }
-.st-blue { background: #E3F2FD; color: #1976D2; border-color: #BBDEFB; }
-.st-orange { background: #FFF3E0; color: #F57C00; border-color: #FFE0B2; }
-.st-cyan { background: #E0F7FA; color: #0097A7; border-color: #B2EBF2; }
-.st-purple { background: #F3E5F5; color: #7B1FA2; border-color: #E1BEE7; }
-.st-green { background: #E8F5E9; color: #388E3C; border-color: #C8E6C9; }
-.st-gray { background: #F5F5F5; color: #999999; border-color: #E0E0E0; }
+.st-blue { background: #E3F4FC; color: #175D7A; border-color: #BEE3F0; }
+.st-orange { background: #FBF3CD; color: #8A6D00; border-color: #F1E3A6; }
+.st-cyan { background: #E3F4FC; color: #175D7A; border-color: #BEE3F0; }
+.st-purple { background: #EFE7FB; color: #6B4FA0; border-color: #E1D4F4; }
+.st-green { background: #E6F4E9; color: #2F855A; border-color: #CBE8D4; }
+.st-gray { background: #F2F4F1; color: #8A948A; border-color: #E1E6E0; }
 
 /* ---------- 空状态 ---------- */
 .empty {
@@ -264,7 +273,7 @@ page {
   margin-top: 12rpx;
   font-size: 28rpx;
   color: var(--c-text);
-  border: 1rpx solid #DDDDDD;
+  border: 1rpx solid #DDE6D9;
   transition: border-color 0.2s ease, background 0.2s ease;
   box-sizing: border-box;
 }
@@ -287,7 +296,7 @@ page {
   margin: 0 0 var(--sp-2);
   display: flex;
   align-items: center;
-  color: var(--neon-violet);
+  color: var(--neon-violet-2);
 }
 .step-title::before {
   content: "";

@@ -1,4 +1,4 @@
-/* ===== 我的订单 · 浅色商务（布局参照 new_simu orderList） ===== */
+/* ===== 我的订单 · 浅色商务（布局参照 new_simu orderList�?===== */
 .page-container {
   min-height: 100vh;
   background-color: var(--bg-base);
@@ -26,7 +26,7 @@
   border-radius: 20rpx;
 }
 
-/* ===== 常驻状态筛选 ===== */
+/* ===== 常驻状态筛�?===== */
 .filter-wrap {
   background: #FFFFFF;
   padding: 16rpx 24rpx;
@@ -56,9 +56,9 @@
 }
 .filter-item:active { transform: scale(0.95); }
 .filter-item.active {
-  background: #EEF2FF;
+  background: #E3F4FC;
   border-color: #C7D2FE;
-  color: #596CD4;
+  color: #2FA8DE;
   font-weight: 600;
 }
 .filter-label { margin-left: 6rpx; white-space: nowrap; }
@@ -73,15 +73,15 @@
   justify-content: center;
   border-radius: var(--r-pill);
   background: rgba(124, 58, 237, .10);
-  color: #667EEA;
+  color: #5BC0EB;
   font-size: 18rpx;
 }
 .filter-item::after { border: none; }.status-dot { width: 12rpx; height: 12rpx; border-radius: 50%; flex-shrink: 0; }
-.dot-purple { background: #667EEA; }
-.dot-blue { background: #3B82F6; }
+.dot-purple { background: #5BC0EB; }
+.dot-blue { background: #5BC0EB; }
 .dot-orange { background: #F59E0B; }
 .dot-cyan { background: #06B6D4; }
-.dot-pink { background: #9B59B6; }
+.dot-pink { background: #7ED3F2; }
 .dot-green { background: #22C55E; }
 .dot-red { background: #EF4444; }
 .dot-gray { background: #94A3B8; }
@@ -191,7 +191,7 @@
 }
 .btn-action:active { opacity: 0.7; }
 
-/* ===== 空状态 ===== */
+/* ===== 空状�?===== */
 .empty-state {
   display: flex;
   flex-direction: column;

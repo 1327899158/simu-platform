@@ -1,5 +1,5 @@
 page {
-  background: #F0F4F8;
+  background: #DDEBD9;
   color: #1A1A2E;
 }
 
@@ -12,12 +12,12 @@ page {
 .admin-hero {
   padding: 30rpx;
   border-radius: 24rpx;
-  background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
-  box-shadow: 0 10rpx 28rpx rgba(102, 126, 234, 0.28);
-  color: #FFFFFF;
+  background: var(--grad-hero-sky);
+  box-shadow: 0 10rpx 28rpx rgba(70, 110, 60, 0.12);
+  color: #1F2B22;
 }
 .admin-hero-title { display: block; font-size: 38rpx; line-height: 52rpx; font-weight: 700; }
-.admin-hero-desc { display: block; margin-top: 8rpx; font-size: 24rpx; line-height: 36rpx; color: rgba(255,255,255,.82); }
+.admin-hero-desc { display: block; margin-top: 8rpx; font-size: 24rpx; line-height: 36rpx; color: #5A665C; }
 
 .admin-card {
   margin-top: 20rpx;
@@ -64,7 +64,7 @@ page {
   align-items: center;
   justify-content: center;
   border-radius: 16rpx;
-  background: linear-gradient(135deg, #667EEA, #764BA2);
+  background: linear-gradient(135deg, #5BC0EB, #2FA8DE);
   color: #FFFFFF;
   font-size: 27rpx;
   font-weight: 600;
@@ -72,7 +72,7 @@ page {
 }
 .admin-button::after { border: none; }
 .admin-button:active { transform: scale(.97); opacity: .88; }
-.admin-button.secondary { background: #EEF2FF; color: #596CD4; }
+.admin-button.secondary { background: #E3F4FC; color: #2FA8DE; }
 .admin-button.danger { background: #FFF0EE; color: #C0392B; }
 .admin-button.ghost { background: #F5F6FA; color: #4B5563; }
 .admin-button.small { min-height: 72rpx; padding: 0 22rpx; font-size: 24rpx; }
@@ -91,7 +91,7 @@ page {
   color: #4B5563;
   font-size: 21rpx;
 }
-.admin-chip.active { border-color: #667EEA; background: #EEF2FF; color: #596CD4; font-weight: 600; }
+.admin-chip.active { border-color: #5BC0EB; background: #E3F4FC; color: #2FA8DE; font-weight: 600; }
 
 .admin-badge { padding: 6rpx 16rpx; border-radius: 999rpx; font-size: 22rpx; font-weight: 600; }
 .badge-purple { color: #68439A; background: #F1E9FA; }
@@ -107,4 +107,4 @@ page {
 
 .admin-divider { height: 1rpx; margin: 20rpx 0; background: #EEF0F3; }
 .admin-tags { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 12rpx; }
-.admin-tag { padding: 7rpx 14rpx; border-radius: 10rpx; background: #EEF2FF; color: #596CD4; font-size: 22rpx; }
+.admin-tag { padding: 7rpx 14rpx; border-radius: 10rpx; background: #E3F4FC; color: #2FA8DE; font-size: 22rpx; }

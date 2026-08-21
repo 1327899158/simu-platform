@@ -65,7 +65,7 @@
 }
 .conv-sender {
   font-size: 22rpx;
-  color: #667EEA;
+  color: #5BC0EB;
   font-weight: 600;
 }
 .conv-content {
@@ -104,7 +104,7 @@
   font-size: 24rpx;
 }
 .verdict-chip.active {
-  border-color: #E74C3C;
+  border-color: #E85A4F;
   background: #FDECEA;
   color: #C0392B;
   font-weight: 600;

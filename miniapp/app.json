@@ -49,16 +49,16 @@
     }
   ],
   "window": {
-    "navigationBarBackgroundColor": "#667EEA",
-    "navigationBarTextStyle": "white",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "仿真服务平台",
-    "backgroundColor": "#F0F4F8",
+    "backgroundColor": "#DDEBD9",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
     "color": "#767676",
-    "selectedColor": "#667EEA",
+    "selectedColor": "#5BC0EB",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [

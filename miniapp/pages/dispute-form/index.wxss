@@ -6,7 +6,7 @@
 }
 
 .hero {
-  background: linear-gradient(135deg, #F97316 0%, #E74C3C 100%);
+  background: linear-gradient(135deg, #F97316 0%, #E85A4F 100%);
   border-radius: var(--r-lg);
   padding: 32rpx 28rpx;
   margin-bottom: 20rpx;
@@ -70,7 +70,7 @@
 }
 .reason-item:active { transform: scale(0.95); }
 .reason-item.active {
-  border-color: #E74C3C;
+  border-color: #E85A4F;
   background: #FDECEA;
 }
 .reason-icon { font-size: 40rpx; }
@@ -129,8 +129,8 @@
   padding: 18rpx 0;
   border: 1rpx dashed #C7D2FE;
   border-radius: var(--r-md);
-  background: #EEF2FF;
-  color: #596CD4;
+  background: #E3F4FC;
+  color: #2FA8DE;
   font-size: 26rpx;
   line-height: 1.5;
 }
@@ -142,7 +142,7 @@
   padding: 24rpx 0;
   border: none;
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, #E74C3C, #C0392B);
+  background: linear-gradient(135deg, #E85A4F, #C0392B);
   color: #FFFFFF;
   font-size: 32rpx;
   font-weight: 600;

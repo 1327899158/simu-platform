@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仿真服务平台 · 小程序全套 UI 设计</title>
+<style>
+  :root{
+    --mint:#DDEBD9; --mint-deep:#cfe3c8; --card:#ffffff; --ink:#1c1f1a; --sub:#6b7265;
+    --yellow:#F5D33F; --yellow-soft:#F7F3C9; --blue:#5BC0EB; --blue-soft:#BEE3F0;
+    --red:#E85A4F; --line:#e3ece0; --radius:20px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--mint); color:var(--ink); font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif; line-height:1.6;}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px;}
+  header.hero{padding:24px 0 8px;}
+  header.hero h1{font-size:40px; font-weight:800; letter-spacing:1px;}
+  header.hero h1 .dot{color:var(--blue);}
+  header.hero p.sub{margin-top:8px; color:var(--sub); font-size:15px;}
+  .palette{display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;}
+  .chip{display:inline-flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:13px; color:var(--sub);}
+  .swatch{width:16px; height:16px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.08);}
+  h2{font-size:24px; font-weight:800; margin:56px 0 6px;}
+  h2 .hl{background:linear-gradient(transparent 62%, var(--yellow) 62%); padding:0 4px;}
+  .section-sub{color:var(--sub); font-size:14px; margin-bottom:20px;}
+  /* 总览网格 */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px;}
+  .thumb{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; text-decoration:none; color:inherit; transition:transform .18s ease, box-shadow .18s ease;}
+  .thumb:hover{transform:translateY(-4px); box-shadow:0 12px 28px rgba(60,90,50,.16);}
+  .thumb img{width:100%; display:block; aspect-ratio:3/4; object-fit:cover; object-position:top;}
+  .thumb .cap{padding:12px 16px 14px;}
+  .thumb .cap b{display:block; font-size:15px;}
+  .thumb .cap span{display:block; color:var(--sub); font-size:12px; margin-top:2px;}
+  .badge{display:inline-block; background:var(--yellow); border-radius:8px; padding:1px 8px; font-size:12px; font-weight:700; margin-right:6px;}
+  /* 设计板详情 */
+  .board{display:grid; grid-template-columns:minmax(260px,420px) 1fr; gap:28px; background:var(--card); border:1px solid var(--line); border-radius:28px; padding:24px; margin-top:24px; align-items:start;}
+  .board img{width:100%; border-radius:18px; border:1px solid var(--line); display:block;}
+  .board .meta h3{font-size:20px; font-weight:800; margin-bottom:4px;}
+  .board .meta p{color:var(--sub); font-size:14px; margin-bottom:14px;}
+  .pages{display:flex; flex-wrap:wrap; gap:8px;}
+  .page-pill{background:var(--blue-soft); color:#175d7a; border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600;}
+  .page-pill.y{background:var(--yellow-soft); color:#7a6a10;}
+  .page-pill.g{background:#e6f2e2; color:#3c6b34;}
+  .note{margin-top:14px; font-size:13px; color:var(--sub); background:var(--mint); border-radius:12px; padding:10px 14px;}
+  /* 页面索引表 */
+  table{width:100%; border-collapse:collapse; background:var(--card); border-radius:var(--radius); overflow:hidden; border:1px solid var(--line); font-size:14px;}
+  th,td{padding:10px 14px; text-align:left; vertical-align:top;}
+  th{background:var(--yellow-soft); font-size:13px;}
+  tbody tr + tr td{border-top:1px solid var(--line);}
+  td.path{font-family:ui-monospace,Consolas,monospace; font-size:12px; color:var(--sub);}
+  .group-title{margin:36px 0 12px; font-size:17px; font-weight:800;}
+  .group-title .badge{vertical-align:2px;}
+  a.boardlink{color:#175d7a; font-weight:700; text-decoration:none; background:var(--blue-soft); border-radius:8px; padding:2px 8px;}
+  footer{margin-top:72px; color:var(--sub); font-size:13px; text-align:center;}
+  @media (max-width:820px){ .board{grid-template-columns:1fr;} header.hero h1{font-size:30px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>仿真服务平台 <span class="dot">·</span> 小程序全套 UI 设计</h1>
+  <p class="sub">年轻、轻量化页面 —— 马卡龙渐变 / 黏土 3D 插画 / 黄色荧光标签 / 天蓝胶囊按钮。覆盖主包 26 页 + 管理端 13 页，共 12 张设计板。</p>
+  <div class="palette">
+    <span class="chip"><span class="swatch" style="background:#DDEBD9"></span>薄荷绿 底</span>
+    <span class="chip"><span class="swatch" style="background:#F7F3C9"></span>奶黄 渐变</span>
+    <span class="chip"><span class="swatch" style="background:#BEE3F0"></span>天青 渐变</span>
+    <span class="chip"><span class="swatch" style="background:#5BC0EB"></span>天蓝 按钮</span>
+    <span class="chip"><span class="swatch" style="background:#F5D33F"></span>荧光黄 标签</span>
+    <span class="chip"><span class="swatch" style="background:#E85A4F"></span>橘红 价格</span>
+  </div>
+</header>
+
+<h2><span class="hl">设计板总览</span></h2>
+<p class="section-sub">点击卡片跳转到对应设计板详情。</p>
+<div class="grid">
+  <a class="thumb" href="#board-1"><img src="images/ui-redesign-1-customer.png" alt="板1 客户侧核心" loading="lazy"><div class="cap"><b>板 1 · 客户侧核心</b><span>客户首页 / 发布需求 / 选标与支付</span></div></a>
+  <a class="thumb" href="#board-2"><img src="images/ui-redesign-2-engineer.png" alt="板2 工程师侧核心" loading="lazy"><div class="cap"><b>板 2 · 工程师侧核心</b><span>接单大厅 / 会话聊天 / 我的报价</span></div></a>
+  <a class="thumb" href="#board-3"><img src="images/ui-redesign-3-login-me.png" alt="板3 登录与我的" loading="lazy"><div class="cap"><b>板 3 · 登录与我的</b><span>登录 / 个人中心</span></div></a>
+  <a class="thumb" href="#board-4"><img src="images/ui-redesign-4-orders-acceptance.png" alt="板4 订单执行与验收" loading="lazy"><div class="cap"><b>板 4 · 订单执行与验收</b><span>我的订单 / 执行中 / 待验收</span></div></a>
+  <a class="thumb" href="#board-5"><img src="images/ui-redesign-5-disputes.png" alt="板5 纠纷流程" loading="lazy"><div class="cap"><b>板 5 · 纠纷流程</b><span>纠纷申请 / 我的纠纷 / 纠纷详情</span></div></a>
+  <a class="thumb" href="#board-6"><img src="images/ui-redesign-6-reviews-profile.png" alt="板6 评价与工程师主页" loading="lazy"><div class="cap"><b>板 6 · 评价与工程师主页</b><span>评价表单 / 我的评价 / 工程师主页</span></div></a>
+  <a class="thumb" href="#board-7"><img src="images/ui-redesign-7-messages-quote.png" alt="板7 消息与报价" loading="lazy"><div class="cap"><b>板 7 · 消息与报价</b><span>我的消息 / 提交报价 / 工程师首页</span></div></a>
+  <a class="thumb" href="#board-8"><img src="images/ui-redesign-8-account-verify.png" alt="板8 账号与认证" loading="lazy"><div class="cap"><b>板 8 · 账号与认证</b><span>编辑资料 / 身份认证 / 账号密码 / 重置密码</span></div></a>
+  <a class="thumb" href="#board-9"><img src="images/ui-redesign-9-invoices.png" alt="板9 发票流程" loading="lazy"><div class="cap"><b>板 9 · 发票流程</b><span>申请发票 / 发票处理 / 上传电子发票</span></div></a>
+  <a class="thumb" href="#board-10"><img src="images/ui-redesign-10-guest.png" alt="板10 游客模式" loading="lazy"><div class="cap"><b>板 10 · 游客模式</b><span>游客首页 / 游客大厅 / 游客我的</span></div></a>
+  <a class="thumb" href="#board-11"><img src="images/ui-redesign-11-admin-ops.png" alt="板11 管理端运营" loading="lazy"><div class="cap"><b>板 11 · 管理端 · 运营</b><span>管理入口 / 数据看板 / 审计日志 / 数据预览</span></div></a>
+  <a class="thumb" href="#board-12"><img src="images/ui-redesign-12-admin-biz.png" alt="板12 管理端业务" loading="lazy"><div class="cap"><b>板 12 · 管理端 · 业务</b><span>用户 / 工程师审核 / 订单 / 纠纷发票</span></div></a>
+</div>
+
+<h2><span class="hl">设计板详情</span></h2>
+<p class="section-sub">每张板对应小程序中的一个完整业务流，页面 pill 与下方索引一一对应。</p>
+
+<div class="board" id="board-1"><img src="images/ui-redesign-1-customer.png" alt="板1"><div class="meta">
+  <h3><span class="badge">板 1</span>客户侧核心</h3>
+  <p>发需求 → 看报价 → 选标 → 支付的最短路径。首页用订单状态统计承接闭环进度。</p>
+  <div class="pages"><span class="page-pill">home · 客户视图</span><span class="page-pill y">publish</span><span class="page-pill">order-detail · 选标/支付</span></div>
+  <div class="note">亮点：黏土笔记本插画欢迎区；五段状态统计（未报价/待确认/待支付/执行中/待验收）；报价卡「先聊一聊 / 选择该工程师」双动作。</div>
+</div></div>
+
+<div class="board" id="board-2"><img src="images/ui-redesign-2-engineer.png" alt="板2"><div class="meta">
+  <h3><span class="badge">板 2</span>工程师侧核心</h3>
+  <p>接单大厅浏览需求并抢单报价；中标后进入会话沟通；我的报价跟踪选中状态。</p>
+  <div class="pages"><span class="page-pill">market</span><span class="page-pill g">chat-room</span><span class="page-pill">my-quotes</span></div>
+  <div class="note">亮点：需求卡保留预算/工期/报价数三要素；「抢单报价」沿用平行四边形按钮；系统通知用黄色荧光条。</div>
+</div></div>
+
+<div class="board" id="board-3"><img src="images/ui-redesign-3-login-me.png" alt="板3"><div class="meta">
+  <h3><span class="badge">板 3</span>登录与我的</h3>
+  <p>登录页承担角色分流（客户/工程师）；个人中心聚合认证、订单、纠纷、发票等入口。</p>
+  <div class="pages"><span class="page-pill y">login</span><span class="page-pill">me</span></div>
+  <div class="note">亮点：黏土显示器+星星主视觉；「我是客户 / 我是工程师」双卡选择；个人中心黄色数据卡 + 天蓝认证卡。</div>
+</div></div>
+
+<div class="board" id="board-4"><img src="images/ui-redesign-4-orders-acceptance.png" alt="板4"><div class="meta">
+  <h3><span class="badge">板 4</span>订单执行与验收</h3>
+  <p>订单列表按状态筛选；执行中可进入会话、下载附件；交付后客户确认验收或申请退款。</p>
+  <div class="pages"><span class="page-pill">orders</span><span class="page-pill g">order-detail · 执行中</span><span class="page-pill y">order-detail · 待验收</span></div>
+  <div class="note">亮点：状态卡渐变随状态换色（蓝=进行中、黄=已交付）；附件行用「需求/成果」双色标签；底部「申请退款 / 确认验收」双按钮。</div>
+</div></div>
+
+<div class="board" id="board-5"><img src="images/ui-redesign-5-disputes.png" alt="板5"><div class="meta">
+  <h3><span class="badge">板 5</span>纠纷流程</h3>
+  <p>纠纷申请（类型/说明/证据）→ 我的纠纷列表 → 纠纷详情与平台处理进度。</p>
+  <div class="pages"><span class="page-pill">dispute-form</span><span class="page-pill g">disputes</span><span class="page-pill y">dispute-detail</span></div>
+  <div class="note">亮点：纠纷类型 chips 单选；证据材料虚线上传位；三段进度条「已提交→平台审核→解决」。</div>
+</div></div>
+
+<div class="board" id="board-6"><img src="images/ui-redesign-6-reviews-profile.png" alt="板6"><div class="meta">
+  <h3><span class="badge">板 6</span>评价与工程师主页</h3>
+  <p>验收后评价（三维度星级）；我的评价归档；工程师主页对外展示评分与专业资料。</p>
+  <div class="pages"><span class="page-pill">review-form</span><span class="page-pill g">my-reviews</span><span class="page-pill y">engineer-profile</span></div>
+  <div class="note">亮点：专业度/时效性/沟通三行星级；工程师主页天蓝渐变头部 + 已认证荧光徽章。</div>
+</div></div>
+
+<div class="board" id="board-7"><img src="images/ui-redesign-7-messages-quote.png" alt="板7"><div class="meta">
+  <h3><span class="badge">板 7</span>消息与报价</h3>
+  <p>消息列表承载选标前沟通与订单会话；报价表单聚焦金额/工期/说明；工程师首页聚合可接单需求。</p>
+  <div class="pages"><span class="page-pill">chat-list</span><span class="page-pill g">quote-form</span><span class="page-pill y">home · 工程师视图</span></div>
+  <div class="note">亮点：会话卡红色未读角标；报价表单顶部需求摘要卡；工程师首页扳手黏土形象。</div>
+</div></div>
+
+<div class="board" id="board-8"><img src="images/ui-redesign-8-account-verify.png" alt="板8"><div class="meta">
+  <h3><span class="badge">板 8</span>账号与认证</h3>
+  <p>资料编辑、身份认证（身份证正反面+补充材料）、账号密码设置与重置。</p>
+  <div class="pages"><span class="page-pill">profile-edit</span><span class="page-pill g">engineer-qualification</span><span class="page-pill y">account-security</span><span class="page-pill">reset-password</span></div>
+  <div class="note">亮点：认证页「人像面/国徽面」双虚线位 + 绿色对勾；审核中荧光徽章；密码类页面统一表单卡。</div>
+</div></div>
+
+<div class="board" id="board-9"><img src="images/ui-redesign-9-invoices.png" alt="板9"><div class="meta">
+  <h3><span class="badge">板 9</span>发票流程</h3>
+  <p>客户申请发票 → 工程师选择自行开票/平台开票 → 上传电子发票文件给客户。</p>
+  <div class="pages"><span class="page-pill">invoice-request</span><span class="page-pill g">invoices</span><span class="page-pill y">invoices · 上传弹窗</span></div>
+  <div class="note">亮点：发票处理三动作（自行开票/申请平台开票/暂不支持）；上传弹窗半透明遮罩 + 文件行。</div>
+</div></div>
+
+<div class="board" id="board-10"><img src="images/ui-redesign-10-guest.png" alt="板10"><div class="meta">
+  <h3><span class="badge">板 10</span>游客模式</h3>
+  <p>未登录可浏览大厅与首页，关键动作（报价/下单/管理）以「登录解锁」引导转化。</p>
+  <div class="pages"><span class="page-pill">guest-home</span><span class="page-pill g">guest-market</span><span class="page-pill y">guest-profile</span></div>
+  <div class="note">亮点：游客大厅需求卡带荧光「登录解锁报价」；游客我的菜单统一「登录后查看」灰注。</div>
+</div></div>
+
+<div class="board" id="board-11"><img src="images/ui-redesign-11-admin-ops.png" alt="板11"><div class="meta">
+  <h3><span class="badge">板 11</span>管理端 · 运营</h3>
+  <p>口令进入管理端；数据看板四指标 + 近 7 日订单柱图；审计日志与数据预览/导出。</p>
+  <div class="pages"><span class="page-pill">gate</span><span class="page-pill g">dashboard</span><span class="page-pill y">audit-logs</span><span class="page-pill">data-preview</span></div>
+  <div class="note">亮点：看板数字沿用橘红强调；柱图用天蓝 pastel 条；日志行时间+动作+操作者三段式。</div>
+</div></div>
+
+<div class="board" id="board-12"><img src="images/ui-redesign-12-admin-biz.png" alt="板12"><div class="meta">
+  <h3><span class="badge">板 12</span>管理端 · 业务</h3>
+  <p>用户/工程师/订单/纠纷/发票的列表与详情管理，审核动作「通过/驳回」双按钮。</p>
+  <div class="pages"><span class="page-pill">users</span><span class="page-pill">user-detail</span><span class="page-pill g">engineers</span><span class="page-pill g">engineer-detail</span><span class="page-pill y">orders</span><span class="page-pill y">order-detail</span><span class="page-pill">disputes</span><span class="page-pill">dispute-detail</span><span class="page-pill">invoices</span></div>
+  <div class="note">亮点：角色徽章配色（客户=天青、工程师=荧光黄）；审核卡内嵌资质缩略图；纠纷/发票处理卡并列。</div>
+</div></div>
+
+<h2><span class="hl">全量页面索引</span></h2>
+<p class="section-sub">与 miniapp/app.json 一一对应；「设计板」列点击可回看设计。</p>
+
+<div class="group-title"><span class="badge">A</span>入门与游客（4 页）</div>
+<table><thead><tr><th>页面</th><th>路径</th><th>设计板</th><th>要点</th></tr></thead><tbody>
+<tr><td>登录</td><td class="path">pages/login/index</td><td><a class="boardlink" href="#board-3">板 3</a></td><td>微信一键登录 / 手机号验证码 / 账号密码；角色分流；游客入口</td></tr>
+<tr><td>游客首页</td><td class="path">pages/guest-home/index</td><td><a class="boardlink" href="#board-10">板 10</a></td><td>品牌主视觉；角色选择；平台卖点</td></tr>
+<tr><td>游客接单大厅</td><td class="path">pages/guest-market/index</td><td><a class="boardlink" href="#board-10">板 10</a></td><td>需求可浏览；报价登录解锁</td></tr>
+<tr><td>游客我的</td><td class="path">pages/guest-profile/index</td><td><a class="boardlink" href="#board-10">板 10</a></td><td>登录引导卡；菜单灰注「登录后查看」</td></tr>
+</tbody></table>
+
+<div class="group-title"><span class="badge">B</span>客户侧（10 页）</div>
+<table><thead><tr><th>页面</th><th>路径</th><th>设计板</th><th>要点</th></tr></thead><tbody>
+<tr><td>首页（客户视图）</td><td class="path">pages/home/index</td><td><a class="boardlink" href="#board-1">板 1</a></td><td>欢迎卡；四宫格；五段订单状态统计；我的需求列表</td></tr>
+<tr><td>发布需求</td><td class="path">pages/publish/index</td><td><a class="boardlink" href="#board-1">板 1</a></td><td>5 步向导：基本信息/仿真配置/详细说明/文件上传/确认提交</td></tr>
+<tr><td>我的订单</td><td class="path">pages/orders/index</td><td><a class="boardlink" href="#board-4">板 4</a></td><td>状态 tab；订单卡（状态徽章+成交价+元信息）</td></tr>
+<tr><td>订单详情</td><td class="path">pages/order-detail/index</td><td><a class="boardlink" href="#board-1">板 1</a> <a class="boardlink" href="#board-4">板 4</a></td><td>状态机横幅；报价列表选标；支付；会话入口；成果验收；退款</td></tr>
+<tr><td>评价表单</td><td class="path">pages/review-form/index</td><td><a class="boardlink" href="#board-6">板 6</a></td><td>专业度/时效性/沟通三维星级 + 100 字评价</td></tr>
+<tr><td>我的评价</td><td class="path">pages/my-reviews/index</td><td><a class="boardlink" href="#board-6">板 6</a></td><td>评价归档卡（星级+内容+订单）</td></tr>
+<tr><td>申请发票</td><td class="path">pages/invoice-request/index</td><td><a class="boardlink" href="#board-9">板 9</a></td><td>抬头/税号/邮箱/备注；工程师视角为详情+文件</td></tr>
+<tr><td>纠纷申请</td><td class="path">pages/dispute-form/index</td><td><a class="boardlink" href="#board-5">板 5</a></td><td>类型 chips；说明；证据上传（最多 5）</td></tr>
+<tr><td>我的纠纷</td><td class="path">pages/disputes/index</td><td><a class="boardlink" href="#board-5">板 5</a></td><td>纠纷列表（处理中/已解决）</td></tr>
+<tr><td>纠纷详情</td><td class="path">pages/dispute-detail/index</td><td><a class="boardlink" href="#board-5">板 5</a></td><td>纠纷信息+证据；平台处理进度条</td></tr>
+</tbody></table>
+
+<div class="group-title"><span class="badge">C</span>工程师侧（7 页）</div>
+<table><thead><tr><th>页面</th><th>路径</th><th>设计板</th><th>要点</th></tr></thead><tbody>
+<tr><td>首页（工程师视图）</td><td class="path">pages/home/index</td><td><a class="boardlink" href="#board-7">板 7</a></td><td>可接单需求流；快捷报价</td></tr>
+<tr><td>接单大厅</td><td class="path">pages/market/index</td><td><a class="boardlink" href="#board-2">板 2</a></td><td>分类筛选+最新/热门排序；需求卡；立即报价</td></tr>
+<tr><td>提交报价</td><td class="path">pages/quote-form/index</td><td><a class="boardlink" href="#board-7">板 7</a></td><td>金额/工期/说明；需求摘要卡</td></tr>
+<tr><td>我的报价</td><td class="path">pages/my-quotes/index</td><td><a class="boardlink" href="#board-2">板 2</a></td><td>进行中/已选中/未选中三态</td></tr>
+<tr><td>工程师主页</td><td class="path">pages/engineer-profile/index</td><td><a class="boardlink" href="#board-6">板 6</a></td><td>对外资料：评分/完成单/擅长/软件/评价</td></tr>
+<tr><td>身份认证</td><td class="path">pages/engineer-qualification/index</td><td><a class="boardlink" href="#board-8">板 8</a></td><td>本人信息；身份证正反面；补充材料；审核状态</td></tr>
+<tr><td>发票处理</td><td class="path">pages/invoices/index</td><td><a class="boardlink" href="#board-9">板 9</a></td><td>自行开票/平台开票/暂不支持；上传电子发票弹窗</td></tr>
+</tbody></table>
+
+<div class="group-title"><span class="badge">D</span>通用与账号（6 页）</div>
+<table><thead><tr><th>页面</th><th>路径</th><th>设计板</th><th>要点</th></tr></thead><tbody>
+<tr><td>个人中心</td><td class="path">pages/me/index</td><td><a class="boardlink" href="#board-3">板 3</a></td><td>用户卡；认证状态；角色化菜单；退出</td></tr>
+<tr><td>编辑资料</td><td class="path">pages/profile-edit/index</td><td><a class="boardlink" href="#board-8">板 8</a></td><td>头像/昵称/手机绑定/专业信息</td></tr>
+<tr><td>我的消息</td><td class="path">pages/chat-list/index</td><td><a class="boardlink" href="#board-7">板 7</a></td><td>会话列表；未读角标</td></tr>
+<tr><td>会话聊天</td><td class="path">pages/chat-room/index</td><td><a class="boardlink" href="#board-2">板 2</a></td><td>气泡聊天；系统通知荧光条；输入栏</td></tr>
+<tr><td>账号安全</td><td class="path">pages/account-security/index</td><td><a class="boardlink" href="#board-8">板 8</a></td><td>一次性设置账号+密码</td></tr>
+<tr><td>重置密码</td><td class="path">pages/reset-password/index</td><td><a class="boardlink" href="#board-8">板 8</a></td><td>手机+验证码+新密码</td></tr>
+</tbody></table>
+
+<div class="group-title"><span class="badge">E</span>管理端（13 页）</div>
+<table><thead><tr><th>页面</th><th>路径</th><th>设计板</th><th>要点</th></tr></thead><tbody>
+<tr><td>管理入口</td><td class="path">admin/pages/gate/index</td><td><a class="boardlink" href="#board-11">板 11</a></td><td>管理口令校验</td></tr>
+<tr><td>数据看板</td><td class="path">admin/pages/dashboard/index</td><td><a class="boardlink" href="#board-11">板 11</a></td><td>用户/待审工程师/待报价订单/有效报价 + 7 日柱图</td></tr>
+<tr><td>用户管理</td><td class="path">admin/pages/users/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>搜索；角色徽章列表</td></tr>
+<tr><td>用户详情</td><td class="path">admin/pages/user-detail/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>用户档案与统计（列表行进入）</td></tr>
+<tr><td>工程师审核</td><td class="path">admin/pages/engineers/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>待审列表；通过/驳回</td></tr>
+<tr><td>工程师详情</td><td class="path">admin/pages/engineer-detail/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>资质材料缩略图与审核动作</td></tr>
+<tr><td>订单管理</td><td class="path">admin/pages/orders/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>全部/进行中/纠纷中筛选</td></tr>
+<tr><td>订单详情（管理）</td><td class="path">admin/pages/order-detail/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>订单全量信息（列表行进入）</td></tr>
+<tr><td>审计日志</td><td class="path">admin/pages/audit-logs/index</td><td><a class="boardlink" href="#board-11">板 11</a></td><td>时间+动作+操作者三段式</td></tr>
+<tr><td>数据预览</td><td class="path">admin/pages/data-preview/index</td><td><a class="boardlink" href="#board-11">板 11</a></td><td>pastel 表格 + 导出 CSV</td></tr>
+<tr><td>纠纷管理</td><td class="path">admin/pages/disputes/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>纠纷列表；介入处理</td></tr>
+<tr><td>纠纷详情（管理）</td><td class="path">admin/pages/dispute-detail/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>证据与处理记录</td></tr>
+<tr><td>发票管理</td><td class="path">admin/pages/invoices/index</td><td><a class="boardlink" href="#board-12">板 12</a></td><td>平台协助开票；标记完成</td></tr>
+</tbody></table>
+
+<footer>仿真服务平台 · UI 重设计提案 —— 风格：年轻、轻量化。本页与 images/ 目录下 12 张设计板配套使用。</footer>
+</div>
+</body>
+</html>

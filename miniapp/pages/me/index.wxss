@@ -11,7 +11,7 @@
 .user-card {
   display: flex;
   align-items: center;
-  background: var(--bg-card);
+  background: var(--grad-hero-sunny);
   border-radius: var(--r-md);
   padding: 32rpx 24rpx;
   border: 1rpx solid var(--c-border);

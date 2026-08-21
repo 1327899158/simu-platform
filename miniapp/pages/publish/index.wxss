@@ -1,4 +1,4 @@
-/* ===== 发布需求 · 浅色商务（布局参照 new_simu requirementCreate） ===== */
+/* ===== 发布需�?· 浅色商务（布局参照 new_simu requirementCreate�?===== */
 .page-container {
   min-height: 100vh;
   background-color: var(--bg-base);
@@ -99,7 +99,7 @@
   margin-bottom: 20rpx;
 }
 
-/* ===== 表单组 ===== */
+/* ===== 表单�?===== */
 .form-group {
   margin-bottom: 24rpx;
 }
@@ -162,7 +162,7 @@
   gap: 8rpx;
 }
 
-/* ===== 多选网格 ===== */
+/* ===== 多选网�?===== */
 .multi-select-grid {
   display: grid;
   gap: 12rpx;
@@ -266,7 +266,7 @@
   margin-top: 8rpx;
 }
 
-/* ===== 上传须知（红色提醒框） ===== */
+/* ===== 上传须知（红色提醒框�?===== */
 .upload-rule-box {
   display: flex;
   gap: 16rpx;
@@ -298,7 +298,7 @@
   line-height: 1.7;
 }
 
-/* ===== 上传区 ===== */
+/* ===== 上传�?===== */
 .upload-area {
   display: flex;
   flex-direction: column;
@@ -378,7 +378,7 @@
   color: var(--neon-red);
 }
 
-/* ===== 确认汇总 ===== */
+/* ===== 确认汇�?===== */
 .summary-card {
   background: #F8F9FA;
   border-radius: var(--r-md);
@@ -465,7 +465,7 @@
   padding: 22rpx 0;
   border: none;
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, #27AE60, #1E8449);
+  background: linear-gradient(135deg, #52B788, #3E9B72);
   color: #FFFFFF;
   font-size: 30rpx;
   font-weight: 600;

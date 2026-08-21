@@ -20,9 +20,9 @@
   font-size: 21rpx; color: var(--c-text-2); background: #FAFAFA;
   border: 1rpx solid var(--c-border); line-height: 1.4;
 }
-.filter-item.active { background: #EEF2FF; border-color: #C7D2FE; color: #596CD4; font-weight: 600; }
+.filter-item.active { background: #E3F4FC; border-color: #C7D2FE; color: #2FA8DE; font-weight: 600; }
 .filter-item::after { border: none; }.filter-label { margin-left: 6rpx; white-space: nowrap; }.status-dot { width: 12rpx; height: 12rpx; border-radius: 50%; flex-shrink: 0; }
-.dot-purple { background: #667EEA; }
+.dot-purple { background: #5BC0EB; }
 .dot-orange { background: #F59E0B; }
 .dot-green { background: #22C55E; }
 .dot-gray { background: #94A3B8; }
@@ -46,7 +46,7 @@
   border-radius: 8rpx;
 }
 .role-tag.mine { background: #E8F6ED; color: #247A43; }
-.role-tag.other { background: #EEF2FF; color: #596CD4; }
+.role-tag.other { background: #E3F4FC; color: #2FA8DE; }
 .card-sub { display: block; font-size: 22rpx; color: var(--c-text-4); margin-top: 4rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status { flex-shrink: 0; padding: 6rpx 16rpx; border-radius: var(--r-pill); font-size: 22rpx; font-weight: 600; }
 .st-orange { color: #A55A00; background: #FFF1DB; }
