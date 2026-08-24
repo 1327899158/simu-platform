@@ -4,7 +4,8 @@
 
   <view class="brand-section">
     <view class="brand-card">
-      <text class="brand-icon">🔬</text>
+      <image class="hero-illust" src="/assets/hero-laptop.png" mode="aspectFit" />
+      <text class="ribbon">你好呀，忙碌的仿真伙伴！</text>
       <text class="brand-title">仿真服务平台</text>
       <text class="brand-subtitle">连接工程师与仿真需求</text>
     </view>

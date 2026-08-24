@@ -13,3 +13,9 @@
 .section-title { color: var(--c-text); font-size: 29rpx; font-weight: 700; }.reviews-title { margin: 28rpx 4rpx 16rpx; }
 .tag-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10rpx; margin-top: 18rpx; }.label { color: var(--c-text-3); font-size: 23rpx; margin-right: 6rpx; }.tag { color: var(--neon-violet); background: rgba(102,126,234,.1); border-radius: var(--r-pill); padding: 6rpx 14rpx; font-size: 22rpx; }
 .empty { padding: 56rpx; color: var(--c-text-3); text-align: center; font-size: 25rpx; }.review-card { background: var(--bg-card); box-shadow: var(--shadow-card); border-radius: var(--r-lg); padding: 24rpx; margin-bottom: 18rpx; }.review-head { display: flex; justify-content: space-between; color: var(--c-text); font-size: 27rpx; font-weight: 600; }.score { color: #E39B00; }.score-lines { display: flex; flex-wrap: wrap; gap: 12rpx; color: var(--neon-violet); font-size: 22rpx; margin: 16rpx 0; }.review-content { color: var(--c-text-2); font-size: 25rpx; line-height: 1.6; }
+
+/* ===== design 1:1 ===== */
+.profile-card { background: linear-gradient(160deg, #BEE3F0, #DDEBD9); border-radius: 32rpx; }
+.rating-card { background: #F7F3C9; border-radius: 32rpx; }
+.card { border-radius: 32rpx; }
+.review-card { background: #FFFFFF; border-radius: 32rpx; }

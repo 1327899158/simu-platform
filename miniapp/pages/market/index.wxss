@@ -362,3 +362,14 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ===== design rebuild ===== */
+.quote-btn { transform: skewX(-12deg); border-radius: 12rpx; }
+.quote-btn .btn-in { display: inline-block; transform: skewX(12deg); }
+.req-data { background: #F4F8F2; border-radius: 16rpx; padding: 14rpx 20rpx; }
+.requirement-card { border-radius: 32rpx; }
+
+/* ===== design 1:1 ===== */
+.page-header { background: linear-gradient(160deg, #BEE3F0 0%, #DDEBD9 100%); border-radius: 32rpx; border-bottom: none; position: relative; }
+.header-illust { position: absolute; right: 20rpx; top: 10rpx; width: 150rpx; height: 150rpx; }
+.stats-card { border-radius: 32rpx; }

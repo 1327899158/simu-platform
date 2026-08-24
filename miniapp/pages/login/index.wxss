@@ -1,4 +1,4 @@
-/* pages/login/index.wxss · 布局迁移�?new_simu login（浅色商务适配�?*/
+/* pages/login/index.wxss · 布局迁移自 new_simu login（浅色商务适配） */
 
 /* ===== 页面容器 ===== */
 .page-container {
@@ -12,7 +12,7 @@
   overflow: hidden;
 }
 
-/* ===== 背景光晕（浅色微妙版�?===== */
+/* ===== 背景光晕（浅色微妙版） ===== */
 .bg-glow-1 {
   position: absolute;
   top: -20%;
@@ -59,7 +59,7 @@
   100% { transform: scale(1.3) rotate(8deg); opacity: 0.8; }
 }
 
-/* ===== 品牌�?===== */
+/* ===== 品牌区 ===== */
 .brand-section {
   position: relative;
   z-index: 1;
@@ -109,7 +109,7 @@
   letter-spacing: 3rpx;
 }
 
-/* ===== Tab 切换�?===== */
+/* ===== Tab 切换栏 ===== */
 .tab-bar {
   position: relative;
   z-index: 1;
@@ -355,7 +355,7 @@
   text-align: center;
 }
 
-/* ===== 登录/注册子切�?===== */
+/* ===== 登录/注册子切换 ===== */
 .sub-tab {
   display: flex;
   background: var(--bg-deep);
@@ -379,7 +379,7 @@
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
 }
 
-/* ===== 表单�?===== */
+/* ===== 表单组 ===== */
 .form-group {
   margin-bottom: 16rpx;
 }
@@ -392,14 +392,14 @@
   letter-spacing: 1rpx;
 }
 
-/* ===== 输入�?===== */
+/* ===== 输入框 ===== */
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: #FAFAFA;  /* 浅灰输入框背�?*/
+  background: #FAFAFA;  /* 浅灰输入框背景 */
   border-radius: 10rpx;
   border: 1rpx solid #E0E0E0;
-  /* 只过渡视觉属性，避免原生 input 聚焦时参与尺寸动画�?*/
+  /* 只过渡视觉属性，避免原生 input 聚焦时参与尺寸动画。 */
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
   height: 88rpx;
@@ -545,7 +545,7 @@
 .role-item {
   padding: 20rpx 0;
   text-align: center;
-  background: #FAFAFA;  /* 浅灰输入框背�?*/
+  background: #FAFAFA;  /* 浅灰输入框背景 */
   border-radius: 12rpx;
   border: 2rpx solid #E8E8E8;
   transition: all 0.3s ease;
@@ -603,7 +603,7 @@
   margin-bottom: 28rpx;
 }
 
-/* 头像选择�?*/
+/* 头像选择器 */
 .avatar-picker-row {
   display: flex;
   justify-content: center;
@@ -638,3 +638,16 @@
 .avatar-placeholder text {
   display: block;
 }
+
+/* ===== design rebuild ===== */
+.page-container { background: linear-gradient(160deg, #BEE3F0 0%, #DDEBD9 100%); }
+.brand-card { background: transparent; box-shadow: none; border: none; }
+.btn { border-radius: 999rpx; }
+.role-item.active { border-color: #5BC0EB; background: #E3F4FC; }
+
+/* ===== design 1:1 ===== */
+.form-container { background: #FFFFFF; border-radius: 32rpx; box-shadow: 0 2rpx 12rpx rgba(70,110,60,.06); }
+.login-type-switch { background: #FFFFFF; border-radius: 999rpx; }
+.login-type-item.active { background: #5BC0EB; color: #FFFFFF; border-radius: 999rpx; }
+.role-item { background: #FFFFFF; border: 2rpx solid #E1EBDD; border-radius: 24rpx; }
+.btn-wechat { background: #5BC0EB; }

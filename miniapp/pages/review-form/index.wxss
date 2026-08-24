@@ -19,3 +19,11 @@
 .submit { width: 100%; min-height: 92rpx; line-height: 92rpx; border: none; border-radius: var(--r-md); background: var(--grad-violet-pink); color: #fff; font-size: 30rpx; font-weight: 600; }
 .submit::after { border: none; }
 .submit[disabled] { opacity: .55; }
+
+/* ===== design 1:1 ===== */
+.hero { background: linear-gradient(160deg, #F7F3C9, #DDEBD9); border-radius: 32rpx; padding: 36rpx 32rpx; }
+.hero-title { color: #1F2B22; font-weight: 800; font-size: 36rpx; }
+.hero-sub { color: #5A665C; }
+.card { border-radius: 32rpx; }
+.star.active { color: #F5A623; }
+.submit { border-radius: 999rpx; background: #5BC0EB; color: #FFFFFF; }

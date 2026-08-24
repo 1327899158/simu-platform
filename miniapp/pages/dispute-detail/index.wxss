@@ -31,3 +31,7 @@
 .empty-evidence { padding:36rpx 0; color:var(--c-text-4); font-size:24rpx; text-align:center; }
 .closed-tip { display:block; margin-top:18rpx; padding:19rpx; border-radius:12rpx; background:#F2F4F7; color:#667085; font-size:23rpx; text-align:center; }
 .loading { padding:60rpx 0; color:var(--c-text-3); font-size:25rpx; text-align:center; }
+
+/* ===== design 1:1 ===== */
+.hero { background: linear-gradient(160deg, #FBF3CD, #DDEBD9); }
+.card { border-radius: 32rpx; }

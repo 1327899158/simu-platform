@@ -1,15 +1,15 @@
 <wxs module="u">
-/* WXML 插值不支持调用数组方法，选中态判断与展示映射放在 WXS �?*/
-var ICONS = { fast: '�?, standard: '📊', relaxed: '�?, custom: '✏️' };
-var SHORT_LABELS = { fast: '快�?, standard: '标准', relaxed: '宽松', custom: '自定�? };
-var DAYS_TEXT = { fast: '1-3�?, standard: '4-7�?, relaxed: '8-15�?, custom: '自己输入' };
+/* WXML 插值不支持调用数组方法，选中态判断与展示映射放在 WXS 里 */
+var ICONS = { fast: '⚡', standard: '📊', relaxed: '☕', custom: '✏️' };
+var SHORT_LABELS = { fast: '快速', standard: '标准', relaxed: '宽松', custom: '自定义' };
+var DAYS_TEXT = { fast: '1-3天', standard: '4-7天', relaxed: '8-15天', custom: '自己输入' };
 module.exports = {
   has: function (arr, v) { return arr && arr.indexOf(v) > -1; },
-  joinText: function (arr) { return arr && arr.length ? arr.join('�?) : '未选择'; },
+  joinText: function (arr) { return arr && arr.length ? arr.join('、') : '未选择'; },
   joinWithOther: function (arr, other) {
     var list = arr && arr.length ? arr.slice() : [];
     if (other) list.push(other);
-    return list.length ? list.join('�?) : '未选择';
+    return list.length ? list.join('、') : '未选择';
   },
   iconOf: function (key) { return ICONS[key] || '📅'; },
   shortLabel: function (item) { return SHORT_LABELS[item.key] || item.label; },
@@ -29,7 +29,7 @@ module.exports = {
 
   <!-- 顶部导航 -->
   <view class="page-header">
-    <text class="page-title">🚀 发布需�?/text>
+    <text class="page-title">🚀 发布需求</text>
     <text class="step-indicator">{{step}}/5</text>
   </view>
 
@@ -53,36 +53,36 @@ module.exports = {
     <text>确认提交</text>
   </view>
 
-  <!-- ===== 步骤1：基本信�?===== -->
+  <!-- ===== 步骤1：基本信息 ===== -->
   <view class="form-section" wx:if="{{step === 1}}">
     <text class="section-title">📋 基本信息</text>
     <view class="form-group">
       <text class="form-label">项目名称 <text class="required">*</text></text>
-      <input class="form-input" placeholder="请输入项目名称（至少4个字�? value="{{projectName}}"
+      <input class="form-input" placeholder="请输入项目名称（至少4个字）" value="{{projectName}}"
         bindinput="input" data-f="projectName" maxlength="60" />
       <text class="char-count">{{projectName.length}}/60</text>
     </view>
     <view class="form-group">
       <text class="form-label">项目描述 <text class="required">*</text></text>
-      <textarea class="form-textarea" placeholder="请简要描述项目需求和目标（至�?0字）" value="{{description}}"
+      <textarea class="form-textarea" placeholder="请简要描述项目需求和目标（至少20字）" value="{{description}}"
         bindinput="input" data-f="description" maxlength="5000" />
     </view>
     <view class="form-group">
-      <text class="form-label">预算（元，可不填�?/text>
-      <input class="form-input" type="digit" placeholder="�?5000" value="{{budgetYuan}}"
+      <text class="form-label">预算（元，可不填）</text>
+      <input class="form-input" type="digit" placeholder="如 5000" value="{{budgetYuan}}"
         bindinput="input" data-f="budgetYuan" maxlength="11" />
     </view>
     <view class="form-group">
-      <text class="form-label">预算弹�?/text>
+      <text class="form-label">预算弹性</text>
       <view class="flexible-row" bindtap="toggleFlexible">
       <switch checked="{{budgetFlexible}}" style="transform:scale(.8)" color="#5BC0EB" />
-        <text class="form-hint">预算有弹性，可与工程师协�?/text>
+        <text class="form-hint">预算有弹性，可与工程师协商</text>
       </view>
     </view>
-    <button class="btn-primary-block" bindtap="next">下一�?�?/button>
+    <button class="btn-primary-block" bindtap="next">下一步 ›</button>
   </view>
 
-  <!-- ===== 步骤2：仿真配�?===== -->
+  <!-- ===== 步骤2：仿真配置 ===== -->
   <view class="form-section" wx:if="{{step === 2}}">
     <text class="section-title">⚙️ 仿真配置</text>
     <text class="section-desc">请选择需要的仿真软件和方向（可多选）</text>
@@ -93,12 +93,12 @@ module.exports = {
           class="select-item {{u.has(softwareTags, item) ? 'selected' : ''}}"
           bindtap="toggleTag" data-f="softwareTags" data-v="{{item}}">
           <text class="select-label">{{item}}</text>
-          <text class="select-checkbox" wx:if="{{u.has(softwareTags, item)}}">�?/text>
+          <text class="select-checkbox" wx:if="{{u.has(softwareTags, item)}}">✓</text>
         </view>
       </view>
-      <input class="form-input other-input" placeholder="其他软件（请填写具体名称�? value="{{otherSoftware}}"
+      <input class="form-input other-input" placeholder="其他软件（请填写具体名称）" value="{{otherSoftware}}"
         bindinput="input" data-f="otherSoftware" maxlength="60" />
-      <text class="selected-count">已�?{{softwareTags.length + (otherSoftware ? 1 : 0)}} �?/text>
+      <text class="selected-count">已选 {{softwareTags.length + (otherSoftware ? 1 : 0)}} 个</text>
     </view>
     <view class="form-group">
       <text class="form-label">仿真方向 <text class="required">*</text></text>
@@ -107,20 +107,20 @@ module.exports = {
           class="select-item {{u.has(directionTags, item) ? 'selected' : ''}}"
           bindtap="toggleTag" data-f="directionTags" data-v="{{item}}">
           <text class="select-label">{{item}}</text>
-          <text class="select-checkbox" wx:if="{{u.has(directionTags, item)}}">�?/text>
+          <text class="select-checkbox" wx:if="{{u.has(directionTags, item)}}">✓</text>
         </view>
       </view>
-      <input class="form-input other-input" placeholder="其他仿真方向（请填写具体方向�? value="{{otherDirection}}"
+      <input class="form-input other-input" placeholder="其他仿真方向（请填写具体方向）" value="{{otherDirection}}"
         bindinput="input" data-f="otherDirection" maxlength="60" />
-      <text class="selected-count">已�?{{directionTags.length + (otherDirection ? 1 : 0)}} �?/text>
+      <text class="selected-count">已选 {{directionTags.length + (otherDirection ? 1 : 0)}} 个</text>
     </view>
     <view class="form-actions-row">
-      <button class="btn-secondary" bindtap="prev">�?上一�?/button>
-      <button class="btn-primary-sm" bindtap="next">下一�?�?/button>
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
+      <button class="btn-primary-sm" bindtap="next">下一步 ›</button>
     </view>
   </view>
 
-  <!-- ===== 步骤3：详细说�?===== -->
+  <!-- ===== 步骤3：详细说明 ===== -->
   <view class="form-section" wx:if="{{step === 3}}">
     <text class="section-title">📄 详细说明</text>
     <view class="form-group">
@@ -135,23 +135,23 @@ module.exports = {
         </view>
       </view>
       <view class="custom-days" wx:if="{{deliveryKey === 'custom'}}">
-        <input class="form-input" type="number" placeholder="请输入天数（1-90�? value="{{customDays}}"
+        <input class="form-input" type="number" placeholder="请输入天数（1-90）" value="{{customDays}}"
           bindinput="input" data-f="customDays" maxlength="2" />
         <text class="form-hint">请输入期望完成的天数</text>
       </view>
     </view>
     <view class="form-group">
       <text class="form-label">特殊要求</text>
-      <textarea class="form-textarea" placeholder="如：保密要求、特殊材料、特定工程师偏好�? value="{{specialNote}}"
+      <textarea class="form-textarea" placeholder="如：保密要求、特殊材料、特定工程师偏好等" value="{{specialNote}}"
         bindinput="input" data-f="specialNote" maxlength="2000" />
     </view>
     <view class="form-actions-row">
-      <button class="btn-secondary" bindtap="prev">�?上一�?/button>
-      <button class="btn-primary-sm" bindtap="next">下一�?�?/button>
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
+      <button class="btn-primary-sm" bindtap="next">下一步 ›</button>
     </view>
   </view>
 
-  <!-- ===== 步骤4：文件上�?===== -->
+  <!-- ===== 步骤4：文件上传 ===== -->
   <view class="form-section" wx:if="{{step === 4}}">
     <text class="section-title">📎 文件上传</text>
     <text class="section-desc">上传模型文件、设计文档、参考图片等</text>
@@ -161,18 +161,18 @@ module.exports = {
       <text class="rule-icon">⚠️</text>
       <view class="rule-content">
         <text class="rule-title">上传须知</text>
-        <text class="rule-item">�?文档/压缩包：从微信聊天或本地文件夹选择，建议压缩包</text>
-        <text class="rule-item">�?手机图片/视频：可直接从相册选择或调用相�?/text>
-        <text class="rule-item">�?模型文件支持 .stp, .iges, .step, .rar, .zip 等格�?/text>
-        <text class="rule-item">�?图片支持 JPG/PNG/GIF</text>
-        <text class="rule-item">�?单个文件不超�?{{maxFileMb}}MB，最多上�?{{maxAttachments}} �?/text>
+        <text class="rule-item">• 文档/压缩包：从微信聊天或本地文件夹选择，建议压缩包</text>
+        <text class="rule-item">• 手机图片/视频：可直接从相册选择或调用相机</text>
+        <text class="rule-item">• 模型文件支持 .stp, .iges, .step, .rar, .zip 等格式</text>
+        <text class="rule-item">• 图片支持 JPG/PNG/GIF</text>
+        <text class="rule-item">• 单个文件不超过 {{maxFileMb}}MB，最多上传 {{maxAttachments}} 个</text>
       </view>
     </view>
 
     <view class="form-group">
-      <text class="form-label">📦 需求附�?<text class="form-hint">（每次最多�?个，已上�?{{files.length}}/{{maxAttachments}}�?/text></text>
+      <text class="form-label">📦 需求附件 <text class="form-hint">（每次最多选3个，已上传 {{files.length}}/{{maxAttachments}}）</text></text>
       <view class="upload-area {{uploading ? 'disabled' : ''}}" bindtap="chooseFile"
-        aria-role="button" aria-label="选择并上传需求附�?>
+        aria-role="button" aria-label="选择并上传需求附件">
         <text class="upload-icon">📦</text>
         <text class="upload-text">{{uploading ? uploadProgress : '选择附件'}}</text>
         <text class="upload-hint">可选择微信聊天文件，或手机相册/相机</text>
@@ -183,46 +183,46 @@ module.exports = {
           <text class="file-name">{{item.name}}</text>
           <text class="file-size">{{item.sizeText}}</text>
           <view class="file-delete" data-i="{{index}}" catchtap="removeFile"
-            aria-role="button" aria-label="删除附件 {{item.name}}">�?/view>
+            aria-role="button" aria-label="删除附件 {{item.name}}">✕</view>
         </view>
       </view>
     </view>
 
     <view class="form-actions-row">
-      <button class="btn-secondary" bindtap="prev">�?上一�?/button>
-      <button class="btn-primary-sm" bindtap="next">下一�?�?/button>
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
+      <button class="btn-primary-sm" bindtap="next">下一步 ›</button>
     </view>
   </view>
 
-  <!-- ===== 步骤5：确认提�?===== -->
+  <!-- ===== 步骤5：确认提交 ===== -->
   <view class="form-section" wx:if="{{step === 5}}">
-    <text class="section-title">�?确认并提�?/text>
-    <text class="section-desc">请仔细核对以下信�?/text>
+    <text class="section-title">✅ 确认并提交</text>
+    <text class="section-desc">请仔细核对以下信息</text>
     <view class="summary-card">
-      <view class="summary-item"><text class="summary-label">项目名称</text><text class="summary-value">{{projectName || '未填�?}}</text></view>
-      <view class="summary-item"><text class="summary-label">项目描述</text><text class="summary-value">{{description || '未填�?}}</text></view>
-      <view class="summary-item"><text class="summary-label">预算</text><text class="summary-value price">{{budgetYuan ? '¥' + budgetYuan : '未填�?}}</text></view>
-      <view class="summary-item"><text class="summary-label">预算弹�?/text><text class="summary-value">{{budgetFlexible ? '可协�? : '固定'}}</text></view>
+      <view class="summary-item"><text class="summary-label">项目名称</text><text class="summary-value">{{projectName || '未填写'}}</text></view>
+      <view class="summary-item"><text class="summary-label">项目描述</text><text class="summary-value">{{description || '未填写'}}</text></view>
+      <view class="summary-item"><text class="summary-label">预算</text><text class="summary-value price">{{budgetYuan ? '¥' + budgetYuan : '未填写'}}</text></view>
+      <view class="summary-item"><text class="summary-label">预算弹性</text><text class="summary-value">{{budgetFlexible ? '可协商' : '固定'}}</text></view>
       <view class="summary-item"><text class="summary-label">仿真软件</text><text class="summary-value">{{u.joinWithOther(softwareTags, otherSoftware)}}</text></view>
       <view class="summary-item"><text class="summary-label">仿真方向</text><text class="summary-value">{{u.joinWithOther(directionTags, otherDirection)}}</text></view>
       <view class="summary-item"><text class="summary-label">工期</text><text class="summary-value">{{u.deliverySummary(dicts.deliveryOptions, deliveryKey, customDays)}}</text></view>
       <view class="summary-item" wx:if="{{specialNote}}"><text class="summary-label">特殊要求</text><text class="summary-value">{{specialNote}}</text></view>
-      <view class="summary-item"><text class="summary-label">附件</text><text class="summary-value">{{files.length}} 个文�?/text></view>
+      <view class="summary-item"><text class="summary-label">附件</text><text class="summary-value">{{files.length}} 个文件</text></view>
     </view>
 
     <view class="terms" bindtap="toggleAgree">
       <view class="checkbox-box {{agreed ? 'checked' : ''}}">
-        <text wx:if="{{agreed}}">�?/text>
+        <text wx:if="{{agreed}}">✓</text>
       </view>
-      <text class="terms-text">我已阅读并同�?<text class="terms-link">《平台服务协议》《隐私政策�?/text></text>
+      <text class="terms-text">我已阅读并同意 <text class="terms-link">《平台服务协议》《隐私政策》</text></text>
     </view>
 
     <button class="btn-success-block {{submitting ? 'disabled' : ''}}" bindtap="next">
-      {{submitting ? '提交中�? : '🚀 确认发布'}}
+      {{submitting ? '提交中…' : '🚀 确认发布'}}
     </button>
 
     <view class="form-actions-row">
-      <button class="btn-secondary" bindtap="prev">�?上一�?/button>
+      <button class="btn-secondary" bindtap="prev">‹ 上一步</button>
     </view>
   </view>
 

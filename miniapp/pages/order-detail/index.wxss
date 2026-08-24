@@ -1,4 +1,4 @@
-/* ===== 订单详情 · 浅色商务（布局参照 new_simu orderDetail�?===== */
+/* ===== 订单详情 · 浅色商务（布局参照 new_simu orderDetail） ===== */
 .page-container {
   min-height: 100vh;
   background-color: var(--bg-base);
@@ -314,7 +314,7 @@
   line-height: 1.6;
 }
 
-/* ===== 操作卡片/操作�?===== */
+/* ===== 操作卡片/操作区 ===== */
 .action-card {
   background: #FFFFFF;
   border-radius: var(--r-lg);
@@ -475,7 +475,7 @@
 .btn-dispute::after { border: none; }
 .btn-dispute:active { background: rgba(240, 180, 41, 0.16); }
 
-/* ===== 退款申�?===== */
+/* ===== 退款申请 ===== */
 .refund-request-card {
   display: flex;
   flex-direction: column;
@@ -619,3 +619,13 @@
 .refund-reject-btn { border: 1rpx solid #E3A13F; background: #FFFFFF; color: #A5650B; }
 .refund-accept-btn { border: none; background: linear-gradient(135deg, #5BC0EB, #2FA8DE); color: #FFFFFF; }
 .refund-decision-actions button[disabled] { opacity: 0.55; }
+
+/* ===== design rebuild ===== */
+.btn-select { border-radius: 999rpx; background: #5BC0EB; color: #FFFFFF; }
+.btn-quote-chat { border-radius: 999rpx; border: 1rpx solid #5BC0EB; color: #2FA8DE; }
+
+/* ===== design 1:1 ===== */
+.pay-card { background: #FFFFFF; border-radius: 32rpx; }
+.pay-amount { color: #E85A4F; font-weight: 800; font-size: 40rpx; }
+.quote-item { border-radius: 24rpx; border: 1rpx solid #E1EBDD; }
+.quote-item.selected { border-color: #F5D33F; background: #FFFBEA; }

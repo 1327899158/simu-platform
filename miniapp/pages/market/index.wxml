@@ -1,5 +1,6 @@
 <view class="page-container">
   <view class="page-header">
+    <image class="header-illust" src="/assets/hero-wrench.png" mode="aspectFit" />
     <view>
       <text class="page-title">🔍 浏览需求</text>
       <text class="page-subtitle">寻找适合你的仿真项目</text>
@@ -103,9 +104,9 @@
           <text class="req-hot" wx:if="{{sort === 'hot'}}">🔥 热度 {{item.hotValue}}</text>
         </view>
         <text class="quoted-text" wx:if="{{item.myQuote}}">已提交报价</text>
-        <button wx:else class="quote-btn" data-id="{{item.id}}"
+        <button wx:else class="quote-btn btn-para" data-id="{{item.id}}"
           data-flexible="{{item.budgetFlexible ? 1 : 0}}" data-fen="{{item.budgetFen}}"
-          catchtap="quickQuote">立即报价</button>
+          catchtap="quickQuote"><text class="btn-in">立即报价</text></button>
       </view>
     </view>
 

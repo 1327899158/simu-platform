@@ -111,3 +111,8 @@
 .btn-primary[disabled] {
   opacity: 0.5;
 }
+
+/* ===== design 1:1 ===== */
+.form-card, .card { background: #FFFFFF; border-radius: 32rpx; }
+.input { background: #FBFDF9; border: 1rpx solid #E1EBDD; border-radius: 16rpx; }
+.submit, .primary { border-radius: 999rpx; background: #5BC0EB; color: #FFFFFF; }

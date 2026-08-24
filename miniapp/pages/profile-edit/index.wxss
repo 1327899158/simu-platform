@@ -143,3 +143,8 @@
   color: #fff;
   box-shadow: var(--glow-primary);
 }
+
+/* ===== design 1:1 ===== */
+.card, .section, .form-card { background: #FFFFFF; border-radius: 32rpx; box-shadow: 0 2rpx 12rpx rgba(70,110,60,.06); }
+.input { background: #FBFDF9; border: 1rpx solid #E1EBDD; border-radius: 16rpx; }
+.submit, .save-btn, button.primary { border-radius: 999rpx; background: #5BC0EB; color: #FFFFFF; }

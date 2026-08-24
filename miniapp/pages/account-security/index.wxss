@@ -7,3 +7,9 @@
 .input { height:88rpx; padding:0 22rpx; box-sizing:border-box; border-radius:var(--r-md); background:#F5F6FB; color:var(--c-text); font-size:28rpx; }
 .submit { margin-top:34rpx; border:0; border-radius:var(--r-md); background:var(--grad-violet-pink); color:#fff; font-size:30rpx; font-weight:600; }
 .submit::after { border:none; }
+
+/* ===== design 1:1 ===== */
+.hero { background: linear-gradient(160deg, #BEE3F0, #DDEBD9); }
+.form-card { background: #FFFFFF; border-radius: 32rpx; }
+.input { background: #FBFDF9; border: 1rpx solid #E1EBDD; border-radius: 16rpx; }
+.submit { border-radius: 999rpx; background: #5BC0EB; color: #FFFFFF; }

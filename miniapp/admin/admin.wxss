@@ -108,3 +108,8 @@ page {
 .admin-divider { height: 1rpx; margin: 20rpx 0; background: #EEF0F3; }
 .admin-tags { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 12rpx; }
 .admin-tag { padding: 7rpx 14rpx; border-radius: 10rpx; background: #E3F4FC; color: #2FA8DE; font-size: 22rpx; }
+
+/* ===== design 1:1 ===== */
+.admin-card { border-radius: 32rpx; }
+.admin-button { border-radius: 999rpx; }
+.admin-input { border-radius: 999rpx; }

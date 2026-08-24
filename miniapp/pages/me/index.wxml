@@ -1,87 +1,83 @@
-<!-- pages/me/index.wxml · 布局迁移自 new_simu profile（浅色商务适配） -->
+<!-- pages/me/index.wxml · 设计稿 1:1 还原 -->
 <view class="page-container">
 
-  <!-- 用户卡片 -->
-  <view class="user-card" wx:if="{{user}}">
-    <view class="avatar" wx:if="{{!user.avatarUrl}}">{{user.nickname ? user.nickname[0] : '👤'}}</view>
-    <image class="avatar" wx:else src="{{user.avatarUrl}}" mode="aspectFill"></image>
-    <view class="info">
-      <text class="name">{{user.nickname || '用户'}}</text>
-      <view class="phone-row">
-        <text class="phone">{{user.phoneMasked || '未绑定手机'}}</text>
-        <button wx:if="{{!user.hasPhone}}" class="bind-phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">绑定手机号</button>
-      </view>
-      <text class="role">{{user.role === 'ENGINEER' ? '🛠️ 工程师' : '👤 客户'}}</text>
+  <view class="hero hero-sunny me-hero" wx:if="{{user}}">
+    <image wx:if="{{user.avatarUrl}}" class="me-avatar" src="{{user.avatarUrl}}" mode="aspectFill" />
+    <view wx:else class="me-avatar me-avatar-fb">{{user.nickname ? user.nickname[0] : '👤'}}</view>
+    <view class="me-info">
+      <text class="me-name">Hi，{{user.nickname || '用户'}}</text>
+      <text class="badge-y">{{user.role === 'ENGINEER' ? '已认证工程师' : '客户'}}</text>
     </view>
-    <button class="edit-btn" bindtap="goEdit">编辑</button>
+    <view class="me-edit" bindtap="goEdit">编辑</view>
   </view>
 
-  <!-- 所有角色统一使用身份认证；工程师在演示环境可保留自主认证入口。 -->
-  <view class="verify-card" wx:if="{{user}}" bindtap="goQualification">
-    <view class="verify-head">
-      <view class="verify-copy">
-        <text class="verify-title">身份认证</text>
-        <text class="verify-desc">当前状态：{{verifyText}}</text>
-      </view>
-      <text class="verify-status {{verifyStatus === 'APPROVED' ? 'approved' : verifyStatus === 'REJECTED' ? 'rejected' : 'pending'}}">{{verifyText}}</text>
-    </view>
-    <button
-      wx:if="{{showSelfVerify}}"
-      class="verify-btn"
-      loading="{{selfVerifyLoading}}"
-      disabled="{{selfVerifyLoading}}"
-      catchtap="selfVerifyEngineer"
-    >自主认证通过（调试）</button>
-    <text class="verify-hint">{{qualificationFileCount ? '已提交 ' + qualificationFileCount + ' 份认证材料。' : (user.role === 'ENGINEER' ? '可填写资料申请审核；演示环境也可使用自主认证。' : '填写本人信息并上传身份证正反面后提交审核。')}}</text>
+  <view class="data-card-y" wx:if="{{user}}">
+    <view class="stat"><b>{{user.completedCount || 0}}</b><span>完成订单</span></view>
+    <view class="stat"><b>{{user.averageScore || '—'}}</b><span>好评评分</span></view>
+    <view class="stat"><b>{{user.reviewCount || 0}}</b><span>累计评价</span></view>
   </view>
 
-  <!-- 菜单（仅保留 simu-platform 已有功能的跳转） -->
-  <view class="menu" wx:if="{{user}}">
-    <view class="menu-item" bindtap="goQualification">
-      <text class="icon">🪪</text>
-      <text class="title">身份认证</text>
-      <text class="arrow">›</text>
+  <view class="card-sky spread" wx:if="{{user}}" bindtap="goQualification">
+    <view class="sky-copy">
+      <text class="sky-title">🪪 身份认证</text>
+      <text class="sky-desc">当前状态：{{verifyText}}</text>
     </view>
-    <view class="menu-item" wx:if="{{user.role === 'CUSTOMER'}}" bindtap="goOrders">
-      <text class="icon">📋</text>
-      <text class="title">我的订单</text>
-      <text class="arrow">›</text>
+    <text class="btn-y">查看</text>
+  </view>
+  <text class="verify-hint" wx:if="{{user}}">{{qualificationFileCount ? '已提交 ' + qualificationFileCount + ' 份认证材料。' : (user.role === 'ENGINEER' ? '可填写资料申请审核；演示环境也可使用自主认证。' : '填写本人信息并上传身份证正反面后提交审核。')}}</text>
+  <button
+    wx:if="{{user && showSelfVerify}}"
+    class="self-verify"
+    loading="{{selfVerifyLoading}}"
+    disabled="{{selfVerifyLoading}}"
+    catchtap="selfVerifyEngineer"
+  >自主认证通过（调试）</button>
+
+  <view class="menu-card" wx:if="{{user}}">
+    <view class="menu-row" bindtap="goQualification">
+      <text class="m-icon">🪪</text>
+      <text class="m-title">身份认证</text>
+      <text class="m-arrow">›</text>
     </view>
-    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goMyQuotes">
-      <text class="icon">💰</text>
-      <text class="title">我的报价</text>
-      <text class="arrow">›</text>
+    <view class="menu-row" wx:if="{{user.role === 'CUSTOMER'}}" bindtap="goOrders">
+      <text class="m-icon">📋</text>
+      <text class="m-title">我的订单</text>
+      <text class="m-arrow">›</text>
     </view>
-    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goMyReviews">
-      <text class="icon">⭐</text>
-      <text class="title">我的评价</text>
-      <text class="arrow">›</text>
+    <view class="menu-row" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goMyQuotes">
+      <text class="m-icon">💰</text>
+      <text class="m-title">我的报价</text>
+      <text class="m-arrow">›</text>
     </view>
-    <view class="menu-item" bindtap="goMyDisputes">
-      <text class="icon">⚖️</text>
-      <text class="title">我的纠纷</text>
-      <text class="arrow">›</text>
+    <view class="menu-row" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goMyReviews">
+      <text class="m-icon">⭐</text>
+      <text class="m-title">我的评价</text>
+      <text class="m-arrow">›</text>
     </view>
-    <view class="menu-item" bindtap="goAccountSecurity">
-      <text class="icon">🔑</text>
-      <text class="title">{{user.username ? '重置密码' : '设置账号和密码'}}</text>
-      <text class="arrow">›</text>
+    <view class="menu-row" bindtap="goMyDisputes">
+      <text class="m-icon">⚖️</text>
+      <text class="m-title">我的纠纷</text>
+      <text class="m-arrow">›</text>
     </view>
-    <view class="menu-item" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goInvoices">
-      <text class="icon">🧾</text>
-      <text class="title">发票处理</text>
-      <text class="arrow">›</text>
+    <view class="menu-row" bindtap="goAccountSecurity">
+      <text class="m-icon">🔑</text>
+      <text class="m-title">{{user.username ? '重置密码' : '设置账号和密码'}}</text>
+      <text class="m-arrow">›</text>
     </view>
-    <view class="menu-item" bindtap="switchRole">
-      <text class="icon">🔄</text>
-      <text class="title">切换角色（演示）</text>
-      <text class="arrow">›</text>
+    <view class="menu-row" wx:if="{{user.role === 'ENGINEER'}}" bindtap="goInvoices">
+      <text class="m-icon">🧾</text>
+      <text class="m-title">发票处理</text>
+      <text class="m-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="switchRole">
+      <text class="m-icon">🔄</text>
+      <text class="m-title">切换角色（演示）</text>
+      <text class="m-arrow">›</text>
     </view>
   </view>
 
-  <!-- 操作 -->
-  <view class="actions" wx:if="{{user}}">
-    <button class="btn-danger-block" bindtap="logout">退出登录</button>
+  <view class="logout-wrap" wx:if="{{user}}">
+    <button class="btn-danger-outline" bindtap="logout">退出登录</button>
   </view>
 
 </view>

@@ -7,7 +7,7 @@
 .hero-eyebrow { color: #175D7A; font-size: 24rpx; font-weight: 600; }
 .hero-title-wrap { height: 54rpx; margin-top: 14rpx; overflow: hidden; }
 .hero-title { color: #1F2B22; font-size: 40rpx; line-height: 1.34; font-weight: 800; letter-spacing: 1rpx; }
-/* 底字保持静止；高亮副本只在窄窗口内显现，窗口与副本反向位移，因此只有被扫到的字形提亮�?*/
+/* 底字保持静止；高亮副本只在窄窗口内显现，窗口与副本反向位移，因此只有被扫到的字形提亮。 */
 .hero-title-shine-window { position: absolute; z-index: 2; top: 0; left: 0; width: 104rpx; height: 54rpx; overflow: hidden; pointer-events: none; transform: skewX(-18deg) translateX(-130rpx); animation: hero-title-sweep-window 1.6s ease-in-out infinite; }
 .hero-title-shine-copy { position: absolute; top: 0; left: 0; width: 700rpx; color: #F5B31A; text-shadow: none; white-space: nowrap; transform: skewX(18deg) translateX(130rpx); animation: hero-title-sweep-copy 1.6s ease-in-out infinite; }
 @keyframes hero-title-sweep-window { 0%, 58% { opacity: 0; transform: skewX(-18deg) translateX(-130rpx); } 60% { opacity: 1; } 78% { opacity: 1; transform: skewX(-18deg) translateX(810rpx); } 80%, 100% { opacity: 0; transform: skewX(-18deg) translateX(810rpx); } }

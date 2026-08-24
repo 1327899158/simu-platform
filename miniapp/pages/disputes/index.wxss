@@ -67,3 +67,6 @@
 .empty-icon { font-size: 72rpx; margin-bottom: 16rpx; }
 .empty-text { font-size: 30rpx; color: var(--c-text-3); }
 .loading { padding: 60rpx 0; text-align: center; color: var(--c-text-3); font-size: 25rpx; }
+
+/* ===== design 1:1 ===== */
+.card { border-radius: 32rpx; }

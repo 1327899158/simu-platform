@@ -225,3 +225,6 @@
   text-align: center;
   flex-shrink: 0;
 }
+
+/* ===== design rebuild ===== */
+.sys-msg { background: #F7F3C9; border: 1rpx solid #F1E3A6; color: #6B5D10; border-radius: 24rpx; }

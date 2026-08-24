@@ -153,3 +153,7 @@
 .btn-submit::after { border: none; }
 .btn-submit:active { transform: scale(0.98); opacity: 0.9; }
 .btn-submit.disabled { opacity: 0.5; }
+
+/* ===== design 1:1 ===== */
+.card { border-radius: 32rpx; }
+.upload-button, .submit, button.primary { border-radius: 999rpx; }
